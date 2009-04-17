@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<faqs id="FAQ" title="Frequently Asked Questions">
+ <part id="General">
+  <faq id="Need Server">
+     <question>Why do I get the error 'Sonar server can not be reached at http://localhost:9000.' ?</question>
+     <answer>
+     	Maven Plugin needs the Sonar server to be up. Read the <a href="http://docs.codehaus.org/display/SONAR/The+2+minutes+tutorial">2 minutes tutorial</a> or the <a href="http://docs.codehaus.org/display/SONAR/Install+Sonar">installation guide</a> for more details.
+     </answer>
+   </faq>
+   <faq id="Documentation">
+     <question>Where can I find more documentation ?</question>
+     <answer>
+     	Documentation can be found on :<ul>
+        <li>the official <a href="http://sonar.codehaus.org/documentation/">website</a></li>
+        <li>the <a href="http://sonar.codehaus.org/category/blog/">blog</a></li>
+        <li>the <a href="http://sonar.codehaus.org/support/">mailing-list</a></li>
+        </ul>
+		
+		You can also follow the team on <a href="http://twitter.com/SonarSource">twitter</a>. 
+     </answer>
+   </faq>
+   <faq id="Demo">
+     <question>Is there a live demo of Sonar ?</question>
+     <answer>
+     	<p>
+        Yes, at <a href="http://nemo.sonar.codehaus.org">http://nemo.sonar.codehaus.org</a>. It regularly analyses some open source projects.
+    	</p>
+     </answer>
+   </faq>
+   <faq id="Which projects">
+     <question>What kinds of projects can be analysed ?</question>
+     <answer>
+     	<p>
+        Sonar analyses Java projects, even if they are not built with Maven (<a href="http://docs.codehaus.org/display/SONAR/Analyzing+Java+Projects">more details</a>).
+        Some <a href="http://sonar-plugins.codehaus.org">plugins</a> support other languages like PHP or PL/SQL.
+    	</p>
+     </answer>
+   </faq>
+   <faq id="Maven Reporting">
+     <question>Can I get a static report in Maven site ?</question>
+     <answer>
+     	<p>
+        No, Sonar is a standalone web application. This infrastructure is more flexible and powerful but needs an application server and a database.
+		</p>
+      	<p>
+		This may be addressed by Maven reports like <a href="http://mojo.codehaus.org/dashboard-maven-plugin/">dashboard</a> or <a href="http://xradar.sourceforge.net/">xradar</a>.
+    	</p>
+     </answer>
+   </faq>
+ </part>
+</faqs>

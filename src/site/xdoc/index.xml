@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<document>
+    <properties>
+        <author email="simn.brandhof@gmail.com">Simon Brandhof</author>
+        <title>Sonar Maven Plugin</title>
+    </properties>
+    <head>
+        <meta/>
+    </head>
+    <body>
+        <!-- The body of the document contains a number of sections -->
+        <section name="Sonar">
+            <p>
+                <a href="http://sonar.codehaus.org">Sonar</a>
+                enables to analyze and report metrics on source code. Sonar not only offers consolidated reporting on and across projects throughout time, but it becomes the central place to manage code quality.
+            </p>
+            <p>
+	        Sonar drives many tools :
+	<ul><li>Static analysis : <a href="http://maven.apache.org/plugins/maven-checkstyle-plugin/">Checkstyle</a>, <a href="http://maven.apache.org/plugins/maven-pmd-plugin/">PMD/CPD</a>, <a href="http://mojo.codehaus.org/findbugs-maven-plugin/">Findbugs</a>, <a href="http://mojo.codehaus.org/javancss-maven-plugin/">JavaNcss</a>.</li>
+	<li>Dynamic analysis for unit tests : <a href="http://mojo.codehaus.org/cobertura-maven-plugin/">Cobertura</a>, <a href="http://www.atlassian.com/software/clover/">Clover</a>, <a href="http://maven.apache.org/plugins/maven-surefire-plugin/">Surefire</a>.</li>
+		</ul>
+		<a href="http://sonar-plugins.codehaus.org">Plugins</a> add more features and support other tools like <a href="http://docs.codehaus.org/display/SONAR/Sonar+Emma+Plugin">Emma</a> and <a href="http://docs.codehaus.org/display/SONAR/Taglist+Plugin">Taglist</a>. 
+	        </p>
+			<subsection name="About Sonar Maven Plugin">
+                <p>
+                    Sonar Maven Plugin executes code analysers and save results in Sonar database.
+                </p>
+            </subsection>
+            <subsection name="Screenshots">
+                <p>
+                    <img border="0" alt="Projects" src="./images/projects.jpg"></img>
+
+                </p>
+                <br/>
+                <p> </p>
+                <p>
+                    <img border="0" alt="Dashboard" src="./images/dashboard.jpg"></img>
+                </p>
+            </subsection>
+            
+        </section>
+    </body>
+</document>

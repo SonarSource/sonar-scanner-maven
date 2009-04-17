@@ -10,6 +10,7 @@
     <artifactId>sonar-maven-plugin</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>Sonar Maven Plugin</name>
+    <description>Analyze and report metrics on source code</description>
 
     <packaging>maven-plugin</packaging>
     <inceptionYear>2009</inceptionYear>
@@ -17,13 +18,8 @@
     <scm>
         <connection>scm:svn:http://svn.codehaus.org/mojo/trunk/mojo/sonar-maven-plugin</connection>
         <developerConnection>scm:svn:https://svn.codehaus.org/mojo/trunk/mojo/sonar-maven-plugin</developerConnection>
-        <url>http://svn.codehaus.org/mojo/trunk/mojo/sonar-maven-plugin</url>
+        <url>http://fisheye.codehaus.org/browse/mojo/trunk/mojo/sonar-maven-plugin</url>
     </scm>
-
-    <organization>
-        <name>The Codehaus Mojo Project</name>
-        <url>http://mojo.codehaus.org</url>
-    </organization>
 
     <developers>
         <developer>
@@ -67,6 +63,30 @@
             <version>2.0.7</version>
             <scope>provided</scope>
         </dependency>
+	    <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-model</artifactId>
+            <version>2.0.7</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-settings</artifactId>
+            <version>2.0.7</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-plugin-descriptor</artifactId>
+            <version>2.0.7</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-artifact</artifactId>
+            <version>2.0.7</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
@@ -79,7 +99,6 @@
             <version>2.0.7</version>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

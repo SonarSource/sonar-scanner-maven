@@ -41,14 +41,16 @@ import java.io.IOException;
 public class SonarMojo extends AbstractMojo {
 
   /**
-   * @parameter expression="${project}"
+   * @parameter default-value="${project}"
    * @required
+   * @readonly
    */
   protected MavenProject project;
 
   /**
-   * @parameter expression="${session}"
+   * @parameter default-value="${session}"
    * @required
+   * @readonly
    */
   private MavenSession session;
 

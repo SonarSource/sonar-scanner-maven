@@ -8,7 +8,7 @@
     </parent>
 
     <artifactId>sonar-maven-plugin</artifactId>
-    <version>1.0-beta-1-SNAPSHOT</version>
+    <version>1.0-SNAPSHOT</version>
     <name>Sonar Maven Plugin</name>
 
     <packaging>maven-plugin</packaging>

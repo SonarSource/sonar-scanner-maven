@@ -35,7 +35,8 @@ import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class ServerMetadata {
+public class ServerMetadata
+{
 
     public static final int CONNECT_TIMEOUT_MILLISECONDS = 30000;
     public static final int READ_TIMEOUT_MILLISECONDS = 60000;
@@ -43,59 +44,72 @@ public class ServerMetadata {
 
     private String url;
 
-    public ServerMetadata(String url) {
-        this.url = StringUtils.chomp(url, "/");
+    public ServerMetadata( String url )
+    {
+        this.url = StringUtils.chomp( url, "/" );
     }
 
-    public String getVersion() throws IOException {
-        return remoteContent("/api/server/version");
+    public String getVersion() throws IOException
+    {
+        return remoteContent( "/api/server/version" );
     }
 
-    public String getKey() throws IOException {
-        return remoteContent("/api/server/key");
+    public String getKey() throws IOException
+    {
+        return remoteContent( "/api/server/key" );
     }
 
-    public String getMavenRepositoryUrl() {
+    public String getMavenRepositoryUrl()
+    {
         return getUrl() + MAVEN_PATH;
     }
 
-    public String getUrl() {
+    public String getUrl()
+    {
         return url;
     }
 
-    public void logSettings(Log log) throws MojoExecutionException {
-        try {
-            log.info("Sonar host: " + getUrl());
-            log.info("Sonar version: " + getVersion());
+    public void logSettings( Log log ) throws MojoExecutionException
+    {
+        try
+        {
+            log.info( "Sonar host: " + getUrl() );
+            log.info( "Sonar version: " + getVersion() );
 
-        } catch (IOException e) {
-            throw new MojoExecutionException("Sonar server can not be reached at " + getUrl() + ". Please check the parameter 'sonar.host.url'.");
+        } catch ( IOException e )
+        {
+            throw new MojoExecutionException( "Sonar server can not be reached at " + getUrl() + ". Please check the parameter 'sonar.host.url'." );
         }
     }
 
-    protected String remoteContent(String path) throws IOException {
+    protected String remoteContent( String path ) throws IOException
+    {
         String fullUrl = url + path;
-        HttpURLConnection conn = getConnection(fullUrl + path, "GET");
-        Reader reader = new InputStreamReader((InputStream) conn.getContent());
-        try {
+        HttpURLConnection conn = getConnection( fullUrl + path, "GET" );
+        Reader reader = new InputStreamReader( (InputStream) conn.getContent() );
+        try
+        {
             int statusCode = conn.getResponseCode();
-            if (statusCode != HttpURLConnection.HTTP_OK) {
-                throw new IOException("Status returned by url : '" + fullUrl + "' is invalid : " + statusCode);
+            if ( statusCode != HttpURLConnection.HTTP_OK )
+            {
+                throw new IOException( "Status returned by url : '" + fullUrl + "' is invalid : " + statusCode );
             }
-            return IOUtils.toString(reader);
+            return IOUtils.toString( reader );
 
-        } finally {
-            IOUtils.closeQuietly(reader);
+        } finally
+        {
+            IOUtils.closeQuietly( reader );
             conn.disconnect();
         }
     }
 
-    protected HttpURLConnection getConnection(String url, String method) throws IOException {
-        URL page = new URL(url);
+    protected HttpURLConnection getConnection( String url, String method ) throws IOException
+    {
+        URL page = new URL( url );
         HttpURLConnection conn = (HttpURLConnection) page.openConnection();
-        conn.setConnectTimeout(CONNECT_TIMEOUT_MILLISECONDS);
-        conn.setReadTimeout(READ_TIMEOUT_MILLISECONDS);
-        conn.setRequestMethod(method);
+        conn.setConnectTimeout( CONNECT_TIMEOUT_MILLISECONDS );
+        conn.setReadTimeout( READ_TIMEOUT_MILLISECONDS );
+        conn.setRequestMethod( method );
         conn.connect();
         return conn;
     }

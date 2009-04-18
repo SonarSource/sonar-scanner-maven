@@ -43,7 +43,8 @@ import java.util.List;
 /**
  * Configure pom and execute sonar internal maven plugin
  */
-public class Bootstraper {
+public class Bootstraper
+{
 
     public static final String REPOSITORY_ID = "sonar";
 
@@ -51,65 +52,76 @@ public class Bootstraper {
     private PluginManager pluginManager;
     private ArtifactRepositoryFactory repoFactory;
 
-    public Bootstraper(ServerMetadata server, ArtifactRepositoryFactory repoFactory, PluginManager pluginManager) {
+    public Bootstraper( ServerMetadata server, ArtifactRepositoryFactory repoFactory, PluginManager pluginManager )
+    {
         this.server = server;
         this.repoFactory = repoFactory;
         this.pluginManager = pluginManager;
     }
 
-    public void start(MavenProject project, MavenSession session) throws IOException, MojoExecutionException {
-        configure(project);
-        executeMojo(project, session);
+    public void start( MavenProject project, MavenSession session ) throws IOException, MojoExecutionException
+    {
+        configure( project );
+        executeMojo( project, session );
     }
 
-    private void executeMojo(MavenProject project, MavenSession session) throws MojoExecutionException {
-        try {
+    private void executeMojo( MavenProject project, MavenSession session ) throws MojoExecutionException
+    {
+        try
+        {
             PluginDescriptor pluginDescriptor = pluginManager.verifyPlugin(
                     createSonarPlugin(),
                     project,
                     session.getSettings(),
-                    session.getLocalRepository());
-            MojoDescriptor mojoDescriptor = pluginDescriptor.getMojo("internal");
-            if (mojoDescriptor == null) {
-                throw new MojoExecutionException("Unknown mojo goal: install");
+                    session.getLocalRepository() );
+            MojoDescriptor mojoDescriptor = pluginDescriptor.getMojo( "internal" );
+            if ( mojoDescriptor == null )
+            {
+                throw new MojoExecutionException( "Unknown mojo goal: install" );
             }
-            pluginManager.executeMojo(project, new MojoExecution(mojoDescriptor), session);
+            pluginManager.executeMojo( project, new MojoExecution( mojoDescriptor ), session );
 
-        } catch (Exception e) {
-            throw new MojoExecutionException("Can not execute Sonar", e);
+        }
+        catch ( Exception e )
+        {
+            throw new MojoExecutionException( "Can not execute Sonar", e );
         }
     }
 
-    private void configure(MavenProject project) throws IOException {
-        configureRepositories(project);
+    private void configure( MavenProject project ) throws IOException
+    {
+        configureRepositories( project );
     }
 
-    private void configureRepositories(MavenProject project) throws IOException {
+    private void configureRepositories( MavenProject project ) throws IOException
+    {
         List<ArtifactRepository> pluginRepositories = new ArrayList<ArtifactRepository>();
-        ArtifactRepository repository = createSonarRepository(repoFactory);
-        pluginRepositories.add(repository);
-        pluginRepositories.addAll(project.getPluginArtifactRepositories());
-        project.setPluginArtifactRepositories(pluginRepositories);
+        ArtifactRepository repository = createSonarRepository( repoFactory );
+        pluginRepositories.add( repository );
+        pluginRepositories.addAll( project.getPluginArtifactRepositories() );
+        project.setPluginArtifactRepositories( pluginRepositories );
 
         List<ArtifactRepository> artifactRepositories = new ArrayList<ArtifactRepository>();
-        artifactRepositories.add(repository);
-        artifactRepositories.addAll(project.getRemoteArtifactRepositories());
-        project.setRemoteArtifactRepositories(artifactRepositories);
+        artifactRepositories.add( repository );
+        artifactRepositories.addAll( project.getRemoteArtifactRepositories() );
+        project.setRemoteArtifactRepositories( artifactRepositories );
 
     }
 
-    private Plugin createSonarPlugin() throws IOException {
+    private Plugin createSonarPlugin() throws IOException
+    {
         Plugin plugin = new Plugin();
-        plugin.setGroupId("org.codehaus.sonar.runtime");
-        plugin.setArtifactId("sonar-core-maven-plugin");
-        plugin.setVersion(server.getKey());
+        plugin.setGroupId( "org.codehaus.sonar.runtime" );
+        plugin.setArtifactId( "sonar-core-maven-plugin" );
+        plugin.setVersion( server.getKey() );
         return plugin;
     }
 
-    private ArtifactRepository createSonarRepository(ArtifactRepositoryFactory repoFactory) {
-        return repoFactory.createArtifactRepository(REPOSITORY_ID, server.getMavenRepositoryUrl(),
+    private ArtifactRepository createSonarRepository( ArtifactRepositoryFactory repoFactory )
+    {
+        return repoFactory.createArtifactRepository( REPOSITORY_ID, server.getMavenRepositoryUrl(),
                 new DefaultRepositoryLayout(),
-                new ArtifactRepositoryPolicy(false, "never", "ignore"), // snapshot
-                new ArtifactRepositoryPolicy(true, "never", "ignore"));
+                new ArtifactRepositoryPolicy( false, "never", "ignore" ), // snapshot
+                new ArtifactRepositoryPolicy( true, "never", "ignore" ) );
     }
 }

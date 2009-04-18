@@ -29,41 +29,48 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class ServerMetadataTest {
-  private static final String URL = "http://test";
+public class ServerMetadataTest
+{
+    private static final String URL = "http://test";
 
 
-  @Test
-  public void shouldReturnAValidResult() throws IOException {
-    final String validContent = "valid";
-    ServerMetadata server = new ServerMetadata(URL) {
+    @Test
+    public void shouldReturnAValidResult() throws IOException
+    {
+        final String validContent = "valid";
+        ServerMetadata server = new ServerMetadata( URL )
+        {
 
-      @Override
-      protected String remoteContent(String path) {
-        return (validContent);
-      }
-    };
+            @Override
+            protected String remoteContent( String path )
+            {
+                return ( validContent );
+            }
+        };
 
-    assertThat(server.remoteContent("an action"), is(validContent));
-  }
+        assertThat( server.remoteContent( "an action" ), is( validContent ) );
+    }
 
-  @Test
-  public void shouldRemoveLastUrlSlash() {
-    ServerMetadata server = new ServerMetadata("http://test/");
-    assertThat(server.getUrl(), is(URL));
-  }
+    @Test
+    public void shouldRemoveLastUrlSlash()
+    {
+        ServerMetadata server = new ServerMetadata( "http://test/" );
+        assertThat( server.getUrl(), is( URL ) );
+    }
 
-  @Test
-  public void shouldReturnMavenRepositoryUrl() {
-    ServerMetadata server = new ServerMetadata(URL);
-    assertThat(server.getMavenRepositoryUrl(), is(URL + ServerMetadata.MAVEN_PATH));
-  }
+    @Test
+    public void shouldReturnMavenRepositoryUrl()
+    {
+        ServerMetadata server = new ServerMetadata( URL );
+        assertThat( server.getMavenRepositoryUrl(), is( URL + ServerMetadata.MAVEN_PATH ) );
+    }
 
-  @Test(expected = IOException.class)
-  public void shouldFailIfCanNotConnectToServer() throws IOException {
-    ServerMetadata server = new ServerMetadata("http://unknown.foo");
-    server.getVersion();
-  }
+    @Test(expected = IOException.class)
+    public void shouldFailIfCanNotConnectToServer() throws IOException
+    {
+        ServerMetadata server = new ServerMetadata( "http://unknown.foo" );
+        server.getVersion();
+    }
 
 }
 

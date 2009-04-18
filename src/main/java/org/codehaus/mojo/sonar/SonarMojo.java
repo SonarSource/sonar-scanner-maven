@@ -38,84 +38,88 @@ import java.io.IOException;
  * @goal sonar
  * @aggregator
  */
-public class SonarMojo extends AbstractMojo {
+public class SonarMojo extends AbstractMojo
+{
 
-  /**
-   * @parameter default-value="${project}"
-   * @required
-   * @readonly
-   */
-  protected MavenProject project;
+    /**
+     * @parameter default-value="${project}"
+     * @required
+     * @readonly
+     */
+    protected MavenProject project;
 
-  /**
-   * @parameter default-value="${session}"
-   * @required
-   * @readonly
-   */
-  private MavenSession session;
+    /**
+     * @parameter default-value="${session}"
+     * @required
+     * @readonly
+     */
+    private MavenSession session;
 
-  /**
-   * Sonar host URL.
-   *
-   * @parameter expression="${sonar.host.url}" default-value="http://localhost:9000" alias="sonar.host.url"
-   */
-  private String sonarHostURL;
+    /**
+     * Sonar host URL.
+     *
+     * @parameter expression="${sonar.host.url}" default-value="http://localhost:9000" alias="sonar.host.url"
+     */
+    private String sonarHostURL;
 
-  /**
-   * @component
-   * @required
-   */
-  protected PluginManager pluginManager;
+    /**
+     * @component
+     * @required
+     */
+    protected PluginManager pluginManager;
 
-  /**
-   * @component
-   * @required
-   */
-  private org.apache.maven.artifact.repository.ArtifactRepositoryFactory repoFactory;
-
-
-  // THE FOLLOWING PARAMETERS ARE DEFINED ONLY FOR MAVEN SITE. DO NOT REMOVE THEM.
+    /**
+     * @component
+     * @required
+     */
+    private org.apache.maven.artifact.repository.ArtifactRepositoryFactory repoFactory;
 
 
-  /**
-   * JDBC URL.
-   *
-   * @parameter expression="${sonar.jdbc.url}" default-value="jdbc:derby://localhost:1527/sonar" alias="sonar.jdbc.url"
-   */
-  private String jdbcURL;
-
-  /**
-   * JDBC driver class.
-   *
-   * @parameter expression="${sonar.jdbc.driver}" default-value="org.apache.derby.jdbc.ClientDriver" alias="sonar.jdbc.driver"
-   */
-  private String jdbcDriverClassName;
-
-  /**
-   * JDBC login.
-   *
-   * @parameter expression="${sonar.jdbc.username}" default-value="sonar" alias="sonar.jdbc.username"
-   */
-  private String jdbcUserName;
+    // THE FOLLOWING PARAMETERS ARE DEFINED ONLY FOR MAVEN SITE. DO NOT REMOVE THEM.
 
 
-  /**
-   * JDBC password.
-   *
-   * @parameter expression="${sonar.jdbc.password}" default-value="sonar" alias="sonar.jdbc.password"
-   */
-  private String jdbcPassword;
+    /**
+     * JDBC URL.
+     *
+     * @parameter expression="${sonar.jdbc.url}" default-value="jdbc:derby://localhost:1527/sonar" alias="sonar.jdbc.url"
+     */
+    private String jdbcURL;
 
-  public void execute() throws MojoExecutionException, MojoFailureException {
-    try {
-      ServerMetadata server = new ServerMetadata(sonarHostURL);
-      server.logSettings(getLog());
+    /**
+     * JDBC driver class.
+     *
+     * @parameter expression="${sonar.jdbc.driver}" default-value="org.apache.derby.jdbc.ClientDriver" alias="sonar.jdbc.driver"
+     */
+    private String jdbcDriverClassName;
 
-      new Bootstraper(server, repoFactory, pluginManager).start(project, session);
+    /**
+     * JDBC login.
+     *
+     * @parameter expression="${sonar.jdbc.username}" default-value="sonar" alias="sonar.jdbc.username"
+     */
+    private String jdbcUserName;
 
-    } catch (IOException e) {
-      throw new MojoExecutionException("Failed to execute Sonar", e);
+
+    /**
+     * JDBC password.
+     *
+     * @parameter expression="${sonar.jdbc.password}" default-value="sonar" alias="sonar.jdbc.password"
+     */
+    private String jdbcPassword;
+
+    public void execute() throws MojoExecutionException, MojoFailureException
+    {
+        try
+        {
+            ServerMetadata server = new ServerMetadata( sonarHostURL );
+            server.logSettings( getLog() );
+
+            new Bootstraper( server, repoFactory, pluginManager ).start( project, session );
+
+        } catch ( IOException e )
+        {
+            throw new MojoExecutionException( "Failed to execute Sonar", e );
+        }
     }
-  }
 
 }

@@ -26,7 +26,7 @@
   <parent>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>mojo-parent</artifactId>
-    <version>22</version>
+    <version>23</version>
   </parent>
 
   <artifactId>sonar-maven-plugin</artifactId>
@@ -65,6 +65,7 @@
 
   <properties>
     <project.build.java.target>1.5</project.build.java.target>
+    <mavenVersion>2.0.7</mavenVersion>
   </properties>
 
   <dependencies>
@@ -86,32 +87,32 @@
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-model</artifactId>
-      <version>2.0.7</version>
+      <version>${mavenVersion}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-settings</artifactId>
-      <version>2.0.7</version>
+      <version>${mavenVersion}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-descriptor</artifactId>
-      <version>2.0.7</version>
+      <version>${mavenVersion}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-artifact</artifactId>
-      <version>2.0.7</version>
+      <version>${mavenVersion}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-core</artifactId>
-      <version>2.0.7</version>
+      <version>${mavenVersion}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-project</artifactId>
-      <version>2.0.7</version>
+      <version>${mavenVersion}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

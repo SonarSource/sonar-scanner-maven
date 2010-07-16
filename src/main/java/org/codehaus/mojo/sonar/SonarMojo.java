@@ -33,7 +33,7 @@ import org.apache.maven.project.MavenProject;
 import java.io.IOException;
 
 /**
- * Analyse project. WARNING, Sonar server must be started.
+ * Analyze a Maven project. The Sonar server must be started.
  *
  * @goal sonar
  * @aggregator
@@ -75,46 +75,15 @@ public class SonarMojo extends AbstractMojo
     private org.apache.maven.artifact.repository.ArtifactRepositoryFactory repoFactory;
 
 
-    // THE FOLLOWING PARAMETERS ARE DEFINED ONLY FOR MAVEN SITE. DO NOT REMOVE THEM.
-
-
-    /**
-     * JDBC URL.
-     *
-     * @parameter expression="${sonar.jdbc.url}" default-value="jdbc:derby://localhost:1527/sonar" alias="sonar.jdbc.url"
-     */
-    private String jdbcURL;
-
-    /**
-     * JDBC driver class.
-     *
-     * @parameter expression="${sonar.jdbc.driver}" default-value="org.apache.derby.jdbc.ClientDriver" alias="sonar.jdbc.driver"
-     */
-    private String jdbcDriverClassName;
-
-    /**
-     * JDBC login.
-     *
-     * @parameter expression="${sonar.jdbc.username}" default-value="sonar" alias="sonar.jdbc.username"
-     */
-    private String jdbcUserName;
-
-
-    /**
-     * JDBC password.
-     *
-     * @parameter expression="${sonar.jdbc.password}" default-value="sonar" alias="sonar.jdbc.password"
-     */
-    private String jdbcPassword;
-
     public void execute() throws MojoExecutionException, MojoFailureException
     {
         try
         {
             ServerMetadata server = new ServerMetadata( sonarHostURL );
+            server.connect();
             server.logSettings( getLog() );
 
-            new Bootstraper( server, repoFactory, pluginManager ).start( project, session );
+            new Bootstraper( server, repoFactory, pluginManager, getLog() ).start( project, session );
 
         } catch ( IOException e )
         {

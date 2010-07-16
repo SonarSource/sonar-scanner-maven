@@ -43,25 +43,40 @@ public class ServerMetadata
     public static final String MAVEN_PATH = "/deploy/maven";
 
     private String url;
+    private String version;
+    private String key;
 
     public ServerMetadata( String url )
     {
         this.url = StringUtils.chomp( url, "/" );
     }
 
-    public String getVersion() throws IOException
+    public void connect() throws MojoExecutionException
     {
-        return remoteContent( "/api/server/version" );
+        try
+        {
+            this.version = remoteContent( "/api/server/version" );
+            this.key = remoteContent( "/api/server/key" );
+          
+        } catch ( IOException e )
+        {
+            throw new MojoExecutionException( "Sonar server can not be reached. Please check the parameter 'sonar.host.url': " + this.url);
+        }
     }
 
-    public String getKey() throws IOException
+    public String getVersion()
     {
-        return remoteContent( "/api/server/key" );
+        return version;
+    }
+
+    public String getKey()
+    {
+        return key;
     }
 
     public String getMavenRepositoryUrl()
     {
-        return getUrl() + MAVEN_PATH;
+        return url + MAVEN_PATH;
     }
 
     public String getUrl()
@@ -69,17 +84,20 @@ public class ServerMetadata
         return url;
     }
 
-    public void logSettings( Log log ) throws MojoExecutionException
+    public boolean needsSonarInternalRepository()
     {
-        try
-        {
-            log.info( "Sonar host: " + getUrl() );
-            log.info( "Sonar version: " + getVersion() );
+        return isVersionPriorTo2Dot2( version );
+    }
 
-        } catch ( IOException e )
-        {
-            throw new MojoExecutionException( "Sonar server can not be reached at " + getUrl() + ". Please check the parameter 'sonar.host.url'." );
-        }
+    static boolean isVersionPriorTo2Dot2( String version )
+    {
+        return version.startsWith( "1." ) || version.startsWith( "2.0" ) || "2.1".equals( version ) || version.startsWith( "2.1." );
+    }
+
+    public void logSettings( Log log )
+    {
+        log.info( "Sonar host: " + getUrl() );
+        log.info( "Sonar version: " + getVersion() );
     }
 
     protected String remoteContent( String path ) throws IOException

@@ -34,6 +34,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.PluginManager;
 import org.apache.maven.plugin.descriptor.MojoDescriptor;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 
 import java.io.IOException;
@@ -51,49 +52,52 @@ public class Bootstraper
     private ServerMetadata server;
     private PluginManager pluginManager;
     private ArtifactRepositoryFactory repoFactory;
+    private Log log;
 
-    public Bootstraper( ServerMetadata server, ArtifactRepositoryFactory repoFactory, PluginManager pluginManager )
+  public Bootstraper( ServerMetadata server, ArtifactRepositoryFactory repoFactory, PluginManager pluginManager, Log log )
     {
         this.server = server;
         this.repoFactory = repoFactory;
         this.pluginManager = pluginManager;
+        this.log = log;
     }
 
     public void start( MavenProject project, MavenSession session ) throws IOException, MojoExecutionException
     {
-        configure( project );
-        executeMojo( project, session );
+        if ( server.needsSonarInternalRepository() )
+        {
+            configureInternalRepositories( project );
+            executeMojo( project, session, createDeprecatedPlugin(), "internal" );
+        } else
+        {
+            executeMojo( project, session, createPlugin(), "sonar" );
+        }
     }
 
-    private void executeMojo( MavenProject project, MavenSession session ) throws MojoExecutionException
+    private void executeMojo( MavenProject project, MavenSession session, Plugin plugin, String goal ) throws MojoExecutionException
     {
         try
         {
+            log.info("Execute: " + plugin.getGroupId() + ":" + plugin.getArtifactId() + ":" + plugin.getVersion() + ":" + goal);
             PluginDescriptor pluginDescriptor = pluginManager.verifyPlugin(
-                    createSonarPlugin(),
+                    plugin,
                     project,
                     session.getSettings(),
                     session.getLocalRepository() );
-            MojoDescriptor mojoDescriptor = pluginDescriptor.getMojo( "internal" );
+            MojoDescriptor mojoDescriptor = pluginDescriptor.getMojo( goal );
             if ( mojoDescriptor == null )
             {
-                throw new MojoExecutionException( "Unknown mojo goal: install" );
+                throw new MojoExecutionException( "Unknown mojo goal: " + goal );
             }
             pluginManager.executeMojo( project, new MojoExecution( mojoDescriptor ), session );
 
-        }
-        catch ( Exception e )
+        } catch ( Exception e )
         {
             throw new MojoExecutionException( "Can not execute Sonar", e );
         }
     }
 
-    private void configure( MavenProject project ) throws IOException
-    {
-        configureRepositories( project );
-    }
-
-    private void configureRepositories( MavenProject project ) throws IOException
+    private void configureInternalRepositories( MavenProject project ) throws IOException
     {
         List<ArtifactRepository> pluginRepositories = new ArrayList<ArtifactRepository>();
         ArtifactRepository repository = createSonarRepository( repoFactory );
@@ -108,7 +112,15 @@ public class Bootstraper
 
     }
 
-    private Plugin createSonarPlugin() throws IOException
+    private ArtifactRepository createSonarRepository( ArtifactRepositoryFactory repoFactory )
+    {
+        return repoFactory.createArtifactRepository( REPOSITORY_ID, server.getMavenRepositoryUrl(),
+                new DefaultRepositoryLayout(),
+                new ArtifactRepositoryPolicy( false, "never", "ignore" ), // snapshot
+                new ArtifactRepositoryPolicy( true, "never", "ignore" ) );
+    }
+
+    private Plugin createDeprecatedPlugin()
     {
         Plugin plugin = new Plugin();
         plugin.setGroupId( "org.codehaus.sonar.runtime" );
@@ -117,11 +129,12 @@ public class Bootstraper
         return plugin;
     }
 
-    private ArtifactRepository createSonarRepository( ArtifactRepositoryFactory repoFactory )
+    private Plugin createPlugin()
     {
-        return repoFactory.createArtifactRepository( REPOSITORY_ID, server.getMavenRepositoryUrl(),
-                new DefaultRepositoryLayout(),
-                new ArtifactRepositoryPolicy( false, "never", "ignore" ), // snapshot
-                new ArtifactRepositoryPolicy( true, "never", "ignore" ) );
+        Plugin plugin = new Plugin();
+        plugin.setGroupId( "org.codehaus.sonar" );
+        plugin.setArtifactId( "sonar-maven-plugin" );
+        plugin.setVersion( server.getVersion() );
+        return plugin;
     }
 }

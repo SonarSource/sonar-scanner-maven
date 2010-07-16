@@ -23,11 +23,13 @@
  */
 package org.codehaus.mojo.sonar;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.Test;
 
 import java.io.IOException;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class ServerMetadataTest
 {
@@ -35,7 +37,7 @@ public class ServerMetadataTest
 
 
     @Test
-    public void shouldReturnAValidResult() throws IOException
+    public void shouldReturnAValidResult() throws MojoExecutionException, IOException
     {
         final String validContent = "valid";
         ServerMetadata server = new ServerMetadata( URL )
@@ -52,25 +54,38 @@ public class ServerMetadataTest
     }
 
     @Test
-    public void shouldRemoveLastUrlSlash()
+    public void shouldRemoveLastUrlSlash() throws MojoExecutionException
     {
         ServerMetadata server = new ServerMetadata( "http://test/" );
         assertThat( server.getUrl(), is( URL ) );
     }
 
     @Test
-    public void shouldReturnMavenRepositoryUrl()
+    public void shouldReturnMavenRepositoryUrl() throws MojoExecutionException
     {
         ServerMetadata server = new ServerMetadata( URL );
         assertThat( server.getMavenRepositoryUrl(), is( URL + ServerMetadata.MAVEN_PATH ) );
     }
 
-    @Test(expected = IOException.class)
-    public void shouldFailIfCanNotConnectToServer() throws IOException
+    @Test(expected = MojoExecutionException.class)
+    public void shouldFailIfCanNotConnectToServer() throws MojoExecutionException
     {
         ServerMetadata server = new ServerMetadata( "http://unknown.foo" );
-        server.getVersion();
+        server.connect();
     }
 
+    @Test
+    public void checkSonarVersion()
+    {
+        assertThat( ServerMetadata.isVersionPriorTo2Dot2( "1.12" ), is( true ) );
+        assertThat( ServerMetadata.isVersionPriorTo2Dot2( "2.0.1" ), is( true ) );
+        assertThat( ServerMetadata.isVersionPriorTo2Dot2( "2.1" ), is( true ) );
+        assertThat( ServerMetadata.isVersionPriorTo2Dot2( "2.1.2" ), is( true ) );
+
+        assertThat( ServerMetadata.isVersionPriorTo2Dot2( "2.2" ), is( false ) );
+        assertThat( ServerMetadata.isVersionPriorTo2Dot2( "2.10" ), is( false ) );
+        assertThat( ServerMetadata.isVersionPriorTo2Dot2( "2.11" ), is( false ) );
+        assertThat( ServerMetadata.isVersionPriorTo2Dot2( "3.0" ), is( false ) );
+    }
 }
 

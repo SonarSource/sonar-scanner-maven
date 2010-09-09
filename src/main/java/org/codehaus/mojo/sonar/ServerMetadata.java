@@ -39,11 +39,15 @@ public class ServerMetadata
 {
 
     public static final int CONNECT_TIMEOUT_MILLISECONDS = 30000;
+
     public static final int READ_TIMEOUT_MILLISECONDS = 60000;
+
     public static final String MAVEN_PATH = "/deploy/maven";
 
     private String url;
+
     private String version;
+
     private String key;
 
     public ServerMetadata( String url )
@@ -51,16 +55,19 @@ public class ServerMetadata
         this.url = StringUtils.chomp( url, "/" );
     }
 
-    public void connect() throws MojoExecutionException
+    public void connect()
+        throws MojoExecutionException
     {
         try
         {
             this.version = remoteContent( "/api/server/version" );
             this.key = remoteContent( "/api/server/key" );
-          
-        } catch ( IOException e )
+
+        }
+        catch ( IOException e )
         {
-            throw new MojoExecutionException( "Sonar server can not be reached. Please check the parameter 'sonar.host.url': " + this.url);
+            throw new MojoExecutionException(
+                "Sonar server can not be reached. Please check the parameter 'sonar.host.url': " + this.url );
         }
     }
 
@@ -91,7 +98,8 @@ public class ServerMetadata
 
     static boolean isVersionPriorTo2Dot2( String version )
     {
-        return version.startsWith( "1." ) || version.startsWith( "2.0" ) || "2.1".equals( version ) || version.startsWith( "2.1." );
+        return version.startsWith( "1." ) || version.startsWith( "2.0" ) || "2.1".equals( version ) ||
+            version.startsWith( "2.1." );
     }
 
     public void logSettings( Log log )
@@ -100,7 +108,8 @@ public class ServerMetadata
         log.info( "Sonar version: " + getVersion() );
     }
 
-    protected String remoteContent( String path ) throws IOException
+    protected String remoteContent( String path )
+        throws IOException
     {
         String fullUrl = url + path;
         HttpURLConnection conn = getConnection( fullUrl + path, "GET" );
@@ -114,14 +123,16 @@ public class ServerMetadata
             }
             return IOUtils.toString( reader );
 
-        } finally
+        }
+        finally
         {
             IOUtils.closeQuietly( reader );
             conn.disconnect();
         }
     }
 
-    protected HttpURLConnection getConnection( String url, String method ) throws IOException
+    protected HttpURLConnection getConnection( String url, String method )
+        throws IOException
     {
         URL page = new URL( url );
         HttpURLConnection conn = (HttpURLConnection) page.openConnection();

@@ -38,7 +38,8 @@ import java.io.IOException;
  * @goal sonar
  * @aggregator
  */
-public class SonarMojo extends AbstractMojo
+public class SonarMojo
+    extends AbstractMojo
 {
 
     /**
@@ -75,7 +76,8 @@ public class SonarMojo extends AbstractMojo
     private org.apache.maven.artifact.repository.ArtifactRepositoryFactory repoFactory;
 
 
-    public void execute() throws MojoExecutionException, MojoFailureException
+    public void execute()
+        throws MojoExecutionException, MojoFailureException
     {
         try
         {
@@ -85,7 +87,8 @@ public class SonarMojo extends AbstractMojo
 
             new Bootstraper( server, repoFactory, pluginManager, getLog() ).start( project, session );
 
-        } catch ( IOException e )
+        }
+        catch ( IOException e )
         {
             throw new MojoExecutionException( "Failed to execute Sonar", e );
         }

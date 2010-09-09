@@ -37,7 +37,8 @@ public class ServerMetadataTest
 
 
     @Test
-    public void shouldReturnAValidResult() throws MojoExecutionException, IOException
+    public void shouldReturnAValidResult()
+        throws MojoExecutionException, IOException
     {
         final String validContent = "valid";
         ServerMetadata server = new ServerMetadata( URL )
@@ -54,21 +55,24 @@ public class ServerMetadataTest
     }
 
     @Test
-    public void shouldRemoveLastUrlSlash() throws MojoExecutionException
+    public void shouldRemoveLastUrlSlash()
+        throws MojoExecutionException
     {
         ServerMetadata server = new ServerMetadata( "http://test/" );
         assertThat( server.getUrl(), is( URL ) );
     }
 
     @Test
-    public void shouldReturnMavenRepositoryUrl() throws MojoExecutionException
+    public void shouldReturnMavenRepositoryUrl()
+        throws MojoExecutionException
     {
         ServerMetadata server = new ServerMetadata( URL );
         assertThat( server.getMavenRepositoryUrl(), is( URL + ServerMetadata.MAVEN_PATH ) );
     }
 
-    @Test(expected = MojoExecutionException.class)
-    public void shouldFailIfCanNotConnectToServer() throws MojoExecutionException
+    @Test( expected = MojoExecutionException.class )
+    public void shouldFailIfCanNotConnectToServer()
+        throws MojoExecutionException
     {
         ServerMetadata server = new ServerMetadata( "http://unknown.foo" );
         server.connect();

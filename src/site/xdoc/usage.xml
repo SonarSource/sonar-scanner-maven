@@ -1,23 +1,34 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <document>
-    <properties>
-        <author email="simn.brandhof@gmail.com">Simon Brandhof</author>
-        <title>Sonar Maven Plugin : Usage</title>
-    </properties>
-    <head>
-        <meta/>
-    </head>
-    <body>
-        <section name="Usage">
-            <subsection name="Install Sonar">
-              <p><a href="http://sonar.codehaus.org/downloads">Download</a> and <a href="http://sonar.codehaus.org/documentation/">install</a> Sonar. Minimum version is 1.8.
-              <b>Server must be up</b> before executing the Maven plugin.</p>
-            </subsection>
-            <subsection name="Analyse project">
-                <p>Run on your project root directory : <source><![CDATA[mvn sonar:sonar]]></source></p>
-                <p>For more details and advanced configuration, read the <a href="http://docs.codehaus.org/display/SONAR/The+2+minutes+tutorial">2 minutes tutorial</a> and the <a href="http://docs.codehaus.org/display/SONAR/Install+Sonar">installation guide</a>.</p>
-            </subsection>
+  <properties>
+    <author email="simn.brandhof@gmail.com">Simon Brandhof</author>
+    <title>Sonar Maven Plugin : Usage</title>
+  </properties>
+  <head>
+    <meta/>
+  </head>
+  <body>
+    <section name="Usage">
+      <subsection name="Install Sonar">
+        <p>
+          <a href="http://sonar.codehaus.org/downloads">Download</a>
+          and
+          <a href="http://sonar.codehaus.org/documentation/">install</a>
+          Sonar. Minimum version is 1.8.
+          <b>Server must be up</b>
+          before executing the Maven plugin.
+        </p>
+      </subsection>
+      <subsection name="Analyse project">
+        <p>Run on your project root directory :
+          <source><![CDATA[mvn sonar:sonar]]></source>
+        </p>
+        <p>For more details and advanced configuration, read the
+          <a href="http://docs.codehaus.org/display/SONAR/The+2+minutes+tutorial">2 minutes tutorial</a>
+          and the<a href="http://docs.codehaus.org/display/SONAR/Install+Sonar">installation guide</a>.
+        </p>
+      </subsection>
 
-        </section>
-    </body>
+    </section>
+  </body>
 </document>

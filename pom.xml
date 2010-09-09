@@ -26,7 +26,7 @@
   <parent>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>mojo-parent</artifactId>
-    <version>24</version>
+    <version>25</version>
   </parent>
 
   <artifactId>sonar-maven-plugin</artifactId>
@@ -64,7 +64,7 @@
   </scm>
 
   <properties>
-    <project.build.java.target>1.5</project.build.java.target>
+    <mojo.java.target>1.5</mojo.java.target>
     <mavenVersion>2.0.7</mavenVersion>
   </properties>
 
@@ -127,4 +127,36 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  
+  <reporting>
+    <plugins>
+      <plugin>
+        <artifactId>maven-changes-plugin</artifactId>
+        <version>2.1</version>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>changes-report</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+        <configuration>
+          <issueLinkTemplate>http://jira.codehaus.org/browse/%ISSUE%</issueLinkTemplate>
+          <onlyCurrentVersion>true</onlyCurrentVersion>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-invoker-plugin</artifactId>
+        <version>1.5</version>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>report</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+    </plugins>
+  </reporting>
+
 </project>

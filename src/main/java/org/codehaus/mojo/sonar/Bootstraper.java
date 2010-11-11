@@ -1,3 +1,5 @@
+package org.codehaus.mojo.sonar;
+
 /*
  * The MIT License
  *
@@ -21,25 +23,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.codehaus.mojo.sonar;
-
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.repository.ArtifactRepositoryFactory;
-import org.apache.maven.artifact.repository.ArtifactRepositoryPolicy;
-import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.plugin.MojoExecution;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.PluginManager;
-import org.apache.maven.plugin.descriptor.MojoDescriptor;
-import org.apache.maven.plugin.descriptor.PluginDescriptor;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.project.MavenProject;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+
+import org.apache.maven.artifact.repository.DefaultRepositoryRequest;
+import org.apache.maven.artifact.repository.RepositoryRequest;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Plugin;
+import org.apache.maven.plugin.MavenPluginManager;
+import org.apache.maven.plugin.Mojo;
+import org.apache.maven.plugin.MojoExecution;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.descriptor.MojoDescriptor;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
+import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.configuration.PlexusConfiguration;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.sonatype.aether.graph.DependencyFilter;
+import org.sonatype.aether.graph.DependencyNode;
+import org.sonatype.aether.repository.RemoteRepository;
 
 /**
  * Configure pom and execute sonar internal maven plugin
@@ -47,102 +51,113 @@ import java.util.List;
 public class Bootstraper
 {
 
-    public static final String REPOSITORY_ID = "sonar";
-
     private ServerMetadata server;
+    private MavenPluginManager pluginManager;
 
-    private PluginManager pluginManager;
-
-    private ArtifactRepositoryFactory repoFactory;
-
-    private Log log;
-
-    public Bootstraper( ServerMetadata server, ArtifactRepositoryFactory repoFactory, PluginManager pluginManager,
-                        Log log )
+    public Bootstraper( ServerMetadata server, MavenPluginManager pluginManager )
     {
         this.server = server;
-        this.repoFactory = repoFactory;
         this.pluginManager = pluginManager;
-        this.log = log;
     }
 
-    public void start( MavenProject project, MavenSession session )
-        throws IOException, MojoExecutionException
+    public void start( MavenProject project, MavenSession session ) throws IOException, MojoExecutionException
     {
-        if ( server.needsSonarInternalRepository() )
-        {
-            configureInternalRepositories( project );
-            executeMojo( project, session, createDeprecatedPlugin(), "internal" );
-        }
-        else
-        {
-            executeMojo( project, session, createPlugin(), "sonar" );
-        }
+        executeMojo( project, session );
     }
 
-    private void executeMojo( MavenProject project, MavenSession session, Plugin plugin, String goal )
-        throws MojoExecutionException
+    private void executeMojo( MavenProject project, MavenSession session ) throws MojoExecutionException
     {
+        ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
         try
         {
-            log.info(
-                "Execute: " + plugin.getGroupId() + ":" + plugin.getArtifactId() + ":" + plugin.getVersion() + ":" +
-                    goal );
-            PluginDescriptor pluginDescriptor =
-                pluginManager.verifyPlugin( plugin, project, session.getSettings(), session.getLocalRepository() );
+            
+            RepositoryRequest repositoryRequest = new DefaultRepositoryRequest();
+            repositoryRequest.setLocalRepository( session.getLocalRepository() );
+            repositoryRequest.setRemoteRepositories( project.getPluginArtifactRepositories() );
+
+            Plugin plugin = createSonarPlugin();
+
+            List<RemoteRepository> remoteRepositories = session.getCurrentProject().getRemotePluginRepositories();
+            
+            PluginDescriptor pluginDescriptor = pluginManager.getPluginDescriptor( plugin, remoteRepositories ,
+                session.getRepositorySession() );
+
+            String goal = "sonar";
+
             MojoDescriptor mojoDescriptor = pluginDescriptor.getMojo( goal );
             if ( mojoDescriptor == null )
             {
                 throw new MojoExecutionException( "Unknown mojo goal: " + goal );
             }
-            pluginManager.executeMojo( project, new MojoExecution( mojoDescriptor ), session );
+            MojoExecution mojoExecution = new MojoExecution( plugin, goal, "sonar" + goal );
+
+            mojoExecution.setConfiguration( convert( mojoDescriptor ) );
+
+            mojoExecution.setMojoDescriptor( mojoDescriptor );
+
+            // olamy : we exclude nothing and import nothing regarding realm import and artifacts
+            
+            DependencyFilter artifactFilter = new DependencyFilter()
+            {
+                public boolean accept( DependencyNode arg0, List<DependencyNode> arg1 )
+                {
+                    return true;
+                }
+            };
+            
+            pluginManager.setupPluginRealm( pluginDescriptor, session, Thread.currentThread().getContextClassLoader(),
+                Collections.<String>emptyList(), artifactFilter );            
+
+            Mojo mojo = pluginManager.getConfiguredMojo( Mojo.class, session, mojoExecution );
+            Thread.currentThread().setContextClassLoader( pluginDescriptor.getClassRealm() );
+            mojo.execute();
 
         }
         catch ( Exception e )
         {
             throw new MojoExecutionException( "Can not execute Sonar", e );
         }
+        finally
+        {
+            Thread.currentThread().setContextClassLoader( originalClassLoader );
+        }
     }
 
-    private void configureInternalRepositories( MavenProject project )
-        throws IOException
+    private Xpp3Dom convert( MojoDescriptor mojoDescriptor )
     {
-        List<ArtifactRepository> pluginRepositories = new ArrayList<ArtifactRepository>();
-        ArtifactRepository repository = createSonarRepository( repoFactory );
-        pluginRepositories.add( repository );
-        pluginRepositories.addAll( project.getPluginArtifactRepositories() );
-        project.setPluginArtifactRepositories( pluginRepositories );
+        Xpp3Dom dom = new Xpp3Dom( "configuration" );
 
-        List<ArtifactRepository> artifactRepositories = new ArrayList<ArtifactRepository>();
-        artifactRepositories.add( repository );
-        artifactRepositories.addAll( project.getRemoteArtifactRepositories() );
-        project.setRemoteArtifactRepositories( artifactRepositories );
+        PlexusConfiguration c = mojoDescriptor.getMojoConfiguration();
 
+        PlexusConfiguration[] ces = c.getChildren();
+
+        if ( ces != null )
+        {
+            for ( PlexusConfiguration ce : ces )
+            {
+                String value = ce.getValue( null );
+                String defaultValue = ce.getAttribute( "default-value", null );
+                if ( value != null || defaultValue != null )
+                {
+                    Xpp3Dom e = new Xpp3Dom( ce.getName() );
+                    e.setValue( value );
+                    if ( defaultValue != null )
+                    {
+                        e.setAttribute( "default-value", defaultValue );
+                    }
+                    dom.addChild( e );
+                }
+            }
+        }
+
+        return dom;
     }
 
-    private ArtifactRepository createSonarRepository( ArtifactRepositoryFactory repoFactory )
-    {
-        return repoFactory.createArtifactRepository( REPOSITORY_ID, server.getMavenRepositoryUrl(),
-                                                     new DefaultRepositoryLayout(),
-                                                     new ArtifactRepositoryPolicy( false, "never", "ignore" ),
-                                                     // snapshot
-                                                     new ArtifactRepositoryPolicy( true, "never", "ignore" ) );
-    }
-
-    private Plugin createDeprecatedPlugin()
-    {
-        Plugin plugin = new Plugin();
-        plugin.setGroupId( "org.codehaus.sonar.runtime" );
-        plugin.setArtifactId( "sonar-core-maven-plugin" );
-        plugin.setVersion( server.getKey() );
-        return plugin;
-    }
-
-    private Plugin createPlugin()
+    private Plugin createSonarPlugin() throws IOException
     {
         Plugin plugin = new Plugin();
         plugin.setGroupId( "org.codehaus.sonar" );
-        plugin.setArtifactId( "sonar-maven-plugin" );
+        plugin.setArtifactId( "sonar-maven3-plugin" );
         plugin.setVersion( server.getVersion() );
         return plugin;
     }

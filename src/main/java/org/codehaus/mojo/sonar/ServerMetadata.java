@@ -1,3 +1,5 @@
+package org.codehaus.mojo.sonar;
+
 /*
  * The MIT License
  *
@@ -21,10 +23,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.codehaus.mojo.sonar;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
@@ -39,77 +39,52 @@ public class ServerMetadata
 {
 
     public static final int CONNECT_TIMEOUT_MILLISECONDS = 30000;
-
     public static final int READ_TIMEOUT_MILLISECONDS = 60000;
 
-    public static final String MAVEN_PATH = "/deploy/maven";
-
     private String url;
-
     private String version;
-
-    private String key;
 
     public ServerMetadata( String url )
     {
-        this.url = StringUtils.chomp( url, "/" );
-    }
-
-    public void connect()
-        throws MojoExecutionException
-    {
-        try
+        if ( url.endsWith( "/" ) )
         {
-            this.version = remoteContent( "/api/server/version" );
-            this.key = remoteContent( "/api/server/key" );
-
+          this.url = url.substring( 0, url.length() - 1 );
         }
-        catch ( IOException e )
+        else
         {
-            throw new MojoExecutionException(
-                "Sonar server can not be reached. Please check the parameter 'sonar.host.url': " + this.url );
+          this.url = url;
         }
     }
 
-    public String getVersion()
+    public String getVersion() throws IOException
     {
+        if ( version == null )
+        {
+            version = remoteContent( "/api/server/version" );
+        }
         return version;
     }
 
-    public String getKey()
-    {
-        return key;
-    }
-
-    public String getMavenRepositoryUrl()
-    {
-        return url + MAVEN_PATH;
-    }
-
-    public String getUrl()
+    public String getUrl() 
     {
         return url;
     }
 
-    public boolean needsSonarInternalRepository()
+    public void logSettings( Log log ) throws MojoExecutionException
     {
-        return isVersionPriorTo2Dot2( version );
+        try
+        {
+            log.info( "Sonar version: " + getVersion() );
+
+        }
+        catch ( IOException e )
+        {
+            throw new MojoExecutionException( "Sonar server can not be reached at " + url
+                + ". Please check the parameter 'sonar.host.url'." );
+        }
     }
 
-    static boolean isVersionPriorTo2Dot2( String version )
-    {
-        return version.startsWith( "1." ) || version.startsWith( "2.0" ) || "2.1".equals( version ) ||
-            version.startsWith( "2.1." );
-    }
-
-    public void logSettings( Log log )
-    {
-        log.info( "Sonar host: " + getUrl() );
-        log.info( "Sonar version: " + getVersion() );
-    }
-
-    protected String remoteContent( String path )
-        throws IOException
+    protected String remoteContent( String path ) throws IOException
     {
         String fullUrl = url + path;
         HttpURLConnection conn = getConnection( fullUrl + path, "GET" );
@@ -131,8 +106,7 @@ public class ServerMetadata
         }
     }
 
-    protected HttpURLConnection getConnection( String url, String method )
-        throws IOException
+    static HttpURLConnection getConnection( String url, String method ) throws IOException
     {
         URL page = new URL( url );
         HttpURLConnection conn = (HttpURLConnection) page.openConnection();
@@ -143,4 +117,15 @@ public class ServerMetadata
         return conn;
     }
 
+    protected boolean supportsMaven3() throws IOException
+    {
+      return !isVersionPriorTo2Dot4( getVersion() );
+    }
+
+    protected static boolean isVersionPriorTo2Dot4( String version )
+    {
+        return version.startsWith( "1." ) || version.startsWith( "2.0." ) || version.equals( "2.1" )
+            || version.equals( "2.2" ) || version.startsWith( "2.1." ) || version.startsWith( "2.3." )
+            || version.equals( "2.3" ) ;
+    }
 }

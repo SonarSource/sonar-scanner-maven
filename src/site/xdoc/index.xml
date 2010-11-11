@@ -19,9 +19,8 @@
         Sonar drives many tools :
         <ul>
           <li>Static analysis :<a href="http://maven.apache.org/plugins/maven-checkstyle-plugin/">Checkstyle</a>,<a
-              href="http://maven.apache.org/plugins/maven-pmd-plugin/">PMD/CPD</a>,<a
-              href="http://mojo.codehaus.org/findbugs-maven-plugin/">Findbugs</a>,<a
-              href="http://mojo.codehaus.org/javancss-maven-plugin/">JavaNcss</a>.
+              href="http://maven.apache.org/plugins/maven-pmd-plugin/">PMD/CPD</a>, <a
+              href="http://mojo.codehaus.org/findbugs-maven-plugin/">Findbugs</a>.
           </li>
           <li>Dynamic analysis for unit tests :<a href="http://mojo.codehaus.org/cobertura-maven-plugin/">Cobertura</a>,
             <a href="http://www.atlassian.com/software/clover/">Clover</a>,<a

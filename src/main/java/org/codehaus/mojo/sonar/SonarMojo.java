@@ -1,3 +1,5 @@
+package org.codehaus.mojo.sonar;
+
 /*
  * The MIT License
  *
@@ -21,25 +23,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.codehaus.mojo.sonar;
 
+import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MavenPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.PluginManager;
 import org.apache.maven.project.MavenProject;
 
 import java.io.IOException;
 
 /**
- * Analyze a Maven project. The Sonar server must be started.
+ * Analyse project. WARNING, Sonar server must be started.
  *
  * @goal sonar
  * @aggregator
  */
-public class SonarMojo
-    extends AbstractMojo
+public class SonarMojo extends AbstractMojo
 {
 
     /**
@@ -67,28 +68,31 @@ public class SonarMojo
      * @component
      * @required
      */
-    protected PluginManager pluginManager;
+    protected MavenPluginManager mavenPluginManager;
 
     /**
-     * @component
-     * @required
+     * The local repository.
+     *
+     * @parameter expression="${localRepository}"
      */
-    private org.apache.maven.artifact.repository.ArtifactRepositoryFactory repoFactory;
+    protected ArtifactRepository localRepository;
 
-
-    public void execute()
-        throws MojoExecutionException, MojoFailureException
+    public void execute() throws MojoExecutionException, MojoFailureException
     {
         try
         {
             ServerMetadata server = new ServerMetadata( sonarHostURL );
-            server.connect();
             server.logSettings( getLog() );
 
-            new Bootstraper( server, repoFactory, pluginManager, getLog() ).start( project, session );
+            if (server.supportsMaven3() )
+            {
+                new Bootstraper( server, mavenPluginManager ).start( project, session );
+            } else
+            {
+                throw new MojoExecutionException( "Sonar " + server.getVersion() + " does not support Maven 3" );
+            }
 
-        }
-        catch ( IOException e )
+        } catch ( IOException e )
         {
             throw new MojoExecutionException( "Failed to execute Sonar", e );
         }

@@ -1,11 +1,14 @@
 <document>
   <properties>
-    <title>Maven 2.x Sonar Plugin changelog</title>
+    <title>Maven Sonar Plugin changelog</title>
     <author email="simon.brandhof@codehaus.org">
       Simon Brandhof
     </author>
   </properties>
   <body>
+    <release version="2.0-beta-1" description="Support Maven 3">
+      <action dev="simon.brandhof" type="update" issue="MOJO-1545">Support Maven 3</action>
+    </release>
     <release version="1.0-beta-2" description="Second BETA release">
       <action dev="simon.brandhof" type="update" issue="MOJO-1544">Remove the use of sonar maven repository</action>
     </release>

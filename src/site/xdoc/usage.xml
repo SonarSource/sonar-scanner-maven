@@ -14,8 +14,7 @@
           <a href="http://sonar.codehaus.org/downloads">Download</a>
           and
           <a href="http://sonar.codehaus.org/documentation/">install</a>
-          Sonar. Minimum version is 1.8.
-          <b>Server must be up</b>
+          Sonar. <b>Server must be up</b>
           before executing the Maven plugin.
         </p>
       </subsection>
@@ -25,7 +24,7 @@
         </p>
         <p>For more details and advanced configuration, read the
           <a href="http://docs.codehaus.org/display/SONAR/The+2+minutes+tutorial">2 minutes tutorial</a>
-          and the<a href="http://docs.codehaus.org/display/SONAR/Install+Sonar">installation guide</a>.
+          and the <a href="http://docs.codehaus.org/display/SONAR/Install+Sonar">installation guide</a>.
         </p>
       </subsection>
 

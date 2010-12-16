@@ -39,6 +39,7 @@ import java.io.IOException;
  *
  * @goal sonar
  * @aggregator
+ * @requiresDependencyResolution test
  */
 public class SonarMojo extends AbstractMojo
 {

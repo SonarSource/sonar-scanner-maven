@@ -6,6 +6,9 @@
     </author>
   </properties>
   <body>
+    <release version="2.0-beta-2" description="Bugfix release">
+      <action dev="godin" type="fix" issue="MOJO-1613">Fix resolution of project dependencies</action>
+    </release>
     <release version="2.0-beta-1" description="Support Maven 3">
       <action dev="simon.brandhof" type="update" issue="MOJO-1545">Support Maven 3</action>
     </release>

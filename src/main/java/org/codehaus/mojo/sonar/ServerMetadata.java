@@ -110,7 +110,7 @@ public class ServerMetadata
         throws IOException
     {
         String fullUrl = url + path;
-        HttpURLConnection conn = getConnection( fullUrl + path, "GET" );
+        HttpURLConnection conn = getConnection( fullUrl, "GET" );
         InputStream input = (InputStream) conn.getContent();
         try
         {

@@ -24,14 +24,11 @@ package org.codehaus.mojo.sonar;
  * SOFTWARE.
  */
 
-import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
+import org.codehaus.plexus.util.IOUtil;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -88,7 +85,7 @@ public class ServerMetadata
     {
         String fullUrl = url + path;
         HttpURLConnection conn = getConnection( fullUrl + path, "GET" );
-        Reader reader = new InputStreamReader( (InputStream) conn.getContent() );
+        InputStream input = (InputStream) conn.getContent();
         try
         {
             int statusCode = conn.getResponseCode();
@@ -96,12 +93,12 @@ public class ServerMetadata
             {
                 throw new IOException( "Status returned by url : '" + fullUrl + "' is invalid : " + statusCode );
             }
-            return IOUtils.toString( reader );
+            return IOUtil.toString( input );
 
         }
         finally
         {
-            IOUtils.closeQuietly( reader );
+            IOUtil.close( input );
             conn.disconnect();
         }
     }

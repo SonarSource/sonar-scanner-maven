@@ -35,7 +35,6 @@ public class ServerMetadataTest
 {
     private static final String URL = "http://test";
 
-
     @Test
     public void shouldReturnAValidResult()
         throws MojoExecutionException, IOException
@@ -58,16 +57,16 @@ public class ServerMetadataTest
     public void shouldRemoveLastUrlSlash()
         throws MojoExecutionException
     {
-        ServerMetadata server = new ServerMetadata( "http://test/" );
-        assertThat( server.getUrl(), is( URL ) );
+        ServerMetadata server = new ServerMetadata( "http://test/sonar/" );
+        assertThat( server.getUrl(), is( "http://test/sonar" ) );
     }
 
     @Test
     public void shouldReturnMavenRepositoryUrl()
         throws MojoExecutionException
     {
-        ServerMetadata server = new ServerMetadata( URL );
-        assertThat( server.getMavenRepositoryUrl(), is( URL + ServerMetadata.MAVEN_PATH ) );
+        ServerMetadata server = new ServerMetadata( "http://test" );
+        assertThat( server.getMavenRepositoryUrl(), is( "http://test/deploy/maven" ) );
     }
 
     @Test( expected = MojoExecutionException.class )

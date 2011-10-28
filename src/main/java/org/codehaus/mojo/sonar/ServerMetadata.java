@@ -23,10 +23,10 @@
  */
 package org.codehaus.mojo.sonar;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.IOUtil;
+import org.codehaus.plexus.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +50,7 @@ public class ServerMetadata
 
     public ServerMetadata( String url )
     {
-        this.url = StringUtils.chomp( url, "/" );
+        this.url = StringUtils.chompLast( url, "/" );
     }
 
     public void connect()
@@ -119,7 +119,7 @@ public class ServerMetadata
             {
                 throw new IOException( "Status returned by url : '" + fullUrl + "' is invalid : " + statusCode );
             }
-            return IOUtil.toString(input);
+            return IOUtil.toString( input );
 
         }
         finally

@@ -30,7 +30,7 @@
   </parent>
 
   <artifactId>sonar-maven-plugin</artifactId>
-  <version>1.0</version>
+  <version>1.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>Sonar Maven Plugin</name>
@@ -58,9 +58,9 @@
   </prerequisites>
 
   <scm>
-    <connection>scm:svn:http://svn.codehaus.org/mojo/tags/sonar-maven-plugin-1.0</connection>
-    <developerConnection>scm:svn:https://svn.codehaus.org/mojo/tags/sonar-maven-plugin-1.0</developerConnection>
-    <url>http://fisheye.codehaus.org/browse/mojo/tags/sonar-maven-plugin-1.0</url>
+    <connection>scm:svn:http://svn.codehaus.org/mojo/branches/sonar-maven-plugin-1.x</connection>
+    <developerConnection>scm:svn:https://svn.codehaus.org/mojo/branches/sonar-maven-plugin-1.x</developerConnection>
+    <url>http://fisheye.codehaus.org/browse/mojo/branches/sonar-maven-plugin-1.x</url>
   </scm>
 
   <properties>

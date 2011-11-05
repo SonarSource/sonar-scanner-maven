@@ -74,6 +74,11 @@
     <developerConnection>scm:svn:https://svn.codehaus.org/mojo/tags/sonar-maven-plugin-2.0</developerConnection>
     <url>http://fisheye.codehaus.org/browse/mojo/tags/sonar-maven-plugin-2.0</url>
   </scm>
+  
+  <issueManagement>
+    <system>JIRA</system>
+    <url>http://jira.codehaus.org/browse/MSONAR</url>
+  </issueManagement>
 
   <properties>
     <project.build.java.target>1.5</project.build.java.target>

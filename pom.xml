@@ -83,6 +83,7 @@
   <properties>
     <project.build.java.target>1.5</project.build.java.target>
     <mavenVersion>3.0</mavenVersion>
+    <mojo.java.target>1.5</mojo.java.target>
   </properties>
   
   <build>

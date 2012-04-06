@@ -81,25 +81,10 @@
   </issueManagement>
 
   <properties>
-    <project.build.java.target>1.5</project.build.java.target>
     <mavenVersion>3.0</mavenVersion>
     <mojo.java.target>1.5</mojo.java.target>
   </properties>
   
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
-          <encoding>UTF-8</encoding>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>

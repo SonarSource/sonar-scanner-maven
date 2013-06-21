@@ -24,11 +24,14 @@ package org.codehaus.mojo.sonar;
  * SOFTWARE.
  */
 
+import org.apache.maven.artifact.versioning.ArtifactVersion;
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.IOUtil;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -36,24 +39,27 @@ public class ServerMetadata
 {
 
     public static final int CONNECT_TIMEOUT_MILLISECONDS = 30000;
+
     public static final int READ_TIMEOUT_MILLISECONDS = 60000;
 
     private String url;
+
     private String version;
 
     public ServerMetadata( String url )
     {
         if ( url.endsWith( "/" ) )
         {
-          this.url = url.substring( 0, url.length() - 1 );
+            this.url = url.substring( 0, url.length() - 1 );
         }
         else
         {
-          this.url = url;
+            this.url = url;
         }
     }
 
-    public String getVersion() throws IOException
+    public String getVersion()
+        throws IOException
     {
         if ( version == null )
         {
@@ -62,12 +68,13 @@ public class ServerMetadata
         return version;
     }
 
-    public String getUrl() 
+    public String getUrl()
     {
         return url;
     }
 
-    public void logSettings( Log log ) throws MojoExecutionException
+    public void logSettings( Log log )
+        throws MojoExecutionException
     {
         try
         {
@@ -81,7 +88,8 @@ public class ServerMetadata
         }
     }
 
-    protected String remoteContent( String path ) throws IOException
+    protected String remoteContent( String path )
+        throws IOException
     {
         String fullUrl = url + path;
         HttpURLConnection conn = getConnection( fullUrl, "GET" );
@@ -103,7 +111,8 @@ public class ServerMetadata
         }
     }
 
-    static HttpURLConnection getConnection( String url, String method ) throws IOException
+    static HttpURLConnection getConnection( String url, String method )
+        throws IOException
     {
         URL page = new URL( url );
         HttpURLConnection conn = (HttpURLConnection) page.openConnection();
@@ -114,15 +123,29 @@ public class ServerMetadata
         return conn;
     }
 
-    protected boolean supportsMaven3() throws IOException
+    protected boolean supportsMaven3()
+        throws IOException
     {
-      return !isVersionPriorTo2Dot4( getVersion() );
+        return !isVersionPriorTo2Dot4( getVersion() );
+    }
+
+    protected boolean supportsMaven3_1()
+        throws IOException
+    {
+        return !isVersionPriorTo3Dot7( getVersion() );
     }
 
     protected static boolean isVersionPriorTo2Dot4( String version )
     {
-        return version.startsWith( "1." ) || version.startsWith( "2.0." ) || version.equals( "2.1" )
-            || version.equals( "2.2" ) || version.startsWith( "2.1." ) || version.startsWith( "2.3." )
-            || version.equals( "2.3" ) ;
+        ArtifactVersion artifactVersion = new DefaultArtifactVersion( version );
+        return artifactVersion.getMajorVersion() < 2 || artifactVersion.getMajorVersion() == 2
+            && artifactVersion.getMinorVersion() < 4;
+    }
+
+    protected static boolean isVersionPriorTo3Dot7( String version )
+    {
+        ArtifactVersion artifactVersion = new DefaultArtifactVersion( version );
+        return artifactVersion.getMajorVersion() < 3 || artifactVersion.getMajorVersion() == 3
+            && artifactVersion.getMinorVersion() < 7;
     }
 }

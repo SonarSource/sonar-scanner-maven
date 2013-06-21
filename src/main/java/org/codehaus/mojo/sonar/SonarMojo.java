@@ -25,7 +25,9 @@ package org.codehaus.mojo.sonar;
  */
 
 import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.execution.RuntimeInformation;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MavenPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -36,12 +38,13 @@ import java.io.IOException;
 
 /**
  * Analyse project. WARNING, Sonar server must be started.
- *
+ * 
  * @goal sonar
  * @aggregator
  * @requiresDependencyResolution test
  */
-public class SonarMojo extends AbstractMojo
+public class SonarMojo
+    extends AbstractMojo
 {
 
     /**
@@ -60,8 +63,8 @@ public class SonarMojo extends AbstractMojo
 
     /**
      * Sonar host URL.
-     *
-     * @parameter expression="${sonar.host.url}" default-value="http://localhost:9000" alias="sonar.host.url"
+     * 
+     * @parameter property="sonar.host.url" default-value="http://localhost:9000" alias="sonar.host.url"
      */
     private String sonarHostURL;
 
@@ -72,28 +75,49 @@ public class SonarMojo extends AbstractMojo
     protected MavenPluginManager mavenPluginManager;
 
     /**
+     * @component
+     * @required
+     */
+    protected MavenPluginManagerHelper mavenPluginManagerHelper;
+
+    /**
      * The local repository.
-     *
-     * @parameter expression="${localRepository}"
+     * 
+     * @parameter property="localRepository"
      */
     protected ArtifactRepository localRepository;
 
-    public void execute() throws MojoExecutionException, MojoFailureException
+    /**
+     * @component
+     * @required
+     * @readonly
+     */
+    private RuntimeInformation runtimeInformation;
+
+    public void execute()
+        throws MojoExecutionException, MojoFailureException
     {
         try
         {
             ServerMetadata server = new ServerMetadata( sonarHostURL );
             server.logSettings( getLog() );
 
-            if (server.supportsMaven3() )
+            ArtifactVersion mavenVersion = runtimeInformation.getApplicationVersion();
+            if ( mavenVersion.getMajorVersion() > 3
+                || ( mavenVersion.getMajorVersion() == 3 && mavenVersion.getMajorVersion() >= 1 )
+                && !server.supportsMaven3_1() )
             {
-                new Bootstraper( server, mavenPluginManager ).start( project, session );
-            } else
+                throw new MojoExecutionException( "Sonar " + server.getVersion() + " does not support Maven 3.1" );
+            }
+            if ( !server.supportsMaven3() )
             {
                 throw new MojoExecutionException( "Sonar " + server.getVersion() + " does not support Maven 3" );
             }
 
-        } catch ( IOException e )
+            new Bootstraper( server, mavenPluginManager, mavenPluginManagerHelper ).start( project, session );
+
+        }
+        catch ( IOException e )
         {
             throw new MojoExecutionException( "Failed to execute Sonar", e );
         }

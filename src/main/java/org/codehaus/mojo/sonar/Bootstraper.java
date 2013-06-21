@@ -24,10 +24,6 @@ package org.codehaus.mojo.sonar;
  * SOFTWARE.
  */
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-
 import org.apache.maven.artifact.repository.DefaultRepositoryRequest;
 import org.apache.maven.artifact.repository.RepositoryRequest;
 import org.apache.maven.execution.MavenSession;
@@ -41,9 +37,9 @@ import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
-import org.sonatype.aether.graph.DependencyFilter;
-import org.sonatype.aether.graph.DependencyNode;
-import org.sonatype.aether.repository.RemoteRepository;
+
+import java.io.IOException;
+import java.util.Collections;
 
 /**
  * Configure pom and execute sonar internal maven plugin
@@ -52,35 +48,39 @@ public class Bootstraper
 {
 
     private ServerMetadata server;
+
     private MavenPluginManager pluginManager;
 
-    public Bootstraper( ServerMetadata server, MavenPluginManager pluginManager )
+    private MavenPluginManagerHelper mavenPluginManagerHelper;
+
+    public Bootstraper( ServerMetadata server, MavenPluginManager pluginManager,
+                        MavenPluginManagerHelper mavenPluginManagerHelper )
     {
         this.server = server;
         this.pluginManager = pluginManager;
+        this.mavenPluginManagerHelper = mavenPluginManagerHelper;
     }
 
-    public void start( MavenProject project, MavenSession session ) throws IOException, MojoExecutionException
+    public void start( MavenProject project, MavenSession session )
+        throws IOException, MojoExecutionException
     {
         executeMojo( project, session );
     }
 
-    private void executeMojo( MavenProject project, MavenSession session ) throws MojoExecutionException
+    private void executeMojo( MavenProject project, MavenSession session )
+        throws MojoExecutionException
     {
         ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
         try
         {
-            
+
             RepositoryRequest repositoryRequest = new DefaultRepositoryRequest();
             repositoryRequest.setLocalRepository( session.getLocalRepository() );
             repositoryRequest.setRemoteRepositories( project.getPluginArtifactRepositories() );
 
             Plugin plugin = createSonarPlugin();
 
-            List<RemoteRepository> remoteRepositories = session.getCurrentProject().getRemotePluginRepositories();
-            
-            PluginDescriptor pluginDescriptor = pluginManager.getPluginDescriptor( plugin, remoteRepositories ,
-                session.getRepositorySession() );
+            PluginDescriptor pluginDescriptor = mavenPluginManagerHelper.getPluginDescriptor( plugin, session );
 
             String goal = "sonar";
 
@@ -95,18 +95,9 @@ public class Bootstraper
 
             mojoExecution.setMojoDescriptor( mojoDescriptor );
 
-            // olamy : we exclude nothing and import nothing regarding realm import and artifacts
-            
-            DependencyFilter artifactFilter = new DependencyFilter()
-            {
-                public boolean accept( DependencyNode arg0, List<DependencyNode> arg1 )
-                {
-                    return true;
-                }
-            };
-            
-            pluginManager.setupPluginRealm( pluginDescriptor, session, Thread.currentThread().getContextClassLoader(),
-                Collections.<String>emptyList(), artifactFilter );            
+            mavenPluginManagerHelper.setupPluginRealm( pluginDescriptor, session,
+                                                       Thread.currentThread().getContextClassLoader(),
+                                                       Collections.<String> emptyList() );
 
             Mojo mojo = pluginManager.getConfiguredMojo( Mojo.class, session, mojoExecution );
             Thread.currentThread().setContextClassLoader( pluginDescriptor.getClassRealm() );
@@ -153,7 +144,8 @@ public class Bootstraper
         return dom;
     }
 
-    private Plugin createSonarPlugin() throws IOException
+    private Plugin createSonarPlugin()
+        throws IOException
     {
         Plugin plugin = new Plugin();
         plugin.setGroupId( "org.codehaus.sonar" );

@@ -27,16 +27,16 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.fest.assertions.Assertions.assertThat;
+
 
 public class ServerMetadataTest
 {
     private static final String URL = "http://test";
 
-
     @Test
-    public void shouldReturnAValidResult() throws IOException
+    public void shouldReturnAValidResult()
+        throws IOException
     {
         final String validContent = "valid";
         ServerMetadata server = new ServerMetadata( URL )
@@ -49,42 +49,56 @@ public class ServerMetadataTest
             }
         };
 
-        assertThat( server.remoteContent( "an action" ), is( validContent ) );
+        assertThat( server.remoteContent( "an action" ) ).isEqualTo( validContent );
     }
 
     @Test
     public void shouldRemoveLastUrlSlash()
     {
         ServerMetadata server = new ServerMetadata( "http://test/" );
-        assertThat( server.getUrl(), is( URL ) );
+        assertThat( server.getUrl() ).isEqualTo( URL );
     }
 
-    
-    @Test(expected = IOException.class)
-    public void shouldFailIfCanNotConnectToServer() throws IOException
+    @Test( expected = IOException.class )
+    public void shouldFailIfCanNotConnectToServer()
+        throws IOException
     {
         ServerMetadata server = new ServerMetadata( "http://unknown.foo" );
         server.getVersion();
     }
 
+    @Test
+    public void testSonarVersionPrior2Dot4()
+    {
+        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "1.12" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.0.1" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.1" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.1.2" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.2" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.3" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.3.1" ) ).isTrue();
+
+        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.4" ) ).isFalse();
+        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.10" ) ).isFalse();
+        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.10" ) ).isFalse();
+        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.11" ) ).isFalse();
+        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "3.0" ) ).isFalse();
+    }
 
     @Test
-    public void testSonarVersion()
+    public void testSonarVersionPrior3Dot7()
     {
-        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "1.12" ), is( true ) );
-        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.0.1" ), is( true ) );
-        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.1" ), is( true ) );
-        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.1.2" ), is( true ) );
-        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.2" ), is( true ) );
-        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.3" ), is( true ) );
-        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.3.1" ), is( true ) );
+        assertThat( ServerMetadata.isVersionPriorTo3Dot7( "1.12" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo3Dot7( "2.0.1" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo3Dot7( "2.1" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo3Dot7( "2.4" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo3Dot7( "2.11" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo3Dot7( "3.0" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo3Dot7( "3.1" ) ).isTrue();
+        assertThat( ServerMetadata.isVersionPriorTo3Dot7( "3.6" ) ).isTrue();
 
-        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.4" ), is( false ) );
-        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.10" ), is( false ) );
-        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.10" ), is( false ) );
-        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "2.11" ), is( false ) );
-        assertThat( ServerMetadata.isVersionPriorTo2Dot4( "3.0" ), is( false ) );
+        assertThat( ServerMetadata.isVersionPriorTo3Dot7( "3.7" ) ).isFalse();
+        assertThat( ServerMetadata.isVersionPriorTo3Dot7( "4.0" ) ).isFalse();
     }
 
 }
-

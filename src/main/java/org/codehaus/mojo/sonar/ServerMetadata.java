@@ -84,7 +84,7 @@ public class ServerMetadata
         catch ( IOException e )
         {
             throw new MojoExecutionException( "Sonar server can not be reached at " + url
-                + ". Please check the parameter 'sonar.host.url'." );
+                + ". Please check the parameter 'sonar.host.url'.", e );
         }
     }
 

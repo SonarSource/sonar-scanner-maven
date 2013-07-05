@@ -107,11 +107,11 @@ public class SonarMojo
                 || ( mavenVersion.getMajorVersion() == 3 && mavenVersion.getMajorVersion() >= 1 )
                 && !server.supportsMaven3_1() )
             {
-                throw new MojoExecutionException( "Sonar " + server.getVersion() + " does not support Maven 3.1" );
+                throw new MojoExecutionException( "SonarQube " + server.getVersion() + " does not support Maven 3.1" );
             }
             if ( !server.supportsMaven3() )
             {
-                throw new MojoExecutionException( "Sonar " + server.getVersion() + " does not support Maven 3" );
+                throw new MojoExecutionException( "SonarQube " + server.getVersion() + " does not support Maven 3" );
             }
 
             new Bootstraper( server, mavenPluginManager, mavenPluginManagerHelper ).start( project, session );
@@ -119,7 +119,7 @@ public class SonarMojo
         }
         catch ( IOException e )
         {
-            throw new MojoExecutionException( "Failed to execute Sonar", e );
+            throw new MojoExecutionException( "Failed to execute SonarQube analysis", e );
         }
     }
 

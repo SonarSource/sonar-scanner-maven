@@ -78,12 +78,12 @@ public class ServerMetadata
     {
         try
         {
-            log.info( "Sonar version: " + getVersion() );
+            log.info( "SonarQube version: " + getVersion() );
 
         }
         catch ( IOException e )
         {
-            throw new MojoExecutionException( "Sonar server can not be reached at " + url
+            throw new MojoExecutionException( "SonarQube server can not be reached at " + url
                 + ". Please check the parameter 'sonar.host.url'.", e );
         }
     }

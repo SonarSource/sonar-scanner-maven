@@ -106,7 +106,7 @@ public class Bootstraper
         }
         catch ( Exception e )
         {
-            throw new MojoExecutionException( "Can not execute Sonar", e );
+            throw new MojoExecutionException( "Can not execute SonarQube analysis", e );
         }
         finally
         {

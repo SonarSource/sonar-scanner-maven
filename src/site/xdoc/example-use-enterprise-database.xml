@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<document>
+  <properties>
+    <author email="simn.brandhof@gmail.com">Simon Brandhof</author>
+    <title>Use Enterprise Database</title>
+  </properties>
+  <head>
+    <meta/>
+  </head>
+  <body>
+    <section name="Usage">
+        <p>
+          The default embedded database is recommended for evaluation only. It must be replaced by a database like MySql, PostgreSQL, SQLServer or Oracle in production environment.
+          This setting is generally set in Maven settings.xml, rather than duplicating it in all project poms. Note that the server must be configured to access the same database. 
+          Read the <a href="http://docs.codehaus.org/display/SONAR/Installation+and+Upgrade">installation guide</a> to get more details.
+        </p>
+          <p>Note: the JDBC driver is automatically downloaded from server. It does not need to be defined as a project dependency.</p>
+
+      <subsection name="MySQL">
+        <source><![CDATA[
+<profiles>
+  <profile>
+    <id>sonar</id>
+    <properties>
+      <sonar.jdbc.url>jdbc:mysql://localhost:3306/sonar?useUnicode=true&amp;characterEncoding=utf8&amp;rewriteBatchedStatements=true</sonar.jdbc.url>
+      <sonar.jdbc.username>sonar</sonar.jdbc.username>
+      <sonar.jdbc.password>sonar</sonar.jdbc.password>
+    </properties>
+  </profile>
+</profiles>
+]]></source>
+      </subsection>
+      <subsection name="PostgreSQL">
+        <source><![CDATA[
+<profiles>
+  <profile>
+    <id>sonar</id>
+    <properties>
+      <sonar.jdbc.url>jdbc:postgresql://localhost/sonar</sonar.jdbc.url>
+      <sonar.jdbc.username>sonar</sonar.jdbc.username>
+      <sonar.jdbc.password>sonar</sonar.jdbc.password>
+    </properties>
+  </profile>
+</profiles>
+]]></source>
+      </subsection>
+      <subsection name="Oracle">
+        <source><![CDATA[
+<profiles>
+  <profile>
+    <id>sonar</id>
+    <properties>
+      <sonar.jdbc.url>jdbc:oracle:thin:@localhost/XE</sonar.jdbc.url>
+      <sonar.jdbc.username>sonar</sonar.jdbc.username>
+      <sonar.jdbc.password>sonar</sonar.jdbc.password>
+    </properties>
+  </profile>
+</profiles>
+]]></source>
+      </subsection>
+      <subsection name="SQLServer">
+        <source><![CDATA[
+<profiles>
+  <profile>
+    <id>sonar</id>
+    <properties>
+      <sonar.jdbc.url>jdbc:jtds:sqlserver://localhost/sonar;SelectMethod=Cursor</sonar.jdbc.url>
+      <sonar.jdbc.username>sonar</sonar.jdbc.username>
+      <sonar.jdbc.password>sonar</sonar.jdbc.password>
+    </properties>
+  </profile>
+</profiles>
+]]></source>
+      </subsection>
+    </section>
+  </body>
+</document>

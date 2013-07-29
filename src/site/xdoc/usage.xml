@@ -16,7 +16,7 @@
           SonarQube server.
         </p>
       </subsection>
-      <subsection name="Analyse Project">
+      <subsection name="Analyze Project">
         <p>Run on your project root directory :
           <source><![CDATA[mvn sonar:sonar]]></source>
         </p>

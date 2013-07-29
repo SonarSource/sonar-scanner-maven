@@ -37,7 +37,7 @@ import org.apache.maven.project.MavenProject;
 import java.io.IOException;
 
 /**
- * Analyse project. WARNING, Sonar server must be started.
+ * Analyze project. SonarQube server must be started.
  * 
  * @goal sonar
  * @aggregator

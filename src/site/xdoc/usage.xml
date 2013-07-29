@@ -2,29 +2,26 @@
 <document>
   <properties>
     <author email="simn.brandhof@gmail.com">Simon Brandhof</author>
-    <title>Sonar Maven Plugin : Usage</title>
+    <title>SonarQube Maven Plugin : Usage</title>
   </properties>
   <head>
     <meta/>
   </head>
   <body>
     <section name="Usage">
-      <subsection name="Install Sonar">
+      <subsection name="Install Server">
         <p>
-          <a href="http://sonar.codehaus.org/downloads">Download</a>
-          and
-          <a href="http://sonar.codehaus.org/documentation/">install</a>
-          Sonar. <b>Server must be up</b>
-          before executing the Maven plugin.
+          <a href="http://sonarqube.org/downloads">Download</a>
+          , <a href="http://docs.codehaus.org/display/SONAR/Installation+and+Upgrade">install</a> and start
+          SonarQube server.
         </p>
       </subsection>
-      <subsection name="Analyse project">
+      <subsection name="Analyse Project">
         <p>Run on your project root directory :
           <source><![CDATA[mvn sonar:sonar]]></source>
         </p>
-        <p>For more details and advanced configuration, read the
-          <a href="http://docs.codehaus.org/display/SONAR/The+2+minutes+tutorial">2 minutes tutorial</a>
-          and the <a href="http://docs.codehaus.org/display/SONAR/Install+Sonar">installation guide</a>.
+        <p>For more details, read the
+          <a href="http://docs.codehaus.org/display/SONAR/Analyzing+with+Maven">Maven Plugin documentation</a>.
         </p>
       </subsection>
 

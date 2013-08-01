@@ -103,16 +103,8 @@ public class SonarMojo
             server.logSettings( getLog() );
 
             ArtifactVersion mavenVersion = runtimeInformation.getApplicationVersion();
-            if ( mavenVersion.getMajorVersion() > 3
-                || ( mavenVersion.getMajorVersion() == 3 && mavenVersion.getMajorVersion() >= 1 )
-                && !server.supportsMaven3_1() )
-            {
-                throw new MojoExecutionException( "SonarQube " + server.getVersion() + " does not support Maven 3.1" );
-            }
-            if ( !server.supportsMaven3() )
-            {
-                throw new MojoExecutionException( "SonarQube " + server.getVersion() + " does not support Maven 3" );
-            }
+
+            checkVersionRequirements( server, mavenVersion );
 
             new Bootstraper( server, mavenPluginManager, mavenPluginManagerHelper ).start( project, session );
 
@@ -121,6 +113,32 @@ public class SonarMojo
         {
             throw new MojoExecutionException( "Failed to execute SonarQube analysis", e );
         }
+    }
+
+    /**
+     * @VisibleForTesting
+     */
+    void checkVersionRequirements( ServerMetadata server, ArtifactVersion mavenVersion )
+        throws IOException, MojoExecutionException
+    {
+        if ( !server.supportsMaven3() )
+        {
+            throw new MojoExecutionException( "SonarQube " + server.getVersion() + " does not support Maven 3" );
+        }
+        if ( ( mavenVersion.getMajorVersion() > 3 || mavenVersion.getMajorVersion() == 3
+            && mavenVersion.getMinorVersion() >= 1 )
+            && !server.supportsMaven3_1() )
+        {
+            throw new MojoExecutionException( "SonarQube " + server.getVersion() + " does not support Maven 3.1+. Please upgrade to SonarQube 3.7 or greater." );
+        }
+    }
+
+    /**
+     * @VisibleForTesting
+     */
+    void setSonarHostURL( String sonarHostURL )
+    {
+        this.sonarHostURL = sonarHostURL;
     }
 
 }

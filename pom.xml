@@ -80,7 +80,7 @@
     <developerConnection>scm:svn:https://svn.codehaus.org/mojo/tags/sonar-maven-plugin-2.1</developerConnection>
     <url>http://fisheye.codehaus.org/browse/mojo/tags/sonar-maven-plugin-2.1</url>
   </scm>
-  
+
   <issueManagement>
     <system>JIRA</system>
     <url>http://jira.codehaus.org/browse/MSONAR</url>
@@ -89,7 +89,7 @@
   <properties>
     <mavenVersion>3.0</mavenVersion>
   </properties>
-  
+
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -114,7 +114,7 @@
       <artifactId>maven-artifact</artifactId>
       <version>${mavenVersion}</version>
       <scope>provided</scope>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-core</artifactId>
@@ -129,7 +129,7 @@
       <version>1.7</version>
       <scope>provided</scope>
     </dependency>
-  
+
     <!-- Eclipse Aether for Maven 3.1.x -->
     <dependency>
       <groupId>org.eclipse.aether</groupId>
@@ -144,13 +144,19 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <version>1.9.5</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.easytesting</groupId>
       <artifactId>fest-assert</artifactId>
       <version>1.4</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
-  
+
   <build>
     <plugins>
       <plugin>

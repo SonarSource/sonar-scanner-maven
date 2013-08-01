@@ -129,7 +129,7 @@ public class SonarMojo
             && mavenVersion.getMinorVersion() >= 1 )
             && !server.supportsMaven3_1() )
         {
-            throw new MojoExecutionException( "SonarQube " + server.getVersion() + " does not support Maven 3.1" );
+            throw new MojoExecutionException( "SonarQube " + server.getVersion() + " does not support Maven 3.1+. Please upgrade to SonarQube 3.7 or greater." );
         }
     }
 

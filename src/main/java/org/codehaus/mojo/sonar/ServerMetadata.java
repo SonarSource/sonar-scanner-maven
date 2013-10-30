@@ -116,6 +116,7 @@ public class ServerMetadata
     {
         URL page = new URL( url );
         HttpURLConnection conn = (HttpURLConnection) page.openConnection();
+        HttpsTrust.INSTANCE.trust( conn );
         conn.setConnectTimeout( CONNECT_TIMEOUT_MILLISECONDS );
         conn.setReadTimeout( READ_TIMEOUT_MILLISECONDS );
         conn.setRequestMethod( method );

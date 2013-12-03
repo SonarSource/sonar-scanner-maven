@@ -69,6 +69,14 @@ public class SonarMojo
     private String sonarHostURL;
 
     /**
+     * Set this to 'true' to skip analysis.
+     *
+     * @parameter property="sonar.skip" default-value="false" alias="sonar.skip"
+     * @since 2.3
+     */
+    private boolean skip;
+
+    /**
      * @component
      * @required
      */
@@ -97,6 +105,11 @@ public class SonarMojo
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
+        if ( skip )
+        {
+            getLog().info( "sonar.skip = true: Skipping analysis" );
+            return;
+        }
         try
         {
             ServerMetadata server = new ServerMetadata( sonarHostURL );
@@ -131,14 +144,6 @@ public class SonarMojo
         {
             throw new MojoExecutionException( "SonarQube " + server.getVersion() + " does not support Maven 3.1+. Please upgrade to SonarQube 3.7 or greater." );
         }
-    }
-
-    /**
-     * @VisibleForTesting
-     */
-    void setSonarHostURL( String sonarHostURL )
-    {
-        this.sonarHostURL = sonarHostURL;
     }
 
 }

@@ -198,7 +198,7 @@ public class MavenPlugin
 
         for ( Plugin plugin : plugins )
         {
-            if ( equals( plugin, groupId, artifactId ) )
+            if ( isEqual( plugin, groupId, artifactId ) )
             {
                 return plugin;
             }
@@ -214,7 +214,7 @@ public class MavenPlugin
      * @param artifactId the artifact id
      * @return whether the plugin has got group + artifact ids
      */
-    private static boolean equals( Plugin plugin, String groupId, String artifactId )
+    private static boolean isEqual( Plugin plugin, String groupId, String artifactId )
     {
         if ( plugin != null && plugin.getArtifactId().equals( artifactId ) )
         {

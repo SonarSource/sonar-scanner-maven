@@ -136,6 +136,12 @@ public class ServerMetadata
         return !isVersionPriorTo3Dot7( getVersion() );
     }
 
+    protected boolean supportsSonarQubeRunnerBootstrappingFromMaven()
+        throws IOException
+    {
+        return !isVersionPriorTo4Dot3( getVersion() );
+    }
+
     protected static boolean isVersionPriorTo2Dot4( String version )
     {
         ArtifactVersion artifactVersion = new DefaultArtifactVersion( version );
@@ -148,5 +154,12 @@ public class ServerMetadata
         ArtifactVersion artifactVersion = new DefaultArtifactVersion( version );
         return artifactVersion.getMajorVersion() < 3 || artifactVersion.getMajorVersion() == 3
             && artifactVersion.getMinorVersion() < 7;
+    }
+
+    protected static boolean isVersionPriorTo4Dot3( String version )
+    {
+        ArtifactVersion artifactVersion = new DefaultArtifactVersion( version );
+        return artifactVersion.getMajorVersion() < 4 || artifactVersion.getMajorVersion() == 4
+            && artifactVersion.getMinorVersion() < 3;
     }
 }

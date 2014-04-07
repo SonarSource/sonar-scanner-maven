@@ -1,4 +1,4 @@
-package org.codehaus.mojo.sonar;
+package org.codehaus.mojo.sonar.bootstrap;
 
 /*
  * The MIT License
@@ -35,6 +35,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.descriptor.MojoDescriptor;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.mojo.sonar.MavenPluginManagerHelper;
+import org.codehaus.mojo.sonar.ServerMetadata;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
@@ -42,9 +44,9 @@ import java.io.IOException;
 import java.util.Collections;
 
 /**
- * Configure pom and execute sonar internal maven plugin
+ * Configure pom and execute sonar internal maven plugin (SQ &lt; 4.3)
  */
-public class Bootstraper
+public class InternalMojoBootstraper
 {
 
     private ServerMetadata server;
@@ -53,8 +55,8 @@ public class Bootstraper
 
     private MavenPluginManagerHelper mavenPluginManagerHelper;
 
-    public Bootstraper( ServerMetadata server, MavenPluginManager pluginManager,
-                        MavenPluginManagerHelper mavenPluginManagerHelper )
+    public InternalMojoBootstraper( ServerMetadata server, MavenPluginManager pluginManager,
+                                    MavenPluginManagerHelper mavenPluginManagerHelper )
     {
         this.server = server;
         this.pluginManager = pluginManager;

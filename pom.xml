@@ -26,7 +26,7 @@
   <parent>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>mojo-parent</artifactId>
-    <version>32</version>
+    <version>33</version>
   </parent>
 
   <artifactId>sonar-maven-plugin</artifactId>
@@ -72,7 +72,7 @@
   </developers>
 
   <prerequisites>
-    <maven>3.0</maven>
+    <maven>3.0.2</maven>
   </prerequisites>
 
   <scm>
@@ -87,7 +87,8 @@
   </issueManagement>
 
   <properties>
-    <mavenVersion>3.0</mavenVersion>
+    <mavenVersion>3.2.1</mavenVersion>
+    <mojo.java.target>1.6</mojo.java.target>
   </properties>
 
   <dependencies>
@@ -121,12 +122,30 @@
       <version>${mavenVersion}</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.maven.shared</groupId>
+      <artifactId>maven-dependency-tree</artifactId>
+      <version>2.1</version>
+      <exclusions>
+        <exclusion>
+          <!-- See SONAR-2455 -->
+          <groupId>classworlds</groupId>
+          <artifactId>classworlds</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.sonatype.plexus</groupId>
+      <artifactId>plexus-sec-dispatcher</artifactId>
+      <version>1.4</version>
+      <scope>compile</scope>
+    </dependency>
 
     <!-- Sonatype Aether for Maven 3.0.x -->
     <dependency>
       <groupId>org.sonatype.aether</groupId>
       <artifactId>aether-api</artifactId>
-      <version>1.7</version>
+      <version>1.13.1</version>
       <scope>provided</scope>
     </dependency>
 
@@ -134,8 +153,30 @@
     <dependency>
       <groupId>org.eclipse.aether</groupId>
       <artifactId>aether-api</artifactId>
-      <version>0.9.0.M2</version>
+      <version>0.9.1.v20140329</version>
       <scope>provided</scope>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.codehaus.sonar.runner</groupId>
+      <artifactId>sonar-runner-api</artifactId>
+      <version>2.4-SNAPSHOT</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>2.6</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>10.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>2.0.3</version>
     </dependency>
 
     <dependency>
@@ -153,6 +194,19 @@
       <groupId>org.easytesting</groupId>
       <artifactId>fest-assert</artifactId>
       <version>1.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.plugin-testing</groupId>
+      <artifactId>maven-plugin-testing-harness</artifactId>
+      <version>3.1.0</version>
+      <scope>test</scope>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.mortbay.jetty</groupId>
+      <artifactId>jetty</artifactId>
+      <version>6.1.25</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

@@ -32,7 +32,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.sonar.runner.api.RunnerProperties;
 import org.sonar.runner.api.ScanProperties;
-import org.sonatype.inject.Nullable;
+
+import javax.annotation.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -129,7 +130,7 @@ public class MavenProjectConverter
         }
         if ( !modulePrefixes.isEmpty() )
         {
-            properties.put( prefix + "modules", StringUtils.join( modulePrefixes, SEPARATOR ) );
+            properties.put( prefix + "sonar.modules", StringUtils.join( modulePrefixes, SEPARATOR ) );
         }
     }
 
@@ -268,11 +269,8 @@ public class MavenProjectConverter
             props.setProperty( RunnerProperties.WORK_DIR, getSonarWorkDir( pom ).getAbsolutePath() );
         }
         List<File> mainDirs = mainDirs( pom );
-        if ( !mainDirs.isEmpty() )
-        {
-            props.setProperty( ScanProperties.PROJECT_SOURCE_DIRS,
-                               StringUtils.join( toPaths( mainDirs ), SEPARATOR ) );
-        }
+        props.setProperty( ScanProperties.PROJECT_SOURCE_DIRS,
+                           StringUtils.join( toPaths( mainDirs ), SEPARATOR ) );
         List<File> testDirs = testDirs( pom );
         if ( !testDirs.isEmpty() )
         {
@@ -280,7 +278,7 @@ public class MavenProjectConverter
                                StringUtils.join( toPaths( testDirs ), SEPARATOR ) );
         }
         File binaryDir = resolvePath( pom.getBuild().getOutputDirectory(), pom.getBasedir() );
-        if ( binaryDir != null )
+        if ( binaryDir != null && binaryDir.exists() )
         {
             props.setProperty( ScanProperties.PROJECT_BINARY_DIRS,
                                binaryDir.getAbsolutePath() );

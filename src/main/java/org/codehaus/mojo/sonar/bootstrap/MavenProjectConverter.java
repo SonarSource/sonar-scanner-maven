@@ -52,7 +52,7 @@ public class MavenProjectConverter
 
     private static final String UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE =
         "Unable to determine structure of project."
-            + " Probably you use Maven Advanced Reactor Options, which is not supported by SonarQube and should not be used.";
+            + " Probably you use Maven Advanced Reactor Options with a broken tree of modules.";
 
     private static final String MODULE_KEY = "sonar.moduleKey";
 
@@ -87,7 +87,8 @@ public class MavenProjectConverter
             rebuildModuleHierarchy( props, paths, propsByModule, root, "" );
             if ( !propsByModule.isEmpty() )
             {
-                throw new IllegalStateException( UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE );
+                throw new IllegalStateException( UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE + " \""
+                    + propsByModule.keySet().iterator().next().getName() + "\" is orphan" );
             }
             return props;
         }
@@ -118,15 +119,12 @@ public class MavenProjectConverter
         {
             File modulePath = new File( current.getBasedir(), moduleId );
             MavenProject module = findMavenProject( modulePath, paths );
-            if ( module == null )
+            if ( module != null )
             {
-                throw new IllegalStateException( UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE );
+                String modulePrefix = module.getGroupId() + ":" + module.getArtifactId();
+                rebuildModuleHierarchy( properties, paths, propsByModule, module, modulePrefix + "." );
+                modulePrefixes.add( modulePrefix );
             }
-
-            String modulePrefix = module.getGroupId() + ":" + module.getArtifactId();
-            rebuildModuleHierarchy( properties, paths, propsByModule, module, modulePrefix + "." );
-
-            modulePrefixes.add( modulePrefix );
         }
         if ( !modulePrefixes.isEmpty() )
         {

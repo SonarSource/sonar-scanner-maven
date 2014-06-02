@@ -114,21 +114,21 @@ public class MavenProjectConverter
             properties.put( prefix + prop.getKey(), prop.getValue() );
         }
         propsByModule.remove( current );
-        List<String> modulePrefixes = new ArrayList<String>();
-        for ( String moduleId : current.getModules() )
+        List<String> moduleIds = new ArrayList<String>();
+        for ( String modulePathStr : current.getModules() )
         {
-            File modulePath = new File( current.getBasedir(), moduleId );
+            File modulePath = new File( current.getBasedir(), modulePathStr );
             MavenProject module = findMavenProject( modulePath, paths );
             if ( module != null )
             {
-                String modulePrefix = module.getGroupId() + ":" + module.getArtifactId();
-                rebuildModuleHierarchy( properties, paths, propsByModule, module, modulePrefix + "." );
-                modulePrefixes.add( modulePrefix );
+                String moduleId = module.getGroupId() + ":" + module.getArtifactId();
+                rebuildModuleHierarchy( properties, paths, propsByModule, module, prefix + moduleId + "." );
+                moduleIds.add( moduleId );
             }
         }
-        if ( !modulePrefixes.isEmpty() )
+        if ( !moduleIds.isEmpty() )
         {
-            properties.put( prefix + "sonar.modules", StringUtils.join( modulePrefixes, SEPARATOR ) );
+            properties.put( prefix + "sonar.modules", StringUtils.join( moduleIds, SEPARATOR ) );
         }
     }
 
@@ -293,7 +293,8 @@ public class MavenProjectConverter
         return resolvePath( pom.getBuild().getDirectory(), pom.getBasedir() );
     }
 
-    static File resolvePath( @Nullable String path, File basedir )
+    static File resolvePath( @Nullable
+    String path, File basedir )
     {
         if ( path != null )
         {

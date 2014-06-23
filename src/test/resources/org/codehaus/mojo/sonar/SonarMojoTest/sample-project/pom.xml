@@ -11,6 +11,7 @@
   <properties>
     <sonarRunner.dumpToFile>target/dump.properties</sonarRunner.dumpToFile>
   </properties>
+  
 
   <dependencies>
     <dependency>

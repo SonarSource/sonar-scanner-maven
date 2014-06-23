@@ -24,6 +24,7 @@ package org.codehaus.mojo.sonar.bootstrap;
  * SOFTWARE.
  */
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.junit.Rule;
 import org.junit.Test;
@@ -142,5 +143,124 @@ public class MavenProjectConverterTest
         assertThat( props.getProperty( module1Key + "." + module11Key + ".sonar.projectBaseDir" ) ).isEqualTo( module11BaseDir.getAbsolutePath() );
         assertThat( props.getProperty( module1Key + "." + module12Key + ".sonar.projectBaseDir" ) ).isEqualTo( module12BaseDir.getAbsolutePath() );
         assertThat( props.getProperty( module2Key + ".sonar.projectBaseDir" ) ).isEqualTo( module2BaseDir.getAbsolutePath() );
+    }
+
+    @Test
+    public void convertSonarSourcesSingleModuleProject()
+        throws Exception
+    {
+        temp.newFolder( "src" );
+        File srcMainDir = temp.newFolder( "src/main" );
+        File pom = temp.newFile( "pom.xml" );
+
+        Properties pomProps = new Properties();
+        pomProps.put( "sonar.sources", "src/main" );
+
+        MavenProject project = new MavenProject();
+        project.getModel().setGroupId( "com.foo" );
+        project.getModel().setArtifactId( "myProject" );
+        project.getModel().setName( "My Project" );
+        project.getModel().setDescription( "My sample project" );
+        project.getModel().setVersion( "2.1" );
+        project.getModel().setProperties( pomProps );
+        project.setFile( pom );
+
+        Properties props = new MavenProjectConverter().configure( Arrays.asList( project ), project );
+
+        assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
+        assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
+        assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
+
+        assertThat( props.getProperty( "sonar.sources" ) ).isEqualTo( srcMainDir.getCanonicalPath() );
+    }
+
+    @Test
+    public void convertSonarSourcesMultiModuleProject()
+        throws Exception
+    {
+        Properties pomProps = new Properties();
+        pomProps.put( "sonar.sources", "src/main" );
+        pomProps.put( "sonar.tests", "src/test" );
+
+        File pomRoot = temp.newFile( "pom.xml" );
+        MavenProject root = new MavenProject();
+        root.getModel().setGroupId( "com.foo" );
+        root.getModel().setArtifactId( "myProject" );
+        root.getModel().setName( "My Project" );
+        root.getModel().setDescription( "My sample project" );
+        root.getModel().setVersion( "2.1" );
+        root.getModel().setPackaging( "pom" );
+        root.getModel().setProperties( pomProps );
+        root.setFile( pomRoot );
+
+        File module1BaseDir = temp.newFolder( "module1" );
+        File module1SrcDir = temp.newFolder( "module1", "src", "main" );
+        File module1TestDir = temp.newFolder( "module1", "src", "test" );
+        MavenProject module1 = new MavenProject();
+        module1.getModel().setGroupId( "com.foo" );
+        module1.getModel().setArtifactId( "module1" );
+        module1.getModel().setName( "My Project - Module 1" );
+        module1.getModel().setDescription( "My sample project - Module 1" );
+        module1.getModel().setVersion( "2.1" );
+        module1.getModel().setProperties( pomProps );
+        module1.setFile( new File( module1BaseDir, "pom.xml" ) );
+        module1.setParent( root );
+        root.getModules().add( "module1" );
+
+        File module2BaseDir = temp.newFolder( "module2" );
+        File module2SrcDir = temp.newFolder( "module2", "src", "main" );
+        File module2TestDir = temp.newFolder( "module2", "src", "test" );
+        MavenProject module2 = new MavenProject();
+        module2.getModel().setGroupId( "com.foo" );
+        module2.getModel().setArtifactId( "module2" );
+        module2.getModel().setName( "My Project - Module 2" );
+        module2.getModel().setDescription( "My sample project - Module 2" );
+        module2.getModel().setVersion( "2.1" );
+        module2.getModel().setProperties( pomProps );
+        module2.setFile( new File( module2BaseDir, "pom.xml" ) );
+        module2.setParent( root );
+        root.getModules().add( "module2" );
+
+        Properties props =
+            new MavenProjectConverter().configure( Arrays.asList( module1, module2, root ), root );
+
+        assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
+        assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
+        assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
+
+        assertThat( props.getProperty( "sonar.projectBaseDir" ) ).isEqualTo( temp.getRoot().getCanonicalPath() );
+
+        String module1Key = "com.foo:module1";
+        String module2Key = "com.foo:module2";
+        assertThat( props.getProperty( "sonar.modules" ).split( "," ) ).containsOnly( module1Key, module2Key );
+
+        assertThat( props.getProperty( module1Key + ".sonar.projectBaseDir" ) ).isEqualTo( module1BaseDir.getCanonicalPath() );
+        assertThat( props.getProperty( module2Key + ".sonar.projectBaseDir" ) ).isEqualTo( module2BaseDir.getCanonicalPath() );
+
+        assertThat( props.getProperty( module1Key + ".sonar.sources" ) ).isEqualTo( module1SrcDir.getCanonicalPath() );
+        assertThat( props.getProperty( module1Key + ".sonar.tests" ) ).isEqualTo( module1TestDir.getCanonicalPath() );
+        assertThat( props.getProperty( module2Key + ".sonar.sources" ) ).isEqualTo( module2SrcDir.getCanonicalPath() );
+        assertThat( props.getProperty( module2Key + ".sonar.tests" ) ).isEqualTo( module2TestDir.getCanonicalPath() );
+    }
+
+    @Test( expected = MojoExecutionException.class )
+    public void convertSonarSourcesNonexistentFolder()
+        throws Exception
+    {
+        File pom = temp.newFile( "pom.xml" );
+
+        Properties pomProps = new Properties();
+        pomProps.put( "sonar.sources", "nonexistent-folder" );
+
+        MavenProject project = new MavenProject();
+        project.getModel().setGroupId( "com.foo" );
+        project.getModel().setArtifactId( "myProject" );
+        project.getModel().setName( "My Project" );
+        project.getModel().setDescription( "My sample project" );
+        project.getModel().setVersion( "2.1" );
+        project.getModel().setProperties( pomProps );
+        project.setFile( pom );
+
+        new MavenProjectConverter().configure( Arrays.asList( project ), project );
     }
 }

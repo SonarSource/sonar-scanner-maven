@@ -72,6 +72,8 @@ public class MavenProjectConverter
 
     private static final String LINKS_SOURCES_DEV = "sonar.links.scm_dev";
 
+    private static final String MAVEN_PACKAGING_POM = "pom";
+    
     public Properties configure( List<MavenProject> mavenProjects, MavenProject root )
         throws MojoExecutionException
     {
@@ -266,20 +268,23 @@ public class MavenProjectConverter
             props.setProperty( PROPERTY_PROJECT_BUILDDIR, buildDir.getAbsolutePath() );
             props.setProperty( RunnerProperties.WORK_DIR, getSonarWorkDir( pom ).getAbsolutePath() );
         }
-        List<File> mainDirs = mainDirs( pom );
-        props.setProperty( ScanProperties.PROJECT_SOURCE_DIRS,
-                           StringUtils.join( toPaths( mainDirs ), SEPARATOR ) );
-        List<File> testDirs = testDirs( pom );
-        if ( !testDirs.isEmpty() )
-        {
-            props.setProperty( ScanProperties.PROJECT_TEST_DIRS,
-                               StringUtils.join( toPaths( testDirs ), SEPARATOR ) );
-        }
         File binaryDir = resolvePath( pom.getBuild().getOutputDirectory(), pom.getBasedir() );
         if ( binaryDir != null && binaryDir.exists() )
         {
             props.setProperty( ScanProperties.PROJECT_BINARY_DIRS,
-                               binaryDir.getAbsolutePath() );
+                binaryDir.getAbsolutePath() );
+        }
+        if ( !MAVEN_PACKAGING_POM.equals( pom.getModel().getPackaging() ) )
+        {
+            List<File> mainDirs = mainDirs( pom );
+            props.setProperty( ScanProperties.PROJECT_SOURCE_DIRS,
+                               StringUtils.join( toPaths( mainDirs ), SEPARATOR ) );
+            List<File> testDirs = testDirs( pom );
+            if ( !testDirs.isEmpty() )
+            {
+                props.setProperty( ScanProperties.PROJECT_TEST_DIRS,
+                                   StringUtils.join( toPaths( testDirs ), SEPARATOR ) );
+            }
         }
     }
 

@@ -37,6 +37,10 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MavenPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.rtinfo.RuntimeInformation;
@@ -49,127 +53,65 @@ import java.io.IOException;
 
 /**
  * Analyze project. SonarQube server must be started.
- * 
- * @goal sonar
- * @aggregator
- * @requiresDependencyResolution test
  */
+@Mojo( name = "sonar",
+                aggregator = true,
+                requiresDependencyResolution = ResolutionScope.TEST )
 public class SonarMojo
     extends AbstractMojo
 {
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter( defaultValue = "${project}", readonly = true )
     protected MavenProject project;
 
-    /**
-     * @parameter default-value="${session}"
-     * @required
-     * @readonly
-     */
+    @Parameter( defaultValue = "${session}", readonly = true )
     private MavenSession session;
 
     /**
      * Sonar host URL.
-     * 
-     * @parameter property="sonar.host.url" default-value="http://localhost:9000" alias="sonar.host.url"
      */
+    @Parameter( property = "sonar.host.url", defaultValue = "http://localhost:9000", alias = "sonar.host.url" )
     private String sonarHostURL;
 
     /**
      * Set this to 'true' to skip analysis.
      *
-     * @parameter property="sonar.skip" default-value="false" alias="sonar.skip"
      * @since 2.3
      */
+    @Parameter( property = "sonar.skip", defaultValue = "false", alias = "sonar.skip" )
     private boolean skip;
 
-    /**
-     * @component
-     * @required
-     */
+    @Component
     protected MavenPluginManager mavenPluginManager;
 
-    /**
-     * @component
-     * @required
-     */
+    @Component
     protected MavenPluginManagerHelper mavenPluginManagerHelper;
 
-    /**
-     * @component
-     * @required
-     */
+    @Component
     private LifecycleExecutor lifecycleExecutor;
 
-    /**
-     * The artifact factory to use.
-     *
-     * @component
-     * @required
-     * @readonly
-     */
+    @Component
     private ArtifactFactory artifactFactory;
 
-    /**
-     * The artifact repository to use.
-     *
-     * @parameter expression="${localRepository}"
-     * @required
-     * @readonly
-     */
+    @Parameter( defaultValue = "${localRepository}", readonly = true, required = true )
     private ArtifactRepository localRepository;
 
-    /**
-     * The artifact metadata source to use.
-     *
-     * @component
-     * @required
-     * @readonly
-     */
+    @Component
     private ArtifactMetadataSource artifactMetadataSource;
 
-    /**
-     * The artifact collector to use.
-     *
-     * @component
-     * @required
-     * @readonly
-     */
+    @Component
     private ArtifactCollector artifactCollector;
 
-    /**
-     * The dependency tree builder to use.
-     *
-     * @component
-     * @required
-     * @readonly
-     */
+    @Component
     private DependencyTreeBuilder dependencyTreeBuilder;
 
-    /**
-     * @component
-     * @required
-     * @readonly
-     */
+    @Component
     private MavenProjectBuilder projectBuilder;
 
-    /**
-     * Plexus component for the SecDispatcher
-     * 
-     * @component role="org.sonatype.plexus.components.sec.dispatcher.SecDispatcher"
-     * @required
-     */
+    @Component( role = org.sonatype.plexus.components.sec.dispatcher.SecDispatcher.class )
     private SecDispatcher securityDispatcher;
 
-    /**
-     * @component
-     * @required
-     * @readonly
-     */
+    @Component
     private RuntimeInformation runtimeInformation;
 
     public void execute()

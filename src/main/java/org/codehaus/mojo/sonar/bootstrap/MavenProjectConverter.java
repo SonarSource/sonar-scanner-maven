@@ -73,7 +73,7 @@ public class MavenProjectConverter
     private static final String LINKS_SOURCES_DEV = "sonar.links.scm_dev";
 
     private static final String MAVEN_PACKAGING_POM = "pom";
-    
+
     public Properties configure( List<MavenProject> mavenProjects, MavenProject root )
         throws MojoExecutionException
     {
@@ -170,9 +170,6 @@ public class MavenProjectConverter
         throws MojoExecutionException
     {
         String key = getSonarKey( pom );
-        // IMPORTANT NOTE : reference on properties from POM model must not be saved,
-        // instead they should be copied explicitly - see SONAR-2896
-        props.putAll( pom.getModel().getProperties() );
         props.setProperty( MODULE_KEY, key );
         props.setProperty( ScanProperties.PROJECT_VERSION, pom.getVersion() );
         props.setProperty( ScanProperties.PROJECT_NAME, pom.getName() );
@@ -185,7 +182,7 @@ public class MavenProjectConverter
         guessJavaVersion( pom, props );
         guessEncoding( pom, props );
         convertMavenLinksToProperties( props, pom );
-        synchronizeFileSystem( pom, props );
+        synchronizeFileSystemAndOtherProps( pom, props );
     }
 
     private static String getSonarKey( MavenProject pom )
@@ -258,7 +255,7 @@ public class MavenProjectConverter
         }
     }
 
-    private void synchronizeFileSystem( MavenProject pom, Properties props )
+    private void synchronizeFileSystemAndOtherProps( MavenProject pom, Properties props )
         throws MojoExecutionException
     {
         props.setProperty( ScanProperties.PROJECT_BASEDIR, pom.getBasedir().getAbsolutePath() );
@@ -272,9 +269,14 @@ public class MavenProjectConverter
         if ( binaryDir != null && binaryDir.exists() )
         {
             props.setProperty( ScanProperties.PROJECT_BINARY_DIRS,
-                binaryDir.getAbsolutePath() );
+                               binaryDir.getAbsolutePath() );
         }
-        if ( !MAVEN_PACKAGING_POM.equals( pom.getModel().getPackaging() ) )
+
+        // IMPORTANT NOTE : reference on properties from POM model must not be saved,
+        // instead they should be copied explicitly - see SONAR-2896
+        props.putAll( pom.getModel().getProperties() );
+
+        if ( pom.getModel().getModules().isEmpty() )
         {
             List<File> mainDirs = mainDirs( pom );
             props.setProperty( ScanProperties.PROJECT_SOURCE_DIRS,
@@ -298,8 +300,7 @@ public class MavenProjectConverter
         return resolvePath( pom.getBuild().getDirectory(), pom.getBasedir() );
     }
 
-    static File resolvePath( @Nullable
-    String path, File basedir )
+    static File resolvePath( @Nullable String path, File basedir )
     {
         if ( path != null )
         {

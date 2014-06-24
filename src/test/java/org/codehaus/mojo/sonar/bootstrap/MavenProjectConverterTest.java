@@ -146,7 +146,7 @@ public class MavenProjectConverterTest
     }
 
     @Test
-    public void convertSonarSourcesSingleModuleProject()
+    public void overrideSourcesSingleModuleProject()
         throws Exception
     {
         temp.newFolder( "src" );
@@ -175,7 +175,7 @@ public class MavenProjectConverterTest
     }
 
     @Test
-    public void convertSonarSourcesMultiModuleProject()
+    public void overrideSourcesMultiModuleProject()
         throws Exception
     {
         Properties pomProps = new Properties();
@@ -244,7 +244,7 @@ public class MavenProjectConverterTest
     }
 
     @Test( expected = MojoExecutionException.class )
-    public void convertSonarSourcesNonexistentFolder()
+    public void overrideSourcesNonexistentFolder()
         throws Exception
     {
         File pom = temp.newFile( "pom.xml" );

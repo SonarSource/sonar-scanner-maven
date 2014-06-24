@@ -263,4 +263,30 @@ public class MavenProjectConverterTest
 
         new MavenProjectConverter().configure( Arrays.asList( project ), project );
     }
+
+    @Test
+    public void overrideProjectKeySingleModuleProject()
+        throws Exception
+    {
+        temp.newFolder( "src" );
+        File pom = temp.newFile( "pom.xml" );
+
+        Properties pomProps = new Properties();
+        pomProps.put( "sonar.projectKey", "myProject" );
+
+        MavenProject project = new MavenProject();
+        project.getModel().setGroupId( "com.foo" );
+        project.getModel().setArtifactId( "myProject" );
+        project.getModel().setName( "My Project" );
+        project.getModel().setDescription( "My sample project" );
+        project.getModel().setVersion( "2.1" );
+        project.getModel().setProperties( pomProps );
+        project.setFile( pom );
+
+        Properties props = new MavenProjectConverter().configure( Arrays.asList( project ), project );
+
+        assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "myProject" );
+        assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
+        assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
+    }
 }

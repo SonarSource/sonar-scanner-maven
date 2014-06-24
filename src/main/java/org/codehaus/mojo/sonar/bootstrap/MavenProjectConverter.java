@@ -169,8 +169,7 @@ public class MavenProjectConverter
     void merge( MavenProject pom, Properties props )
         throws MojoExecutionException
     {
-        String key = getSonarKey( pom );
-        props.setProperty( MODULE_KEY, key );
+        defineProjectKey( pom, props );
         props.setProperty( ScanProperties.PROJECT_VERSION, pom.getVersion() );
         props.setProperty( ScanProperties.PROJECT_NAME, pom.getName() );
         String description = pom.getDescription();
@@ -183,6 +182,20 @@ public class MavenProjectConverter
         guessEncoding( pom, props );
         convertMavenLinksToProperties( props, pom );
         synchronizeFileSystemAndOtherProps( pom, props );
+    }
+
+    private void defineProjectKey( MavenProject pom, Properties props )
+    {
+        String key;
+        if ( pom.getModel().getProperties().containsKey( ScanProperties.PROJECT_KEY ) )
+        {
+            key = pom.getModel().getProperties().getProperty( ScanProperties.PROJECT_KEY );
+        }
+        else
+        {
+            key = getSonarKey( pom );
+        }
+        props.setProperty( MODULE_KEY, key );
     }
 
     private static String getSonarKey( MavenProject pom )

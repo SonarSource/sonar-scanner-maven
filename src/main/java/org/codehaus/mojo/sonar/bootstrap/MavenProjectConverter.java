@@ -301,6 +301,11 @@ public class MavenProjectConverter
                                    StringUtils.join( toPaths( testDirs ), SEPARATOR ) );
             }
         }
+        else
+        {
+            props.remove( ScanProperties.PROJECT_SOURCE_DIRS );
+            props.remove( ScanProperties.PROJECT_TEST_DIRS );
+        }
     }
 
     public static File getSonarWorkDir( MavenProject pom )

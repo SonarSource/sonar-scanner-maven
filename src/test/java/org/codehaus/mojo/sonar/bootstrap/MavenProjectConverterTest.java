@@ -171,7 +171,7 @@ public class MavenProjectConverterTest
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
         assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
 
-        assertThat( props.getProperty( "sonar.sources" ) ).isEqualTo( srcMainDir.getCanonicalPath() );
+        assertThat( props.getProperty( "sonar.sources" ) ).isEqualTo( srcMainDir.getAbsolutePath() );
     }
 
     @Test
@@ -228,19 +228,21 @@ public class MavenProjectConverterTest
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
         assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
 
-        assertThat( props.getProperty( "sonar.projectBaseDir" ) ).isEqualTo( temp.getRoot().getCanonicalPath() );
+        assertThat( props.getProperty( "sonar.projectBaseDir" ) ).isEqualTo( temp.getRoot().getAbsolutePath() );
 
         String module1Key = "com.foo:module1";
         String module2Key = "com.foo:module2";
         assertThat( props.getProperty( "sonar.modules" ).split( "," ) ).containsOnly( module1Key, module2Key );
 
-        assertThat( props.getProperty( module1Key + ".sonar.projectBaseDir" ) ).isEqualTo( module1BaseDir.getCanonicalPath() );
-        assertThat( props.getProperty( module2Key + ".sonar.projectBaseDir" ) ).isEqualTo( module2BaseDir.getCanonicalPath() );
+        assertThat( props.getProperty( module1Key + ".sonar.projectBaseDir" ) ).isEqualTo( module1BaseDir.getAbsolutePath() );
+        assertThat( props.getProperty( module2Key + ".sonar.projectBaseDir" ) ).isEqualTo( module2BaseDir.getAbsolutePath() );
 
-        assertThat( props.getProperty( module1Key + ".sonar.sources" ) ).isEqualTo( module1SrcDir.getCanonicalPath() );
-        assertThat( props.getProperty( module1Key + ".sonar.tests" ) ).isEqualTo( module1TestDir.getCanonicalPath() );
-        assertThat( props.getProperty( module2Key + ".sonar.sources" ) ).isEqualTo( module2SrcDir.getCanonicalPath() );
-        assertThat( props.getProperty( module2Key + ".sonar.tests" ) ).isEqualTo( module2TestDir.getCanonicalPath() );
+        assertThat( props.getProperty( "sonar.sources" ) ).isEqualTo( "" );
+        assertThat( props.getProperty( "sonar.tests" ) ).isNull();
+        assertThat( props.getProperty( module1Key + ".sonar.sources" ) ).isEqualTo( module1SrcDir.getAbsolutePath() );
+        assertThat( props.getProperty( module1Key + ".sonar.tests" ) ).isEqualTo( module1TestDir.getAbsolutePath() );
+        assertThat( props.getProperty( module2Key + ".sonar.sources" ) ).isEqualTo( module2SrcDir.getAbsolutePath() );
+        assertThat( props.getProperty( module2Key + ".sonar.tests" ) ).isEqualTo( module2TestDir.getAbsolutePath() );
     }
 
     @Test( expected = MojoExecutionException.class )

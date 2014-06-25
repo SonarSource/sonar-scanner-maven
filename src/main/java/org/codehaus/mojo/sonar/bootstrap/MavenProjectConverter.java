@@ -289,21 +289,17 @@ public class MavenProjectConverter
         // instead they should be copied explicitly - see SONAR-2896
         props.putAll( pom.getModel().getProperties() );
 
-        if ( pom.getModel().getModules().isEmpty() )
+        List<File> mainDirs = mainDirs( pom );
+        props.setProperty( ScanProperties.PROJECT_SOURCE_DIRS,
+                           StringUtils.join( toPaths( mainDirs ), SEPARATOR ) );
+        List<File> testDirs = testDirs( pom );
+        if ( !testDirs.isEmpty() )
         {
-            List<File> mainDirs = mainDirs( pom );
-            props.setProperty( ScanProperties.PROJECT_SOURCE_DIRS,
-                               StringUtils.join( toPaths( mainDirs ), SEPARATOR ) );
-            List<File> testDirs = testDirs( pom );
-            if ( !testDirs.isEmpty() )
-            {
-                props.setProperty( ScanProperties.PROJECT_TEST_DIRS,
-                                   StringUtils.join( toPaths( testDirs ), SEPARATOR ) );
-            }
+            props.setProperty( ScanProperties.PROJECT_TEST_DIRS,
+                               StringUtils.join( toPaths( testDirs ), SEPARATOR ) );
         }
         else
         {
-            props.remove( ScanProperties.PROJECT_SOURCE_DIRS );
             props.remove( ScanProperties.PROJECT_TEST_DIRS );
         }
     }
@@ -369,20 +365,31 @@ public class MavenProjectConverter
         throws MojoExecutionException
     {
         List<String> paths;
+        List<File> dirs;
+        boolean userDefined = false;
         String prop = pom.getProperties().getProperty( propertyKey );
         if ( prop != null )
         {
             paths = Arrays.asList( StringUtils.split( prop, "," ) );
-            // do not remove dirs that do not exist. They must be kept in order to
-            // notify users that value of sonar.sources has a typo.
-            return existingDirsOrFail( resolvePaths( paths, pom.getBasedir() ), pom, propertyKey );
+            dirs = resolvePaths( paths, pom.getBasedir() );
+            userDefined = true;
+        }
+        else
+        {
+            dirs = resolvePaths( mavenDirs, pom.getBasedir() );
         }
 
-        List<File> dirs = resolvePaths( mavenDirs, pom.getBasedir() );
-
-        // Maven provides some directories that do not exist. They
-        // should be removed
-        return keepExistingDirs( dirs );
+        if ( userDefined && !MAVEN_PACKAGING_POM.equals( pom.getModel().getPackaging() ) )
+        {
+            return existingDirsOrFail( dirs, pom, propertyKey );
+        }
+        else
+        {
+            // Maven provides some directories that do not exist. They
+            // should be removed. Same for pom module were sonar.sources and sonar.tests
+            // can be defined only to be inherited by children
+            return keepExistingDirs( dirs );
+        }
     }
 
     private List<File> existingDirsOrFail( List<File> dirs, MavenProject pom, String propertyKey )

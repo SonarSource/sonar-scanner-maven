@@ -25,6 +25,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.model.CiManagement;
 import org.apache.maven.model.IssueManagement;
 import org.apache.maven.model.Scm;
@@ -278,12 +279,9 @@ public class MavenProjectConverter
             props.setProperty( PROPERTY_PROJECT_BUILDDIR, buildDir.getAbsolutePath() );
             props.setProperty( RunnerProperties.WORK_DIR, getSonarWorkDir( pom ).getAbsolutePath() );
         }
-        File binaryDir = resolvePath( pom.getBuild().getOutputDirectory(), pom.getBasedir() );
-        if ( binaryDir != null && binaryDir.exists() )
-        {
-            props.setProperty( ScanProperties.PROJECT_BINARY_DIRS,
-                               binaryDir.getAbsolutePath() );
-        }
+        populateBinaries( pom, props );
+
+        populateLibraries( pom, props );
 
         // IMPORTANT NOTE : reference on properties from POM model must not be saved,
         // instead they should be copied explicitly - see SONAR-2896
@@ -301,6 +299,48 @@ public class MavenProjectConverter
         else
         {
             props.remove( ScanProperties.PROJECT_TEST_DIRS );
+        }
+    }
+
+    private void populateLibraries( MavenProject pom, Properties props )
+        throws MojoExecutionException
+    {
+        List<File> libraries = Lists.newArrayList();
+        try
+        {
+            if ( pom.getCompileClasspathElements() != null )
+            {
+                for ( String classPathString : (List<String>) pom.getCompileClasspathElements() )
+                {
+                    if ( !classPathString.equals( pom.getBuild().getOutputDirectory() ) )
+                    {
+                        File libPath = resolvePath( classPathString, pom.getBasedir() );
+                        if ( libPath != null && libPath.exists() )
+                        {
+                            libraries.add( libPath );
+                        }
+                    }
+                }
+            }
+        }
+        catch ( DependencyResolutionRequiredException e )
+        {
+            throw new MojoExecutionException( "Unable to populate libraries", e );
+        }
+        if ( !libraries.isEmpty() )
+        {
+            props.setProperty( ScanProperties.PROJECT_LIBRARIES,
+                               StringUtils.join( toPaths( libraries ), SEPARATOR ) );
+        }
+    }
+
+    private void populateBinaries( MavenProject pom, Properties props )
+    {
+        File binaryDir = resolvePath( pom.getBuild().getOutputDirectory(), pom.getBasedir() );
+        if ( binaryDir != null && binaryDir.exists() )
+        {
+            props.setProperty( ScanProperties.PROJECT_BINARY_DIRS,
+                               binaryDir.getAbsolutePath() );
         }
     }
 

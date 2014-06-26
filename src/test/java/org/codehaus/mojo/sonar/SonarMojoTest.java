@@ -23,6 +23,7 @@
  */
 package org.codehaus.mojo.sonar;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.DefaultArtifactRepository;
@@ -138,6 +139,31 @@ public class SonarMojoTest
         mojo.execute();
 
         assertPropsContains( entry( "sonar.projectKey", "org.codehaus.sonar:sample-project" ) );
+    }
+
+    @Test
+    public void shouldExportBinaries()
+        throws Exception
+    {
+
+        mockHttp.setMockResponseData( "4.3" );
+
+        File localRepo = temp.newFolder();
+        final ArtifactRepository localRepository =
+            new DefaultArtifactRepository( "local",
+                                           localRepo.toURI().toURL().toString(), new DefaultRepositoryLayout() );
+        File commonsIo = new File( localRepo, "commons-io/commons-io/2.4/commons-io-2.4.jar" );
+        FileUtils.forceMkdir( commonsIo.getParentFile() );
+        commonsIo.createNewFile();
+
+        File baseDir = new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/sample-project" );
+        SonarMojo mojo =
+            getMojo( baseDir );
+        mojo.setLocalRepository( localRepository );
+        mojo.setSonarHostURL( "http://localhost:" + mockHttp.getPort() );
+        mojo.execute();
+
+        assertPropsContains( entry( "sonar.binaries", new File( baseDir, "target/classes" ).getAbsolutePath() ) );
     }
 
     private void assertPropsContains( MapAssert.Entry... entries )

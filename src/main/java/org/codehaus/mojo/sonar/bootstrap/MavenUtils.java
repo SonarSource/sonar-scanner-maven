@@ -19,7 +19,9 @@
  */
 package org.codehaus.mojo.sonar.bootstrap;
 
+import org.apache.maven.model.Plugin;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 /**
  * An utility class to manipulate Maven concepts
@@ -72,5 +74,46 @@ public final class MavenUtils
     public static String getSourceEncoding( MavenProject pom )
     {
         return pom.getProperties().getProperty( "project.build.sourceEncoding" );
+    }
+
+    /**
+     * Search for a configuration setting of an other plugin for a configuration setting.
+     *
+     * @todo there should be a better way to do this
+     * @param project the current maven project to get the configuration from.
+     * @param pluginId the group id and artifact id of the plugin to search for
+     * @param optionName the option to get from the configuration
+     * @param defaultValue the default value if the configuration was not found
+     * @return the value of the option configured in the plugin configuration
+     */
+    public static String getPluginSetting( MavenProject project, String pluginId, String optionName,
+                                           String defaultValue )
+    {
+        Xpp3Dom dom = getPluginConfigurationDom( project, pluginId );
+        if ( dom != null && dom.getChild( optionName ) != null )
+        {
+            return dom.getChild( optionName ).getValue();
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Search for the configuration Xpp3 dom of an other plugin.
+     *
+     * @todo there should be a better way to do this
+     * @param project the current maven project to get the configuration from.
+     * @param pluginId the group id and artifact id of the plugin to search for
+     * @return the value of the option configured in the plugin configuration
+     */
+    private static Xpp3Dom getPluginConfigurationDom( MavenProject project, String pluginId )
+    {
+
+        Plugin plugin = (org.apache.maven.model.Plugin) project.getBuild().getPluginsAsMap().get( pluginId );
+        if ( plugin != null )
+        {
+            // TODO: This may cause ClassCastExceptions eventually, if the dom impls differ.
+            return (Xpp3Dom) plugin.getConfiguration();
+        }
+        return null;
     }
 }

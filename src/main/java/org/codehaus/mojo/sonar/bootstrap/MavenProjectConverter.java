@@ -75,6 +75,10 @@ public class MavenProjectConverter
 
     private static final String MAVEN_PACKAGING_POM = "pom";
 
+    private static final String MAVEN_PACKAGING_WAR = "war";
+
+    public static final String ARTIFACT_MAVEN_WAR_PLUGIN = "org.apache.maven.plugins:maven-war-plugin";
+
     public Properties configure( List<MavenProject> mavenProjects, MavenProject root )
         throws MojoExecutionException
     {
@@ -392,7 +396,14 @@ public class MavenProjectConverter
     private List<File> mainDirs( MavenProject pom )
         throws MojoExecutionException
     {
-        return sourceDirs( pom, ScanProperties.PROJECT_SOURCE_DIRS, pom.getCompileSourceRoots() );
+        List<String> srcDirs = new ArrayList<String>();
+        if ( MAVEN_PACKAGING_WAR.equals( pom.getModel().getPackaging() ) )
+        {
+            srcDirs.add( MavenUtils.getPluginSetting( pom, ARTIFACT_MAVEN_WAR_PLUGIN, "warSourceDirectory",
+                                                      "src/main/webapp" ) );
+        }
+        srcDirs.addAll( pom.getCompileSourceRoots() );
+        return sourceDirs( pom, ScanProperties.PROJECT_SOURCE_DIRS, srcDirs );
     }
 
     private List<File> testDirs( MavenProject pom )

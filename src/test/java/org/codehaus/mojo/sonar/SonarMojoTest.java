@@ -166,6 +166,53 @@ public class SonarMojoTest
         assertPropsContains( entry( "sonar.binaries", new File( baseDir, "target/classes" ).getAbsolutePath() ) );
     }
 
+    @Test
+    public void shouldExportDefaultWarWebSource()
+        throws Exception
+    {
+
+        mockHttp.setMockResponseData( "4.3" );
+
+        File localRepo = temp.newFolder();
+        final ArtifactRepository localRepository =
+            new DefaultArtifactRepository( "local",
+                                           localRepo.toURI().toURL().toString(), new DefaultRepositoryLayout() );
+
+        File baseDir = new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/sample-war-project" );
+        SonarMojo mojo =
+            getMojo( baseDir );
+        mojo.setLocalRepository( localRepository );
+        mojo.setSonarHostURL( "http://localhost:" + mockHttp.getPort() );
+        mojo.execute();
+
+        assertPropsContains( entry( "sonar.sources", new File( baseDir, "src/main/webapp" ).getAbsolutePath() + ","
+            + new File( baseDir, "src/main/java" ).getAbsolutePath() ) );
+    }
+
+    @Test
+    public void shouldExportOverridenWarWebSource()
+        throws Exception
+    {
+
+        mockHttp.setMockResponseData( "4.3" );
+
+        File localRepo = temp.newFolder();
+        final ArtifactRepository localRepository =
+            new DefaultArtifactRepository( "local",
+                                           localRepo.toURI().toURL().toString(), new DefaultRepositoryLayout() );
+
+        File baseDir =
+            new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/war-project-override-web-dir" );
+        SonarMojo mojo =
+            getMojo( baseDir );
+        mojo.setLocalRepository( localRepository );
+        mojo.setSonarHostURL( "http://localhost:" + mockHttp.getPort() );
+        mojo.execute();
+
+        assertPropsContains( entry( "sonar.sources", new File( baseDir, "web" ).getAbsolutePath() + ","
+            + new File( baseDir, "src/main/java" ).getAbsolutePath() ) );
+    }
+
     private void assertPropsContains( MapAssert.Entry... entries )
         throws FileNotFoundException, IOException
     {

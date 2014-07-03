@@ -29,7 +29,6 @@ import java.io.IOException;
 
 import static org.fest.assertions.Assertions.assertThat;
 
-
 public class ServerMetadataTest
 {
     private static final String URL = "http://test";
@@ -59,9 +58,8 @@ public class ServerMetadataTest
         assertThat( server.getUrl() ).isEqualTo( URL );
     }
 
-    @Test( expected = IOException.class )
+    @Test( expected = IllegalStateException.class )
     public void shouldFailIfCanNotConnectToServer()
-        throws IOException
     {
         ServerMetadata server = new ServerMetadata( "http://unknown.foo" );
         server.getVersion();

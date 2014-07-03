@@ -79,6 +79,13 @@ public class MavenProjectConverter
 
     public static final String ARTIFACT_MAVEN_WAR_PLUGIN = "org.apache.maven.plugins:maven-war-plugin";
 
+    private final boolean includePomXml;
+
+    public MavenProjectConverter( boolean includePomXml )
+    {
+        this.includePomXml = includePomXml;
+    }
+
     public Properties configure( List<MavenProject> mavenProjects, MavenProject root )
         throws MojoExecutionException
     {
@@ -291,10 +298,10 @@ public class MavenProjectConverter
         // instead they should be copied explicitly - see SONAR-2896
         props.putAll( pom.getModel().getProperties() );
 
-        List<File> mainDirs = mainDirs( pom );
+        List<File> mainDirs = mainSources( pom );
         props.setProperty( ScanProperties.PROJECT_SOURCE_DIRS,
                            StringUtils.join( toPaths( mainDirs ), SEPARATOR ) );
-        List<File> testDirs = testDirs( pom );
+        List<File> testDirs = testSources( pom );
         if ( !testDirs.isEmpty() )
         {
             props.setProperty( ScanProperties.PROJECT_TEST_DIRS,
@@ -384,62 +391,66 @@ public class MavenProjectConverter
         List<File> result = Lists.newArrayList();
         for ( String path : paths )
         {
-            File dir = resolvePath( path, basedir );
-            if ( dir != null )
+            File fileOrDir = resolvePath( path, basedir );
+            if ( fileOrDir != null )
             {
-                result.add( dir );
+                result.add( fileOrDir );
             }
         }
         return result;
     }
 
-    private List<File> mainDirs( MavenProject pom )
+    private List<File> mainSources( MavenProject pom )
         throws MojoExecutionException
     {
-        List<String> srcDirs = new ArrayList<String>();
+        List<String> sources = new ArrayList<String>();
         if ( MAVEN_PACKAGING_WAR.equals( pom.getModel().getPackaging() ) )
         {
-            srcDirs.add( MavenUtils.getPluginSetting( pom, ARTIFACT_MAVEN_WAR_PLUGIN, "warSourceDirectory",
+            sources.add( MavenUtils.getPluginSetting( pom, ARTIFACT_MAVEN_WAR_PLUGIN, "warSourceDirectory",
                                                       "src/main/webapp" ) );
         }
-        srcDirs.addAll( pom.getCompileSourceRoots() );
-        return sourceDirs( pom, ScanProperties.PROJECT_SOURCE_DIRS, srcDirs );
+        if ( includePomXml )
+        {
+            sources.add( pom.getFile().getPath() );
+        }
+        sources.addAll( pom.getCompileSourceRoots() );
+        return sourcePaths( pom, ScanProperties.PROJECT_SOURCE_DIRS, sources );
     }
 
-    private List<File> testDirs( MavenProject pom )
+    private List<File> testSources( MavenProject pom )
         throws MojoExecutionException
     {
-        return sourceDirs( pom, ScanProperties.PROJECT_TEST_DIRS, pom.getTestCompileSourceRoots() );
+        return sourcePaths( pom, ScanProperties.PROJECT_TEST_DIRS, pom.getTestCompileSourceRoots() );
     }
 
-    private List<File> sourceDirs( MavenProject pom, String propertyKey, List<String> mavenDirs )
+    private List<File> sourcePaths( MavenProject pom, String propertyKey, List<String> mavenPaths )
         throws MojoExecutionException
     {
         List<String> paths;
-        List<File> dirs;
+        List<File> filesOrDirs;
         boolean userDefined = false;
         String prop = pom.getProperties().getProperty( propertyKey );
         if ( prop != null )
         {
             paths = Arrays.asList( StringUtils.split( prop, "," ) );
-            dirs = resolvePaths( paths, pom.getBasedir() );
+            filesOrDirs = resolvePaths( paths, pom.getBasedir() );
             userDefined = true;
         }
         else
         {
-            dirs = resolvePaths( mavenDirs, pom.getBasedir() );
+            filesOrDirs = resolvePaths( mavenPaths, pom.getBasedir() );
         }
 
         if ( userDefined && !MAVEN_PACKAGING_POM.equals( pom.getModel().getPackaging() ) )
         {
-            return existingDirsOrFail( dirs, pom, propertyKey );
+            return existingDirsOrFail( filesOrDirs, pom, propertyKey );
         }
         else
         {
             // Maven provides some directories that do not exist. They
             // should be removed. Same for pom module were sonar.sources and sonar.tests
             // can be defined only to be inherited by children
-            return keepExistingDirs( dirs );
+            return keepExistingPaths( filesOrDirs );
         }
     }
 
@@ -459,17 +470,16 @@ public class MavenProjectConverter
         return dirs;
     }
 
-    private static List<File> keepExistingDirs( List<File> files )
+    private static List<File> keepExistingPaths( List<File> files )
     {
         return Lists.newArrayList( Collections2.filter( files,
                                                         new Predicate<File>()
                                                         {
                                                             @Override
-                                                            public boolean apply( File dir )
+                                                            public boolean apply( File fileOrDir )
                                                             {
-                                                                return dir != null
-                                                                    && dir.exists()
-                                                                    && dir.isDirectory();
+                                                                return fileOrDir != null
+                                                                    && fileOrDir.exists();
                                                             }
                                                         } ) );
     }

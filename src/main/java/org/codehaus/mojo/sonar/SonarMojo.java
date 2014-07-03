@@ -135,7 +135,7 @@ public class SonarMojo
             {
                 new RunnerBootstraper( runtimeInformation, getLog(), session, lifecycleExecutor,
                                        artifactFactory, localRepository, artifactMetadataSource, artifactCollector,
-                                       dependencyTreeBuilder, projectBuilder, securityDispatcher ).execute();
+                                       dependencyTreeBuilder, projectBuilder, securityDispatcher, server ).execute();
             }
             else
             {

@@ -26,7 +26,6 @@ package org.codehaus.mojo.sonar;
 
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.IOUtil;
 
@@ -59,11 +58,18 @@ public class ServerMetadata
     }
 
     public String getVersion()
-        throws IOException
     {
         if ( version == null )
         {
-            version = remoteContent( "/api/server/version" );
+            try
+            {
+                version = remoteContent( "/api/server/version" );
+            }
+            catch ( IOException e )
+            {
+                throw new IllegalStateException( "SonarQube server can not be reached at " + url
+                    + ". Please check the parameter 'sonar.host.url'.", e );
+            }
         }
         return version;
     }
@@ -74,18 +80,8 @@ public class ServerMetadata
     }
 
     public void logSettings( Log log )
-        throws MojoExecutionException
     {
-        try
-        {
-            log.info( "SonarQube version: " + getVersion() );
-
-        }
-        catch ( IOException e )
-        {
-            throw new MojoExecutionException( "SonarQube server can not be reached at " + url
-                + ". Please check the parameter 'sonar.host.url'.", e );
-        }
+        log.info( "SonarQube version: " + getVersion() );
     }
 
     protected String remoteContent( String path )
@@ -124,42 +120,51 @@ public class ServerMetadata
         return conn;
     }
 
-    protected boolean supportsMaven3()
-        throws IOException
+    public boolean supportsMaven3()
     {
         return !isVersionPriorTo2Dot4( getVersion() );
     }
 
-    protected boolean supportsMaven3_1()
-        throws IOException
+    public boolean supportsMaven3_1()
     {
         return !isVersionPriorTo3Dot7( getVersion() );
     }
 
-    protected boolean supportsSonarQubeRunnerBootstrappingFromMaven()
-        throws IOException
+    public boolean supportsSonarQubeRunnerBootstrappingFromMaven()
     {
         return !isVersionPriorTo4Dot3( getVersion() );
     }
 
-    protected static boolean isVersionPriorTo2Dot4( String version )
+    public boolean supportsFilesAsSources()
+    {
+        return !isVersionPriorTo4Dot5( getVersion() );
+    }
+
+    public static boolean isVersionPriorTo2Dot4( String version )
     {
         ArtifactVersion artifactVersion = new DefaultArtifactVersion( version );
         return artifactVersion.getMajorVersion() < 2 || artifactVersion.getMajorVersion() == 2
             && artifactVersion.getMinorVersion() < 4;
     }
 
-    protected static boolean isVersionPriorTo3Dot7( String version )
+    public static boolean isVersionPriorTo3Dot7( String version )
     {
         ArtifactVersion artifactVersion = new DefaultArtifactVersion( version );
         return artifactVersion.getMajorVersion() < 3 || artifactVersion.getMajorVersion() == 3
             && artifactVersion.getMinorVersion() < 7;
     }
 
-    protected static boolean isVersionPriorTo4Dot3( String version )
+    public static boolean isVersionPriorTo4Dot3( String version )
     {
         ArtifactVersion artifactVersion = new DefaultArtifactVersion( version );
         return artifactVersion.getMajorVersion() < 4 || artifactVersion.getMajorVersion() == 4
             && artifactVersion.getMinorVersion() < 3;
+    }
+
+    public static boolean isVersionPriorTo4Dot5( String version )
+    {
+        ArtifactVersion artifactVersion = new DefaultArtifactVersion( version );
+        return artifactVersion.getMajorVersion() < 4 || artifactVersion.getMajorVersion() == 4
+            && artifactVersion.getMinorVersion() < 5;
     }
 }

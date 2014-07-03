@@ -35,6 +35,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
+import org.codehaus.mojo.sonar.ServerMetadata;
 import org.sonar.runner.api.EmbeddedRunner;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
@@ -70,12 +71,14 @@ public class RunnerBootstraper
 
     private final SecDispatcher securityDispatcher;
 
+    private ServerMetadata server;
+
     public RunnerBootstraper( RuntimeInformation runtimeInformation, Log log,
                               MavenSession session, LifecycleExecutor lifecycleExecutor,
                               ArtifactFactory artifactFactory, ArtifactRepository localRepository,
                               ArtifactMetadataSource artifactMetadataSource, ArtifactCollector artifactCollector,
                               DependencyTreeBuilder dependencyTreeBuilder, MavenProjectBuilder projectBuilder,
-                              SecDispatcher securityDispatcher )
+                              SecDispatcher securityDispatcher, ServerMetadata server )
     {
         this.runtimeInformation = runtimeInformation;
         this.log = log;
@@ -88,7 +91,7 @@ public class RunnerBootstraper
         this.dependencyTreeBuilder = dependencyTreeBuilder;
         this.projectBuilder = projectBuilder;
         this.securityDispatcher = securityDispatcher;
-
+        this.server = server;
     }
 
     public void execute()
@@ -140,7 +143,9 @@ public class RunnerBootstraper
     private Properties collectProperties()
         throws MojoExecutionException
     {
-        Properties props = new MavenProjectConverter().configure( session.getProjects(), session.getTopLevelProject() );
+        Properties props =
+            new MavenProjectConverter( server.supportsFilesAsSources() ).configure( session.getProjects(),
+                                                                                    session.getTopLevelProject() );
         props.putAll( decryptProperties( props ) );
         return props;
     }

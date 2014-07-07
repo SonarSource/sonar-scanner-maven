@@ -174,7 +174,7 @@ public class MavenProjectConverterTest
         throws Exception
     {
         temp.newFolder( "src" );
-        File srcMainDir = temp.newFolder( "src/main" );
+        File srcMainDir = temp.newFolder( "src/main" ).getCanonicalFile();
         File pom = temp.newFile( "pom.xml" );
 
         Properties pomProps = new Properties();
@@ -218,9 +218,9 @@ public class MavenProjectConverterTest
         root.getModel().setProperties( pomProps );
         root.setFile( pomRoot );
 
-        File module1BaseDir = temp.newFolder( "module1" );
-        File module1SrcDir = temp.newFolder( "module1", "src", "main" );
-        File module1TestDir = temp.newFolder( "module1", "src", "test" );
+        File module1BaseDir = temp.newFolder( "module1" ).getCanonicalFile();
+        File module1SrcDir = temp.newFolder( "module1", "src", "main" ).getCanonicalFile();
+        File module1TestDir = temp.newFolder( "module1", "src", "test" ).getCanonicalFile();
         MavenProject module1 = new MavenProject();
         module1.getModel().setGroupId( "com.foo" );
         module1.getModel().setArtifactId( "module1" );
@@ -232,9 +232,9 @@ public class MavenProjectConverterTest
         module1.setParent( root );
         root.getModules().add( "module1" );
 
-        File module2BaseDir = temp.newFolder( "module2" );
-        File module2SrcDir = temp.newFolder( "module2", "src", "main" );
-        File module2TestDir = temp.newFolder( "module2", "src", "test" );
+        File module2BaseDir = temp.newFolder( "module2" ).getCanonicalFile();
+        File module2SrcDir = temp.newFolder( "module2", "src", "main" ).getCanonicalFile();
+        File module2TestDir = temp.newFolder( "module2", "src", "test" ).getCanonicalFile();
         MavenProject module2 = new MavenProject();
         module2.getModel().setGroupId( "com.foo" );
         module2.getModel().setArtifactId( "module2" );

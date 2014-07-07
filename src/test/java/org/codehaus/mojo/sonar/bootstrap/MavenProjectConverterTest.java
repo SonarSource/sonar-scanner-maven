@@ -54,7 +54,8 @@ public class MavenProjectConverterTest
         project.getModel().setDescription( "My sample project" );
         project.getModel().setVersion( "2.1" );
         project.setFile( new File( baseDir, "pom.xml" ) );
-        Properties props = new MavenProjectConverter( false ).configure( Arrays.asList( project ), project );
+        Properties props =
+            new MavenProjectConverter( false ).configure( Arrays.asList( project ), project, new Properties() );
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
         assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
@@ -74,7 +75,8 @@ public class MavenProjectConverterTest
         File pom = new File( baseDir, "pom.xml" );
         pom.createNewFile();
         project.setFile( pom );
-        Properties props = new MavenProjectConverter( true ).configure( Arrays.asList( project ), project );
+        Properties props =
+            new MavenProjectConverter( true ).configure( Arrays.asList( project ), project, new Properties() );
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
         assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
@@ -144,7 +146,7 @@ public class MavenProjectConverterTest
 
         Properties props =
             new MavenProjectConverter( false ).configure( Arrays.asList( module12, module11, module1, module2, root ),
-                                                          root );
+                                                          root, new Properties() );
 
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
@@ -187,7 +189,8 @@ public class MavenProjectConverterTest
         project.getModel().setProperties( pomProps );
         project.setFile( pom );
 
-        Properties props = new MavenProjectConverter( false ).configure( Arrays.asList( project ), project );
+        Properties props =
+            new MavenProjectConverter( false ).configure( Arrays.asList( project ), project, new Properties() );
 
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
@@ -244,7 +247,8 @@ public class MavenProjectConverterTest
         root.getModules().add( "module2" );
 
         Properties props =
-            new MavenProjectConverter( false ).configure( Arrays.asList( module1, module2, root ), root );
+            new MavenProjectConverter( false ).configure( Arrays.asList( module1, module2, root ), root,
+                                                          new Properties() );
 
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
@@ -285,7 +289,7 @@ public class MavenProjectConverterTest
         project.getModel().setProperties( pomProps );
         project.setFile( pom );
 
-        new MavenProjectConverter( false ).configure( Arrays.asList( project ), project );
+        new MavenProjectConverter( false ).configure( Arrays.asList( project ), project, new Properties() );
     }
 
     @Test
@@ -307,7 +311,8 @@ public class MavenProjectConverterTest
         project.getModel().setProperties( pomProps );
         project.setFile( pom );
 
-        Properties props = new MavenProjectConverter( false ).configure( Arrays.asList( project ), project );
+        Properties props =
+            new MavenProjectConverter( false ).configure( Arrays.asList( project ), project, new Properties() );
 
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );

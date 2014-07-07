@@ -125,10 +125,6 @@ public class RunnerBootstraper
             }
             runner.addProperties( collectProperties() );
 
-            // Add user properties (ie command line arguments -Dsonar.xxx=yyyy) in last position to
-            // override all other
-            runner.addProperties( session.getUserProperties() );
-
             // Secret property to manage backward compatibility on SQ side (see ProjectScanContainer)
             runner.setProperty( "sonar.mojoUseRunner", "true" );
 
@@ -145,7 +141,8 @@ public class RunnerBootstraper
     {
         Properties props =
             new MavenProjectConverter( server.supportsFilesAsSources() ).configure( session.getProjects(),
-                                                                                    session.getTopLevelProject() );
+                                                                                    session.getTopLevelProject(),
+                                                                                    session.getUserProperties() );
         props.putAll( decryptProperties( props ) );
         return props;
     }

@@ -81,14 +81,17 @@ public class MavenProjectConverter
 
     private final boolean includePomXml;
 
+    private Properties userProperties;
+
     public MavenProjectConverter( boolean includePomXml )
     {
         this.includePomXml = includePomXml;
     }
 
-    public Properties configure( List<MavenProject> mavenProjects, MavenProject root )
+    public Properties configure( List<MavenProject> mavenProjects, MavenProject root, Properties userProperties )
         throws MojoExecutionException
     {
+        this.userProperties = userProperties;
         // projects by canonical path to pom.xml
         Map<String, MavenProject> paths = new HashMap<String, MavenProject>();
         Map<MavenProject, Properties> propsByModule = new HashMap<MavenProject, Properties>();
@@ -297,6 +300,10 @@ public class MavenProjectConverter
         // IMPORTANT NOTE : reference on properties from POM model must not be saved,
         // instead they should be copied explicitly - see SONAR-2896
         props.putAll( pom.getModel().getProperties() );
+
+        // Add user properties (ie command line arguments -Dsonar.xxx=yyyy) in last position to
+        // override all other
+        props.putAll( userProperties );
 
         List<File> mainDirs = mainSources( pom );
         props.setProperty( ScanProperties.PROJECT_SOURCE_DIRS,

@@ -436,7 +436,9 @@ public class MavenProjectConverter
         List<String> paths;
         List<File> filesOrDirs;
         boolean userDefined = false;
-        String prop = pom.getProperties().getProperty( propertyKey );
+        String prop =
+            StringUtils.defaultIfEmpty( userProperties.getProperty( propertyKey ),
+                                        pom.getProperties().getProperty( propertyKey ) );
         if ( prop != null )
         {
             paths = Arrays.asList( StringUtils.split( prop, "," ) );

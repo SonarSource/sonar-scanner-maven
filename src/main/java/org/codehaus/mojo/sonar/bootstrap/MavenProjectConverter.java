@@ -452,7 +452,7 @@ public class MavenProjectConverter
 
         if ( userDefined && !MAVEN_PACKAGING_POM.equals( pom.getModel().getPackaging() ) )
         {
-            return existingDirsOrFail( filesOrDirs, pom, propertyKey );
+            return existingPathsOrFail( filesOrDirs, pom, propertyKey );
         }
         else
         {
@@ -463,12 +463,12 @@ public class MavenProjectConverter
         }
     }
 
-    private List<File> existingDirsOrFail( List<File> dirs, MavenProject pom, String propertyKey )
+    private List<File> existingPathsOrFail( List<File> dirs, MavenProject pom, String propertyKey )
         throws MojoExecutionException
     {
         for ( File dir : dirs )
         {
-            if ( !dir.isDirectory() || !dir.exists() )
+            if ( !dir.exists() )
             {
                 throw new MojoExecutionException(
                                                   String.format(

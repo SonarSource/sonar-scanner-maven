@@ -501,10 +501,6 @@ public class MavenProjectConverter
                 @Override
                 public String apply( File dir )
                 {
-                    if ( dir == null )
-                    {
-                        throw new NullPointerException( "Directory is null" );
-                    }
                     return dir.getAbsolutePath();
                 }
             } );

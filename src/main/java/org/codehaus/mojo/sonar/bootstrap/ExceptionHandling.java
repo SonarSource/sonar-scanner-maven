@@ -22,22 +22,29 @@ package org.codehaus.mojo.sonar.bootstrap;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
-class ExceptionHandling {
+class ExceptionHandling
+{
 
-  private ExceptionHandling(){
-    // Hide public constructor
-  }
-
-  static RuntimeException handle(Exception e, Log log) throws MojoExecutionException {
-    Throwable source = e;
-    if ("org.sonar.runner.impl.RunnerException".equals(e.getClass().getName()) && e.getCause() != null) {
-      source = e.getCause();
+    private ExceptionHandling()
+    {
+        // Hide public constructor
     }
-    log.error(source.getMessage());
-    throw new MojoExecutionException(source.getMessage(), source);
-  }
 
-  static RuntimeException handle(String message, Log log) throws MojoExecutionException {
-    return handle(new MojoExecutionException(message), log);
-  }
+    static RuntimeException handle( Exception e, Log log )
+        throws MojoExecutionException
+    {
+        Throwable source = e;
+        if ( "org.sonar.runner.impl.RunnerException".equals( e.getClass().getName() ) && e.getCause() != null )
+        {
+            source = e.getCause();
+        }
+        log.error( source.getMessage() );
+        throw new MojoExecutionException( source.getMessage(), source );
+    }
+
+    static RuntimeException handle( String message, Log log )
+        throws MojoExecutionException
+    {
+        return handle( new MojoExecutionException( message ), log );
+    }
 }

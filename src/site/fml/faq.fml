@@ -2,15 +2,15 @@
 <faqs id="FAQ" title="Frequently Asked Questions">
  <part id="General">
   <faq id="Need Server">
-     <question>Why do I get the error 'Sonar server can not be reached at http://localhost:9000.'?</question>
+     <question>Why do I get the error 'SonarQube server can not be reached at http://localhost:9000.'?</question>
      <answer>
-     	Maven Plugin needs the SonarQube server to be up. Read the <a href="http://docs.codehaus.org/display/SONAR/Get+Started+in+Two+Minutes">2 minutes tutorial</a> or the <a href="http://docs.codehaus.org/display/SONAR/Installation+and+Upgrade">installation guide</a> for more details.
+     	Maven Plugin needs the SonarQube server to be up. Read the <a href="http://docs.codehaus.org/x/yoHEBg">Setup and Upgrade</a> page for more details.
      </answer>
    </faq>
    <faq id="Documentation">
      <question>Where can I find more documentation?</question>
      <answer>
-     	Documentation can be found on the page "Get Support" of <a href="http://www.sonarqube.org/get-support/">http://sonarqube.org</a>.
+     	Documentation can be found on the page "Get Support" of <a href="http://www.sonarqube.org/get-support/">http://www.sonarqube.org</a>.
      	You can also read the <a href="http://www.sonarqube.org/category/blog/">blog</a> and follow us on <a href="http://twitter.com/SonarSource">twitter</a>.
      </answer>
    </faq>
@@ -26,7 +26,7 @@
      <question>What kinds of projects can be analyzed?</question>
      <answer>
      	<p>
-        SonarQube analyzes Java projects, even if they are not built with Maven (<a href="http://docs.codehaus.org/display/SONAR/Analyzing+Source+Code">more details</a>).
+        SonarQube analyzes Java projects, even if they are not built with Maven (<a href="http://docs.codehaus.org/x/P4LEBg">more details</a>).
         More than 20 other languages are covered through <a href="http://sonar-plugins.codehaus.org">plugins</a> including C#, C/C++, Javascript, PL/SQL, Cobol or ABAP.
     	</p>
      </answer>

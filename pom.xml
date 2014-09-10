@@ -87,7 +87,7 @@
   </issueManagement>
 
   <properties>
-    <mavenVersion>3.2.1</mavenVersion>
+    <mavenVersion>3.2.3</mavenVersion>
     <mojo.java.target>1.6</mojo.java.target>
   </properties>
 
@@ -140,22 +140,6 @@
       <version>1.4</version>
       <scope>compile</scope>
     </dependency>
-
-    <!-- Sonatype Aether for Maven 3.0.x -->
-    <dependency>
-      <groupId>org.sonatype.aether</groupId>
-      <artifactId>aether-api</artifactId>
-      <version>1.13.1</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Eclipse Aether for Maven 3.1.x -->
-    <dependency>
-      <groupId>org.eclipse.aether</groupId>
-      <artifactId>aether-api</artifactId>
-      <version>0.9.1.v20140329</version>
-      <scope>provided</scope>
-    </dependency>
     
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
@@ -204,11 +188,18 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven.plugin-testing</groupId>
-      <artifactId>maven-plugin-testing-harness</artifactId>
-      <version>3.1.0</version>
+      <groupId>org.skyscreamer</groupId>
+      <artifactId>jsonassert</artifactId>
+      <version>1.2.3</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.maven.plugin-testing</groupId>
+      <artifactId>maven-plugin-testing-harness</artifactId>
+      <version>3.2.0</version>
+      <scope>test</scope>
+    </dependency>
+    
     
     <dependency>
       <groupId>org.mortbay.jetty</groupId>

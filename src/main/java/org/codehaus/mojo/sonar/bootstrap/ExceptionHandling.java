@@ -38,7 +38,6 @@ class ExceptionHandling
         {
             source = e.getCause();
         }
-        log.error( source.getMessage() );
         throw new MojoExecutionException( source.getMessage(), source );
     }
 

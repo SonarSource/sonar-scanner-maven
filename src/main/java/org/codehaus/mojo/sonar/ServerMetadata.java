@@ -135,6 +135,11 @@ public class ServerMetadata
         return !isVersionPriorTo4Dot3( getVersion() );
     }
 
+    public boolean supportsNewDependencyProperty()
+    {
+        return !isVersionPriorTo5Dot0( getVersion() );
+    }
+
     public boolean supportsFilesAsSources()
     {
         return !isVersionPriorTo4Dot5( getVersion() );
@@ -159,6 +164,12 @@ public class ServerMetadata
         ArtifactVersion artifactVersion = new DefaultArtifactVersion( version );
         return artifactVersion.getMajorVersion() < 4 || artifactVersion.getMajorVersion() == 4
             && artifactVersion.getMinorVersion() < 3;
+    }
+
+    public static boolean isVersionPriorTo5Dot0( String version )
+    {
+        ArtifactVersion artifactVersion = new DefaultArtifactVersion( version );
+        return artifactVersion.getMajorVersion() < 5;
     }
 
     public static boolean isVersionPriorTo4Dot5( String version )

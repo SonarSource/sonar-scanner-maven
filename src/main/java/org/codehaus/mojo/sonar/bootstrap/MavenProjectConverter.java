@@ -83,9 +83,12 @@ public class MavenProjectConverter
 
     private Properties userProperties;
 
-    public MavenProjectConverter( boolean includePomXml )
+    private DependencyCollector dependencyCollector;
+
+    public MavenProjectConverter( boolean includePomXml, DependencyCollector dependencyCollector )
     {
         this.includePomXml = includePomXml;
+        this.dependencyCollector = dependencyCollector;
     }
 
     public Properties configure( List<MavenProject> mavenProjects, MavenProject root, Properties userProperties )
@@ -197,6 +200,8 @@ public class MavenProjectConverter
         guessEncoding( pom, props );
         convertMavenLinksToProperties( props, pom );
         synchronizeFileSystemAndOtherProps( pom, props );
+
+        props.setProperty( "sonar.maven.projectDependencies", dependencyCollector.toJson( pom ) );
     }
 
     private void defineProjectKey( MavenProject pom, Properties props )

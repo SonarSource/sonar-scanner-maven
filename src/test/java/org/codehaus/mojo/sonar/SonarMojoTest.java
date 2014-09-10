@@ -36,6 +36,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
+import org.skyscreamer.jsonassert.JSONAssert;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -213,7 +214,42 @@ public class SonarMojoTest
             + new File( baseDir, "src/main/java" ).getAbsolutePath() ) );
     }
 
+    @Test
+    public void shouldExportDependencies()
+        throws Exception
+    {
+
+        mockHttp.setMockResponseData( "5.0" );
+
+        File localRepo = new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/repository" );
+        final ArtifactRepository localRepository =
+            new DefaultArtifactRepository( "local",
+                                           localRepo.toURI().toURL().toString(), new DefaultRepositoryLayout() );
+
+        File baseDir =
+            new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/export-dependencies" );
+        SonarMojo mojo =
+            getMojo( baseDir );
+        mojo.setLocalRepository( localRepository );
+        mojo.setSonarHostURL( "http://localhost:" + mockHttp.getPort() );
+        mojo.execute();
+
+        String libJson = readProps().getProperty( "sonar.maven.projectDependencies" );
+
+        JSONAssert.assertEquals( "[{\"k\":\"commons-io:commons-io\",\"v\":\"2.4\",\"s\":\"compile\",\"d\":["
+            + "{\"k\":\"commons-lang:commons-lang\",\"v\":\"2.6\",\"s\":\"compile\",\"d\":[]}"
+            + "]},"
+            + "{\"k\":\"junit:junit\",\"v\":\"3.8.1\",\"s\":\"test\",\"d\":[]}]",
+                                 libJson, true );
+    }
+
     private void assertPropsContains( MapAssert.Entry... entries )
+        throws FileNotFoundException, IOException
+    {
+        assertThat( readProps() ).includes( entries );
+    }
+
+    private Properties readProps()
         throws FileNotFoundException, IOException
     {
         FileInputStream fis = null;
@@ -223,7 +259,7 @@ public class SonarMojoTest
             Properties props = new Properties();
             fis = new FileInputStream( dump );
             props.load( fis );
-            assertThat( props ).includes( entries );
+            return props;
         }
         finally
         {

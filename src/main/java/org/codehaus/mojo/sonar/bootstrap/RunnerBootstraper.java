@@ -117,8 +117,12 @@ public class RunnerBootstraper
                   .mask( "com.google.common" )
                   // Include everything else
                   .unmask( "" );
-            runner.addExtensions( session, log, lifecycleExecutor, artifactFactory, localRepository,
-                                  artifactMetadataSource, artifactCollector, dependencyTreeBuilder, projectBuilder );
+            runner.addExtensions( session, log, lifecycleExecutor, projectBuilder );
+            if ( !server.supportsNewDependencyProperty() )
+            {
+                runner.addExtensions( artifactFactory, localRepository, artifactMetadataSource, artifactCollector,
+                                      dependencyTreeBuilder );
+            }
             if ( log.isDebugEnabled() )
             {
                 runner.setProperty( "sonar.verbose", "true" );
@@ -140,10 +144,14 @@ public class RunnerBootstraper
         throws MojoExecutionException
     {
         Properties props =
-            new MavenProjectConverter( server.supportsFilesAsSources() ).configure( session.getProjects(),
-                                                                                    session.getTopLevelProject(),
-                                                                                    session.getUserProperties() );
+            new MavenProjectConverter( server.supportsFilesAsSources(),
+                                       new DependencyCollector( dependencyTreeBuilder, artifactFactory,
+                                                                localRepository, artifactMetadataSource,
+                                                                artifactCollector ) ).configure( session.getProjects(),
+                                                                                                 session.getTopLevelProject(),
+                                                                                                 session.getUserProperties() );
         props.putAll( decryptProperties( props ) );
+
         return props;
     }
 

@@ -199,9 +199,8 @@ public class MavenProjectConverter
         guessJavaVersion( pom, props );
         guessEncoding( pom, props );
         convertMavenLinksToProperties( props, pom );
-        synchronizeFileSystemAndOtherProps( pom, props );
-
         props.setProperty( "sonar.maven.projectDependencies", dependencyCollector.toJson( pom ) );
+        synchronizeFileSystemAndOtherProps( pom, props );
     }
 
     private void defineProjectKey( MavenProject pom, Properties props )

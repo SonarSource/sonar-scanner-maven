@@ -383,14 +383,7 @@ public class MavenProjectConverter
             File file = new File( StringUtils.trim( path ) );
             if ( !file.isAbsolute() )
             {
-                try
-                {
-                    file = new File( basedir, path ).getCanonicalFile();
-                }
-                catch ( IOException e )
-                {
-                    throw new IllegalStateException( "Unable to resolve path '" + path + "'", e );
-                }
+                file = new File( basedir, path ).getAbsoluteFile();
             }
             return file;
         }

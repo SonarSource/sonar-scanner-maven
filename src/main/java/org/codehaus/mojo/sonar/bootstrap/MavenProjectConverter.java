@@ -104,7 +104,7 @@ public class MavenProjectConverter
             configureModules( mavenProjects, paths, propsByModule );
             Properties props = new Properties();
             props.setProperty( ScanProperties.PROJECT_KEY, getSonarKey( root ) );
-            rebuildModuleHierarchy( props, paths, propsByModule, root, "" );
+            rebuildModuleHierarchy( props, paths, propsByModule, root, null );
             if ( !propsByModule.isEmpty() )
             {
                 throw new IllegalStateException( UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE + " \""
@@ -121,9 +121,10 @@ public class MavenProjectConverter
 
     private void rebuildModuleHierarchy( Properties properties, Map<String, MavenProject> paths,
                                          Map<MavenProject, Properties> propsByModule, MavenProject current,
-                                         String prefix )
+                                         @Nullable String moduleId )
         throws IOException
     {
+        String prefix = moduleId != null ? ( moduleId + "." ) : "";
         Properties currentProps = propsByModule.get( current );
         if ( currentProps == null )
         {
@@ -142,9 +143,9 @@ public class MavenProjectConverter
             MavenProject module = findMavenProject( modulePath, paths );
             if ( module != null )
             {
-                String moduleId = prefix + idx;
-                rebuildModuleHierarchy( properties, paths, propsByModule, module, moduleId + "." );
-                moduleIds.add( moduleId );
+                String subModuleId = moduleId != null ? ( moduleId + "_" + idx ) : ( "" + idx );
+                rebuildModuleHierarchy( properties, paths, propsByModule, module, subModuleId );
+                moduleIds.add( subModuleId );
                 idx++;
             }
         }

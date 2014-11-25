@@ -173,8 +173,8 @@ public class MavenProjectConverterTest
         String module2Id = "2";
         assertThat( props.getProperty( "sonar.modules" ).split( "," ) ).containsOnly( module1Id, module2Id );
 
-        String module11Id = "1.1";
-        String module12Id = "1.2";
+        String module11Id = "1_1";
+        String module12Id = "1_2";
         assertThat( props.getProperty( module1Id + ".sonar.modules" ).split( "," ) ).containsOnly( module11Id,
                                                                                                    module12Id );
 

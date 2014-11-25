@@ -169,19 +169,19 @@ public class MavenProjectConverterTest
 
         assertThat( props.getProperty( "sonar.projectBaseDir" ) ).isEqualTo( baseDir.getAbsolutePath() );
 
-        String module1Key = "com.foo:module1";
-        String module2Key = "com.foo:module2";
-        assertThat( props.getProperty( "sonar.modules" ).split( "," ) ).containsOnly( module1Key, module2Key );
+        String module1Id = "1";
+        String module2Id = "2";
+        assertThat( props.getProperty( "sonar.modules" ).split( "," ) ).containsOnly( module1Id, module2Id );
 
-        String module11Key = "com.foo:module11";
-        String module12Key = "com.foo:module12";
-        assertThat( props.getProperty( module1Key + ".sonar.modules" ).split( "," ) ).containsOnly( module11Key,
-                                                                                                    module12Key );
+        String module11Id = "1.1";
+        String module12Id = "1.2";
+        assertThat( props.getProperty( module1Id + ".sonar.modules" ).split( "," ) ).containsOnly( module11Id,
+                                                                                                   module12Id );
 
-        assertThat( props.getProperty( module1Key + ".sonar.projectBaseDir" ) ).isEqualTo( module1BaseDir.getAbsolutePath() );
-        assertThat( props.getProperty( module1Key + "." + module11Key + ".sonar.projectBaseDir" ) ).isEqualTo( module11BaseDir.getAbsolutePath() );
-        assertThat( props.getProperty( module1Key + "." + module12Key + ".sonar.projectBaseDir" ) ).isEqualTo( module12BaseDir.getAbsolutePath() );
-        assertThat( props.getProperty( module2Key + ".sonar.projectBaseDir" ) ).isEqualTo( module2BaseDir.getAbsolutePath() );
+        assertThat( props.getProperty( module1Id + ".sonar.projectBaseDir" ) ).isEqualTo( module1BaseDir.getAbsolutePath() );
+        assertThat( props.getProperty( module11Id + ".sonar.projectBaseDir" ) ).isEqualTo( module11BaseDir.getAbsolutePath() );
+        assertThat( props.getProperty( module12Id + ".sonar.projectBaseDir" ) ).isEqualTo( module12BaseDir.getAbsolutePath() );
+        assertThat( props.getProperty( module2Id + ".sonar.projectBaseDir" ) ).isEqualTo( module2BaseDir.getAbsolutePath() );
     }
 
     @Test
@@ -273,8 +273,8 @@ public class MavenProjectConverterTest
 
         assertThat( props.getProperty( "sonar.projectBaseDir" ) ).isEqualTo( temp.getRoot().getAbsolutePath() );
 
-        String module1Key = "com.foo:module1";
-        String module2Key = "com.foo:module2";
+        String module1Key = "1";
+        String module2Key = "2";
         assertThat( props.getProperty( "sonar.modules" ).split( "," ) ).containsOnly( module1Key, module2Key );
 
         assertThat( props.getProperty( module1Key + ".sonar.projectBaseDir" ) ).isEqualTo( module1BaseDir.getAbsolutePath() );

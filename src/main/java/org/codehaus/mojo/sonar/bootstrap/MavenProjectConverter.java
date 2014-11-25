@@ -135,15 +135,17 @@ public class MavenProjectConverter
         }
         propsByModule.remove( current );
         List<String> moduleIds = new ArrayList<String>();
+        int idx = 1;
         for ( String modulePathStr : current.getModules() )
         {
             File modulePath = new File( current.getBasedir(), modulePathStr );
             MavenProject module = findMavenProject( modulePath, paths );
             if ( module != null )
             {
-                String moduleId = module.getGroupId() + ":" + module.getArtifactId();
-                rebuildModuleHierarchy( properties, paths, propsByModule, module, prefix + moduleId + "." );
+                String moduleId = prefix + idx;
+                rebuildModuleHierarchy( properties, paths, propsByModule, module, moduleId + "." );
                 moduleIds.add( moduleId );
+                idx++;
             }
         }
         if ( !moduleIds.isEmpty() )

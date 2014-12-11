@@ -222,6 +222,7 @@ public class MavenProjectConverterTest
         assertThat( props.getProperty( module2Key + ".sonar.projectBaseDir" ) ).isEqualTo( module2BaseDir.getAbsolutePath() );
     }
 
+    // MSONAR-91
     @Test
     public void convertMultiModuleProjectSkipModule()
         throws Exception

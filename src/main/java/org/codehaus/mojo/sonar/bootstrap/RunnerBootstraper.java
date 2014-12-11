@@ -184,7 +184,7 @@ public class RunnerBootstraper
         }
         catch ( SecDispatcherException e )
         {
-            log.warn( "Unable to decrypt property " + key, e );
+            log.debug( "Unable to decrypt property " + key, e );
         }
     }
 }

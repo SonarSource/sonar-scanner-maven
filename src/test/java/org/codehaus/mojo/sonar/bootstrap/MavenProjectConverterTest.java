@@ -25,6 +25,7 @@ package org.codehaus.mojo.sonar.bootstrap;
  */
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.junit.Before;
 import org.junit.Rule;
@@ -38,6 +39,7 @@ import java.util.Properties;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class MavenProjectConverterTest
@@ -48,9 +50,12 @@ public class MavenProjectConverterTest
 
     private DependencyCollector dependencyCollector = mock( DependencyCollector.class );
 
+    private Log log;
+
     @Before
     public void prepare()
     {
+        log = mock( Log.class );
         when( dependencyCollector.toJson( any( MavenProject.class ) ) ).thenReturn( "" );
     }
 
@@ -67,8 +72,8 @@ public class MavenProjectConverterTest
         project.getModel().setVersion( "2.1" );
         project.setFile( new File( baseDir, "pom.xml" ) );
         Properties props =
-            new MavenProjectConverter( false, dependencyCollector ).configure( Arrays.asList( project ),
-                                                                               project, new Properties() );
+            new MavenProjectConverter( log, false, dependencyCollector ).configure( Arrays.asList( project ),
+                                                                                    project, new Properties() );
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
         assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
@@ -89,8 +94,8 @@ public class MavenProjectConverterTest
         pom.createNewFile();
         project.setFile( pom );
         Properties props =
-            new MavenProjectConverter( true, dependencyCollector ).configure( Arrays.asList( project ), project,
-                                                                              new Properties() );
+            new MavenProjectConverter( log, true, dependencyCollector ).configure( Arrays.asList( project ), project,
+                                                                                   new Properties() );
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
         assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
@@ -159,9 +164,10 @@ public class MavenProjectConverterTest
         root.getModules().add( "module2" );
 
         Properties props =
-            new MavenProjectConverter( false, dependencyCollector ).configure( Arrays.asList( module12, module11,
-                                                                                              module1, module2, root ),
-                                                                               root, new Properties() );
+            new MavenProjectConverter( log, false, dependencyCollector ).configure( Arrays.asList( module12, module11,
+                                                                                                   module1, module2,
+                                                                                                   root ),
+                                                                                    root, new Properties() );
 
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
@@ -185,6 +191,100 @@ public class MavenProjectConverterTest
     }
 
     @Test
+    public void convertMultiModuleProjectSkipModule()
+        throws Exception
+    {
+        File baseDir = temp.newFolder();
+        MavenProject root = new MavenProject();
+        root.getModel().setGroupId( "com.foo" );
+        root.getModel().setArtifactId( "myProject" );
+        root.getModel().setName( "My Project" );
+        root.getModel().setDescription( "My sample project" );
+        root.getModel().setVersion( "2.1" );
+        root.setFile( new File( baseDir, "pom.xml" ) );
+
+        MavenProject module1 = new MavenProject();
+        module1.getModel().setGroupId( "com.foo" );
+        module1.getModel().setArtifactId( "module1" );
+        module1.getModel().setName( "My Project - Module 1" );
+        module1.getModel().setDescription( "My sample project - Module 1" );
+        module1.getModel().setVersion( "2.1" );
+        File module1BaseDir = new File( baseDir, "module1" );
+        module1BaseDir.mkdir();
+        module1.setFile( new File( module1BaseDir, "pom.xml" ) );
+        module1.setParent( root );
+        root.getModules().add( "module1" );
+
+        MavenProject module11 = new MavenProject();
+        module11.getModel().setGroupId( "com.foo" );
+        module11.getModel().setArtifactId( "module11" );
+        module11.getModel().setName( "My Project - Module 1 - Module 1" );
+        module11.getModel().setDescription( "My sample project - Module 1 - Module 1" );
+        module11.getModel().setVersion( "2.1" );
+        File module11BaseDir = new File( module1BaseDir, "module1" );
+        module11BaseDir.mkdir();
+        module11.setFile( new File( baseDir, "module1/module1/pom.xml" ) );
+        module11.setParent( module1 );
+        module11.getModel().getProperties().setProperty( "sonar.skip", "true" );
+        module1.getModules().add( "module1" );
+
+        MavenProject module12 = new MavenProject();
+        module12.getModel().setGroupId( "com.foo" );
+        module12.getModel().setArtifactId( "module12" );
+        module12.getModel().setName( "My Project - Module 1 - Module 2" );
+        module12.getModel().setDescription( "My sample project - Module 1 - Module 2" );
+        module12.getModel().setVersion( "2.1" );
+        File module12BaseDir = new File( module1BaseDir, "module2" );
+        module12BaseDir.mkdir();
+        module12.setFile( new File( baseDir, "module1/module2/pom.xml" ) );
+        module12.setParent( module1 );
+        module1.getModules().add( "module2" );
+
+        MavenProject module2 = new MavenProject();
+        module2.getModel().setGroupId( "com.foo" );
+        module2.getModel().setArtifactId( "module2" );
+        module2.getModel().setName( "My Project - Module 2" );
+        module2.getModel().setDescription( "My sample project - Module 2" );
+        module2.getModel().setVersion( "2.1" );
+        File module2BaseDir = new File( baseDir, "module2" );
+        module2BaseDir.mkdir();
+        module2.setFile( new File( module2BaseDir, "pom.xml" ) );
+        module2.setParent( root );
+        root.getModules().add( "module2" );
+
+        Properties props =
+            new MavenProjectConverter( log, false, dependencyCollector ).configure( Arrays.asList( module12, module11,
+                                                                                                   module1, module2,
+                                                                                                   root ),
+                                                                                    root, new Properties() );
+
+        assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
+        assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
+        assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
+
+        assertThat( props.getProperty( "sonar.projectBaseDir" ) ).isEqualTo( baseDir.getAbsolutePath() );
+
+        String module1Key = "com.foo:module1";
+        String module2Key = "com.foo:module2";
+        assertThat( props.getProperty( "sonar.modules" ).split( "," ) ).containsOnly( module1Key, module2Key );
+
+        String module11Key = "com.foo:module11";
+        String module12Key = "com.foo:module12";
+        assertThat( props.getProperty( module1Key + ".sonar.modules" ).split( "," ) ).containsOnly( module11Key,
+                                                                                                    module12Key );
+
+        assertThat( props.getProperty( module1Key + ".sonar.projectBaseDir" ) ).isEqualTo( module1BaseDir.getAbsolutePath() );
+        // Module 11 is skipped
+        assertThat( props.getProperty( module1Key + "." + module11Key + ".sonar.projectBaseDir" ) ).isNull();
+        assertThat( props.getProperty( module1Key + "." + module12Key + ".sonar.projectBaseDir" ) ).isEqualTo( module12BaseDir.getAbsolutePath() );
+        assertThat( props.getProperty( module2Key + ".sonar.projectBaseDir" ) ).isEqualTo( module2BaseDir.getAbsolutePath() );
+
+        verify( log ).debug( "Module MavenProject: com.foo:module11:2.1 @ "
+                                 + new File( module11BaseDir, "pom.xml" ).getAbsolutePath()
+                                 + " skipped by property 'sonar.skip'" );
+    }
+
+    @Test
     public void overrideSourcesSingleModuleProject()
         throws Exception
     {
@@ -205,8 +305,8 @@ public class MavenProjectConverterTest
         project.setFile( pom );
 
         Properties props =
-            new MavenProjectConverter( false, dependencyCollector ).configure( Arrays.asList( project ), project,
-                                                                               new Properties() );
+            new MavenProjectConverter( log, false, dependencyCollector ).configure( Arrays.asList( project ), project,
+                                                                                    new Properties() );
 
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
@@ -263,9 +363,10 @@ public class MavenProjectConverterTest
         root.getModules().add( "module2" );
 
         Properties props =
-            new MavenProjectConverter( false, dependencyCollector ).configure( Arrays.asList( module1, module2, root ),
-                                                                               root,
-                                                                               new Properties() );
+            new MavenProjectConverter( log, false, dependencyCollector ).configure( Arrays.asList( module1, module2,
+                                                                                                   root ),
+                                                                                    root,
+                                                                                    new Properties() );
 
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
@@ -306,8 +407,8 @@ public class MavenProjectConverterTest
         project.getModel().setProperties( pomProps );
         project.setFile( pom );
 
-        new MavenProjectConverter( false, dependencyCollector ).configure( Arrays.asList( project ), project,
-                                                                           new Properties() );
+        new MavenProjectConverter( log, false, dependencyCollector ).configure( Arrays.asList( project ), project,
+                                                                                new Properties() );
     }
 
     @Test
@@ -330,8 +431,8 @@ public class MavenProjectConverterTest
         project.setFile( pom );
 
         Properties props =
-            new MavenProjectConverter( false, dependencyCollector ).configure( Arrays.asList( project ), project,
-                                                                               new Properties() );
+            new MavenProjectConverter( log, false, dependencyCollector ).configure( Arrays.asList( project ), project,
+                                                                                    new Properties() );
 
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );

@@ -144,7 +144,7 @@ public class RunnerBootstraper
         throws MojoExecutionException
     {
         Properties props =
-            new MavenProjectConverter( server.supportsFilesAsSources(),
+            new MavenProjectConverter( log, server.supportsFilesAsSources(),
                                        new DependencyCollector( dependencyTreeBuilder, artifactFactory,
                                                                 localRepository, artifactMetadataSource,
                                                                 artifactCollector ) ).configure( session.getProjects(),

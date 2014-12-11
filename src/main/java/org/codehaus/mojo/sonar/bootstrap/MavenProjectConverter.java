@@ -30,6 +30,7 @@ import org.apache.maven.model.CiManagement;
 import org.apache.maven.model.IssueManagement;
 import org.apache.maven.model.Scm;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.sonar.runner.api.RunnerProperties;
 import org.sonar.runner.api.ScanProperties;
@@ -48,6 +49,7 @@ import java.util.Properties;
 
 public class MavenProjectConverter
 {
+    private final Log log;
 
     private static final char SEPARATOR = ',';
 
@@ -85,8 +87,9 @@ public class MavenProjectConverter
 
     private DependencyCollector dependencyCollector;
 
-    public MavenProjectConverter( boolean includePomXml, DependencyCollector dependencyCollector )
+    public MavenProjectConverter( Log log, boolean includePomXml, DependencyCollector dependencyCollector )
     {
+        this.log = log;
         this.includePomXml = includePomXml;
         this.dependencyCollector = dependencyCollector;
     }
@@ -129,9 +132,17 @@ public class MavenProjectConverter
         {
             throw new IllegalStateException( UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE );
         }
-        for ( Map.Entry<Object, Object> prop : currentProps.entrySet() )
+        boolean skipped = "true".equals( currentProps.getProperty( "sonar.skip" ) );
+        if ( !skipped )
         {
-            properties.put( prefix + prop.getKey(), prop.getValue() );
+            for ( Map.Entry<Object, Object> prop : currentProps.entrySet() )
+            {
+                properties.put( prefix + prop.getKey(), prop.getValue() );
+            }
+        }
+        else
+        {
+            log.debug( "Module " + current + " skipped by property 'sonar.skip'" );
         }
         propsByModule.remove( current );
         List<String> moduleIds = new ArrayList<String>();
@@ -146,7 +157,7 @@ public class MavenProjectConverter
                 moduleIds.add( moduleId );
             }
         }
-        if ( !moduleIds.isEmpty() )
+        if ( !moduleIds.isEmpty() && !skipped )
         {
             properties.put( prefix + "sonar.modules", StringUtils.join( moduleIds, SEPARATOR ) );
         }

@@ -43,9 +43,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 public class MavenProjectConverter
 {
@@ -401,7 +403,7 @@ public class MavenProjectConverter
         return null;
     }
 
-    static List<File> resolvePaths( List<String> paths, File basedir )
+    static List<File> resolvePaths( Collection<String> paths, File basedir )
     {
         List<File> result = Lists.newArrayList();
         for ( String path : paths )
@@ -418,7 +420,7 @@ public class MavenProjectConverter
     private List<File> mainSources( MavenProject pom )
         throws MojoExecutionException
     {
-        List<String> sources = new ArrayList<String>();
+        Set<String> sources = new LinkedHashSet<String>();
         if ( MAVEN_PACKAGING_WAR.equals( pom.getModel().getPackaging() ) )
         {
             sources.add( MavenUtils.getPluginSetting( pom, ARTIFACT_MAVEN_WAR_PLUGIN, "warSourceDirectory",
@@ -438,7 +440,7 @@ public class MavenProjectConverter
         return sourcePaths( pom, ScanProperties.PROJECT_TEST_DIRS, pom.getTestCompileSourceRoots() );
     }
 
-    private List<File> sourcePaths( MavenProject pom, String propertyKey, List<String> mavenPaths )
+    private List<File> sourcePaths( MavenProject pom, String propertyKey, Collection<String> mavenPaths )
         throws MojoExecutionException
     {
         List<String> paths;
@@ -467,7 +469,7 @@ public class MavenProjectConverter
             // Maven provides some directories that do not exist. They
             // should be removed. Same for pom module were sonar.sources and sonar.tests
             // can be defined only to be inherited by children
-            return keepExistingPaths( filesOrDirs );
+            return removeNested( keepExistingPaths( filesOrDirs ) );
         }
     }
 
@@ -499,6 +501,33 @@ public class MavenProjectConverter
                                                                     && fileOrDir.exists();
                                                             }
                                                         } ) );
+    }
+
+    private List<File> removeNested( List<File> originalPaths )
+    {
+        List<File> result = new ArrayList<File>();
+        for ( File maybeChild : originalPaths )
+        {
+            boolean hasParent = false;
+            for ( File possibleParent : originalPaths )
+            {
+                if ( isStrictChild( maybeChild, possibleParent ) )
+                {
+                    hasParent = true;
+                }
+            }
+            if ( !hasParent )
+            {
+                result.add( maybeChild );
+            }
+        }
+        return result;
+    }
+
+    boolean isStrictChild( File maybeChild, File possibleParent )
+    {
+        return maybeChild.getAbsolutePath().startsWith( possibleParent.getAbsolutePath() )
+            && !maybeChild.getAbsolutePath().equals( possibleParent.getAbsolutePath() );
     }
 
     private static String[] toPaths( Collection<File> dirs )

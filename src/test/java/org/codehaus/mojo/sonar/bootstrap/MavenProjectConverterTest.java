@@ -79,6 +79,38 @@ public class MavenProjectConverterTest
         assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
     }
 
+    // MSONAR-104
+    @Test
+    public void convertSingleModuleProjectAvoidNestedFolders()
+        throws Exception
+    {
+        File baseDir = temp.newFolder();
+        File webappDir = new File( baseDir, "src/main/webapp" );
+        webappDir.mkdirs();
+        MavenProject project = new MavenProject();
+        project.getModel().setGroupId( "com.foo" );
+        project.getModel().setArtifactId( "myProject" );
+        project.getModel().setName( "My Project" );
+        project.getModel().setDescription( "My sample project" );
+        project.getModel().setVersion( "2.1" );
+        project.getModel().setPackaging( "war" );
+        project.setFile( new File( baseDir, "pom.xml" ) );
+        Properties props =
+            new MavenProjectConverter( log, false, dependencyCollector ).configure( Arrays.asList( project ),
+                                                                                    project, new Properties() );
+        assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "com.foo:myProject" );
+        assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
+        assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
+        assertThat( props.getProperty( "sonar.sources" ) ).isEqualTo( webappDir.getAbsolutePath() );
+
+        project.getModel().getProperties().setProperty( "sonar.sources", "src" );
+        File srcDir = new File( baseDir, "src" );
+        srcDir.mkdirs();
+        props = new MavenProjectConverter( log, false, dependencyCollector ).configure( Arrays.asList( project ),
+                                                                                        project, new Properties() );
+        assertThat( props.getProperty( "sonar.sources" ) ).isEqualTo( srcDir.getAbsolutePath() );
+    }
+
     @Test
     public void shouldIncludePomIfRequested()
         throws Exception
@@ -280,8 +312,8 @@ public class MavenProjectConverterTest
         assertThat( props.getProperty( module2Key + ".sonar.projectBaseDir" ) ).isEqualTo( module2BaseDir.getAbsolutePath() );
 
         verify( log ).debug( "Module MavenProject: com.foo:module11:2.1 @ "
-                                 + new File( module11BaseDir, "pom.xml" ).getAbsolutePath()
-                                 + " skipped by property 'sonar.skip'" );
+            + new File( module11BaseDir, "pom.xml" ).getAbsolutePath()
+            + " skipped by property 'sonar.skip'" );
     }
 
     @Test

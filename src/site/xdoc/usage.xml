@@ -10,11 +10,11 @@
   <body>
     <section name="Usage">
       <subsection name="Analyze Project">
-        <p><a href="http://docs.codehaus.org/x/yoHEBg">Setup</a> SonarQube&#0153; server and execute the following command from the project root directory:
+        <p><a href="http://redirect.sonarsource.com/doc/setup-and-upgrade.html">Setup</a> SonarQube&#0153; server and execute the following command from the project root directory:
           <source><![CDATA[mvn sonar:sonar]]></source>
         </p>
         <p>For more details, read the
-          <a href="http://docs.codehaus.org/x/iYCOCw">Maven Plugin documentation</a>.
+          <a href="http://docs.sonarqube.org/display/SONAR/Analyzing+with+Maven">Maven Plugin documentation</a>.
         </p>
       </subsection>
 

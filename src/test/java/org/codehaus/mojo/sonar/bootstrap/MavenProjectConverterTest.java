@@ -303,8 +303,7 @@ public class MavenProjectConverterTest
 
         String module11Key = "com.foo:module11";
         String module12Key = "com.foo:module12";
-        assertThat( props.getProperty( module1Key + ".sonar.modules" ).split( "," ) ).containsOnly( module11Key,
-                                                                                                    module12Key );
+        assertThat( props.getProperty( module1Key + ".sonar.modules" ).split( "," ) ).containsOnly( module12Key );
 
         assertThat( props.getProperty( module1Key + ".sonar.projectBaseDir" ) ).isEqualTo( module1BaseDir.getAbsolutePath() );
         // Module 11 is skipped

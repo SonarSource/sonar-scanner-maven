@@ -128,9 +128,9 @@ public class MavenProjectConverter
 
     }
 
-    private void rebuildModuleHierarchy( Properties properties, Map<String, MavenProject> paths,
-                                         Map<MavenProject, Properties> propsByModule, MavenProject current,
-                                         String prefix )
+    private boolean rebuildModuleHierarchy( Properties properties, Map<String, MavenProject> paths,
+                                            Map<MavenProject, Properties> propsByModule, MavenProject current,
+                                            String prefix )
         throws IOException
     {
         Properties currentProps = propsByModule.get( current );
@@ -159,14 +159,17 @@ public class MavenProjectConverter
             if ( module != null )
             {
                 String moduleId = module.getGroupId() + ":" + module.getArtifactId();
-                rebuildModuleHierarchy( properties, paths, propsByModule, module, prefix + moduleId + "." );
-                moduleIds.add( moduleId );
+                if ( rebuildModuleHierarchy( properties, paths, propsByModule, module, prefix + moduleId + "." ) )
+                {
+                    moduleIds.add( moduleId );
+                }
             }
         }
         if ( !moduleIds.isEmpty() && !skipped )
         {
             properties.put( prefix + "sonar.modules", StringUtils.join( moduleIds, SEPARATOR ) );
         }
+        return !skipped;
     }
 
     private void configureModules( List<MavenProject> mavenProjects, Map<String, MavenProject> paths,

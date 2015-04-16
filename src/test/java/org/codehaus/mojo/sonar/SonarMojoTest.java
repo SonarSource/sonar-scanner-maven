@@ -234,13 +234,21 @@ public class SonarMojoTest
         mojo.setSonarHostURL( "http://localhost:" + mockHttp.getPort() );
         mojo.execute();
 
-        String libJson = readProps().getProperty( "sonar.maven.projectDependencies" );
+        Properties outProps = readProps();
+        String libJson = outProps.getProperty( "sonar.maven.projectDependencies" );
 
         JSONAssert.assertEquals( "[{\"k\":\"commons-io:commons-io\",\"v\":\"2.4\",\"s\":\"compile\",\"d\":["
             + "{\"k\":\"commons-lang:commons-lang\",\"v\":\"2.6\",\"s\":\"compile\",\"d\":[]}"
             + "]},"
             + "{\"k\":\"junit:junit\",\"v\":\"3.8.1\",\"s\":\"test\",\"d\":[]}]",
                                  libJson, true );
+
+        assertThat( outProps.getProperty( "sonar.java.binaries" ) ).endsWith( "export-dependencies/target/classes" );
+        // assertThat( outProps.getProperty( "sonar.java.libraries" ) ).endsWith( "export-dependencies/target/classes"
+        // );
+        assertThat( outProps.getProperty( "sonar.java.test.binaries" ) ).endsWith( "export-dependencies/target/test-classes" );
+        // assertThat( outProps.getProperty( "sonar.java.test.libraries" ) ).endsWith(
+        // "export-dependencies/target/classes" );
     }
 
     private void assertPropsContains( MapAssert.Entry... entries )

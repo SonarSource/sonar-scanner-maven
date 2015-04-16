@@ -16,11 +16,7 @@ import org.apache.maven.shared.dependency.tree.traversal.CollectingDependencyNod
 import org.apache.maven.shared.dependency.tree.traversal.DependencyNodeVisitor;
 import org.apache.maven.shared.dependency.tree.traversal.FilteringDependencyNodeVisitor;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class DependencyCollector
 {
@@ -104,6 +100,7 @@ public class DependencyCollector
 
                 private Deque<Dependency> stack = new ArrayDeque<Dependency>();
 
+                @Override
                 public boolean visit( DependencyNode node )
                 {
                     if ( node.getParent() != null && node.getParent() != node )
@@ -122,6 +119,7 @@ public class DependencyCollector
                     return true;
                 }
 
+                @Override
                 public boolean endVisit( DependencyNode node )
                 {
                     if ( !stack.isEmpty() )

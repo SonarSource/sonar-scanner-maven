@@ -24,13 +24,8 @@ package org.codehaus.mojo.sonar;
  * SOFTWARE.
  */
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
+
 import java.net.HttpURLConnection;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -95,6 +90,7 @@ class HttpsTrust
     {
         return new HostnameVerifier()
         {
+            @Override
             public boolean verify( String hostname, SSLSession session )
             {
                 return true;

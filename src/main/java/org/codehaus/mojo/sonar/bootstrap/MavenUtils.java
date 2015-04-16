@@ -108,7 +108,7 @@ public final class MavenUtils
     private static Xpp3Dom getPluginConfigurationDom( MavenProject project, String pluginId )
     {
 
-        Plugin plugin = (org.apache.maven.model.Plugin) project.getBuild().getPluginsAsMap().get( pluginId );
+        Plugin plugin = project.getBuild().getPluginsAsMap().get( pluginId );
         if ( plugin != null )
         {
             // TODO: This may cause ClassCastExceptions eventually, if the dom impls differ.

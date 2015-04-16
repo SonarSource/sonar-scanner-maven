@@ -39,15 +39,7 @@ import javax.annotation.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 public class MavenProjectConverter
 {
@@ -83,9 +75,13 @@ public class MavenProjectConverter
 
     public static final String ARTIFACT_MAVEN_WAR_PLUGIN = "org.apache.maven.plugins:maven-war-plugin";
 
-    private static final String JAVA_PROJECT_BINARY_DIRS = "sonar.java.binaries";
+    private static final String JAVA_PROJECT_MAIN_BINARY_DIRS = "sonar.java.binaries";
 
-    private static final String JAVA_PROJECT_LIBRARIES = "sonar.java.libraries";
+    private static final String JAVA_PROJECT_MAIN_LIBRARIES = "sonar.java.libraries";
+
+    private static final String JAVA_PROJECT_TEST_BINARY_DIRS = "sonar.java.test.binaries";
+
+    private static final String JAVA_PROJECT_TEST_LIBRARIES = "sonar.java.test.libraries";
 
     private final boolean includePomXml;
 
@@ -319,7 +315,8 @@ public class MavenProjectConverter
         }
         populateBinaries( pom, props );
 
-        populateLibraries( pom, props );
+        populateLibraries( pom, props, false );
+        populateLibraries( pom, props, true );
 
         // IMPORTANT NOTE : reference on properties from POM model must not be saved,
         // instead they should be copied explicitly - see SONAR-2896
@@ -344,17 +341,19 @@ public class MavenProjectConverter
         }
     }
 
-    private void populateLibraries( MavenProject pom, Properties props )
+    private void populateLibraries( MavenProject pom, Properties props, boolean test )
         throws MojoExecutionException
     {
         List<File> libraries = Lists.newArrayList();
         try
         {
-            if ( pom.getCompileClasspathElements() != null )
+            List<String> classpathElements = test ? pom.getTestClasspathElements() : pom.getCompileClasspathElements();
+            if ( classpathElements != null )
             {
-                for ( String classPathString : (List<String>) pom.getCompileClasspathElements() )
+                for ( String classPathString : classpathElements )
                 {
-                    if ( !classPathString.equals( pom.getBuild().getOutputDirectory() ) )
+                    if ( !classPathString.equals( test ? pom.getBuild().getOutputDirectory()
+                                    : pom.getBuild().getOutputDirectory() ) )
                     {
                         File libPath = resolvePath( classPathString, pom.getBasedir() );
                         if ( libPath != null && libPath.exists() )
@@ -367,26 +366,39 @@ public class MavenProjectConverter
         }
         catch ( DependencyResolutionRequiredException e )
         {
-            throw new MojoExecutionException( "Unable to populate libraries", e );
+            throw new MojoExecutionException( "Unable to populate" + ( test ? " test" : "" ) + " libraries", e );
         }
         if ( !libraries.isEmpty() )
         {
             String librariesValue = StringUtils.join( toPaths( libraries ), SEPARATOR );
-            // Populate both deprecated and new property for backward compatibility
-            props.setProperty( ScanProperties.PROJECT_LIBRARIES, librariesValue );
-            props.setProperty( JAVA_PROJECT_LIBRARIES, librariesValue );
+            if ( test )
+            {
+                props.setProperty( JAVA_PROJECT_TEST_LIBRARIES, librariesValue );
+            }
+            else
+            {
+                // Populate both deprecated and new property for backward compatibility
+                props.setProperty( ScanProperties.PROJECT_LIBRARIES, librariesValue );
+                props.setProperty( JAVA_PROJECT_MAIN_LIBRARIES, librariesValue );
+            }
         }
     }
 
     private void populateBinaries( MavenProject pom, Properties props )
     {
-        File binaryDir = resolvePath( pom.getBuild().getOutputDirectory(), pom.getBasedir() );
-        if ( binaryDir != null && binaryDir.exists() )
+        File mainBinaryDir = resolvePath( pom.getBuild().getOutputDirectory(), pom.getBasedir() );
+        if ( mainBinaryDir != null && mainBinaryDir.exists() )
         {
-            String binPath = binaryDir.getAbsolutePath();
+            String binPath = mainBinaryDir.getAbsolutePath();
             // Populate both deprecated and new property for backward compatibility
             props.setProperty( ScanProperties.PROJECT_BINARY_DIRS, binPath );
-            props.setProperty( JAVA_PROJECT_BINARY_DIRS, binPath );
+            props.setProperty( JAVA_PROJECT_MAIN_BINARY_DIRS, binPath );
+        }
+        File testBinaryDir = resolvePath( pom.getBuild().getTestOutputDirectory(), pom.getBasedir() );
+        if ( testBinaryDir != null && testBinaryDir.exists() )
+        {
+            String binPath = testBinaryDir.getAbsolutePath();
+            props.setProperty( JAVA_PROJECT_TEST_BINARY_DIRS, binPath );
         }
     }
 

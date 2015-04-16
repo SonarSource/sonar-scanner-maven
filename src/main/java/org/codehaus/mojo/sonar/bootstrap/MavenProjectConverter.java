@@ -351,11 +351,11 @@ public class MavenProjectConverter
     {
         String surefireReportsPath =
             MavenUtils.getPluginSetting( pom, ARTIFACT_MAVEN_SUREFIRE_PLUGIN, "reportsDirectory",
-                                         pom.getBuild().getDirectory() + "/surefire-reports" );
+                                         pom.getBuild().getDirectory() + File.separator + "surefire-reports" );
         File path = resolvePath( surefireReportsPath, pom.getBasedir() );
         if ( path != null && path.exists() )
         {
-            props.put( SUREFIRE_REPORTS_PATH_PROPERTY, surefireReportsPath );
+            props.put( SUREFIRE_REPORTS_PATH_PROPERTY, path.getAbsolutePath() );
         }
     }
 

@@ -75,6 +75,8 @@ public class MavenProjectConverter
 
     public static final String ARTIFACT_MAVEN_WAR_PLUGIN = "org.apache.maven.plugins:maven-war-plugin";
 
+    public static final String ARTIFACT_MAVEN_SUREFIRE_PLUGIN = "org.apache.maven.plugins:maven-surefire-plugin";
+
     private static final String JAVA_PROJECT_MAIN_BINARY_DIRS = "sonar.java.binaries";
 
     private static final String JAVA_PROJECT_MAIN_LIBRARIES = "sonar.java.libraries";
@@ -82,6 +84,8 @@ public class MavenProjectConverter
     private static final String JAVA_PROJECT_TEST_BINARY_DIRS = "sonar.java.test.binaries";
 
     private static final String JAVA_PROJECT_TEST_LIBRARIES = "sonar.java.test.libraries";
+
+    private static final String SUREFIRE_REPORTS_PATH_PROPERTY = "sonar.junit.reportsPath";
 
     private final boolean includePomXml;
 
@@ -318,6 +322,8 @@ public class MavenProjectConverter
         populateLibraries( pom, props, false );
         populateLibraries( pom, props, true );
 
+        populateSurefireReportsPath( pom, props );
+
         // IMPORTANT NOTE : reference on properties from POM model must not be saved,
         // instead they should be copied explicitly - see SONAR-2896
         props.putAll( pom.getModel().getProperties() );
@@ -338,6 +344,18 @@ public class MavenProjectConverter
         else
         {
             props.remove( ScanProperties.PROJECT_TEST_DIRS );
+        }
+    }
+
+    private void populateSurefireReportsPath( MavenProject pom, Properties props )
+    {
+        String surefireReportsPath =
+            MavenUtils.getPluginSetting( pom, ARTIFACT_MAVEN_SUREFIRE_PLUGIN, "reportsDirectory",
+                                         pom.getBuild().getDirectory() + "/surefire-reports" );
+        File path = resolvePath( surefireReportsPath, pom.getBasedir() );
+        if ( path != null && path.exists() )
+        {
+            props.put( SUREFIRE_REPORTS_PATH_PROPERTY, surefireReportsPath );
         }
     }
 

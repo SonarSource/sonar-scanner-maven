@@ -196,6 +196,57 @@ public class SonarMojoTest
         // "export-dependencies/target/classes" );
     }
 
+    // MSONAR-113
+    @Test
+    public void shouldExportSurefireReportsPath()
+        throws Exception
+    {
+
+        mockHttp.setMockResponseData( "4.3" );
+
+        File localRepo = temp.newFolder();
+        final ArtifactRepository localRepository =
+            new DefaultArtifactRepository( "local",
+                                           localRepo.toURI().toURL().toString(), new DefaultRepositoryLayout() );
+
+        File baseDir =
+            new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/sample-project-with-surefire" );
+        SonarMojo mojo =
+            getMojo( baseDir );
+        mojo.setLocalRepository( localRepository );
+        mojo.setSonarHostURL( "http://localhost:" + mockHttp.getPort() );
+        mojo.execute();
+
+        assertPropsContains( entry( "sonar.junit.reportsPath",
+                                    new File( baseDir, "target/surefire-reports" ).getAbsolutePath() ) );
+    }
+
+    // MSONAR-113
+    @Test
+    public void shouldExportSurefireCustomReportsPath()
+        throws Exception
+    {
+
+        mockHttp.setMockResponseData( "4.3" );
+
+        File localRepo = temp.newFolder();
+        final ArtifactRepository localRepository =
+            new DefaultArtifactRepository( "local",
+                                           localRepo.toURI().toURL().toString(), new DefaultRepositoryLayout() );
+
+        File baseDir =
+            new File(
+                      "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/sample-project-with-custom-surefire-path" );
+        SonarMojo mojo =
+            getMojo( baseDir );
+        mojo.setLocalRepository( localRepository );
+        mojo.setSonarHostURL( "http://localhost:" + mockHttp.getPort() );
+        mojo.execute();
+
+        assertPropsContains( entry( "sonar.junit.reportsPath",
+                                    new File( baseDir, "target/tests" ).getAbsolutePath() ) );
+    }
+
     private void assertPropsContains( MapAssert.Entry... entries )
         throws FileNotFoundException, IOException
     {

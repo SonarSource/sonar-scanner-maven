@@ -28,7 +28,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.DefaultArtifactRepository;
 import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.testing.MojoRule;
 import org.codehaus.mojo.sonar.mock.MockHttpServerInterceptor;
 import org.fest.assertions.MapAssert;
@@ -46,8 +45,6 @@ import java.util.Properties;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.MapAssert.entry;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class SonarMojoTest
 {
@@ -68,58 +65,6 @@ public class SonarMojoTest
         throws Exception
     {
         return (SonarMojo) mojoRule.lookupConfiguredMojo( baseDir, "sonar" );
-    }
-
-    @Test
-    public void sonar37SupportsAnyMavenVersion()
-        throws Exception
-    {
-        ServerMetadata serverMetadata = mock( ServerMetadata.class );
-        when( serverMetadata.getVersion() ).thenReturn( "3.7" );
-        when( serverMetadata.supportsMaven3() ).thenReturn( true );
-        when( serverMetadata.supportsMaven3_1() ).thenReturn( true );
-
-        SonarMojo mojo =
-            getMojo( new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/sample-project" ) );
-        mojo.checkVersionRequirements( serverMetadata, "3.0.5" );
-        mojo.checkVersionRequirements( serverMetadata, "3.1" );
-        mojo.checkVersionRequirements( serverMetadata, "4.0" );
-    }
-
-    @Test
-    public void sonar36SupportsMavenVersionUpTo30()
-        throws Exception
-    {
-        ServerMetadata serverMetadata = mock( ServerMetadata.class );
-        when( serverMetadata.getVersion() ).thenReturn( "3.6" );
-        when( serverMetadata.supportsMaven3() ).thenReturn( true );
-        when( serverMetadata.supportsMaven3_1() ).thenReturn( false );
-
-        SonarMojo mojo =
-            getMojo( new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/sample-project" ) );
-        mojo.checkVersionRequirements( serverMetadata, "3.0.5" );
-
-        thrown.expect( MojoExecutionException.class );
-        thrown.expectMessage( "SonarQube 3.6 does not support Maven 3.1" );
-        mojo.checkVersionRequirements( serverMetadata, "3.1" );
-    }
-
-    @Test
-    public void sonar23DoesntSupportMaven3()
-        throws Exception
-    {
-        ServerMetadata serverMetadata = mock( ServerMetadata.class );
-        when( serverMetadata.getVersion() ).thenReturn( "2.3" );
-        when( serverMetadata.supportsMaven3() ).thenReturn( false );
-        when( serverMetadata.supportsMaven3_1() ).thenReturn( false );
-
-        thrown.expect( MojoExecutionException.class );
-        thrown.expectMessage( "SonarQube 2.3 does not support Maven 3" );
-
-        SonarMojo mojo =
-            getMojo( new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/sample-project" ) );
-        mojo.checkVersionRequirements( serverMetadata, "3.1" );
-
     }
 
     @Test

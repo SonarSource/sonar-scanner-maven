@@ -29,8 +29,6 @@ import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactCollector;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
-import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.LifecycleExecutor;
 import org.apache.maven.plugin.AbstractMojo;
@@ -127,10 +125,6 @@ public class SonarMojo
             ServerMetadata server = new ServerMetadata( sonarHostURL );
             server.logSettings( getLog() );
 
-            String mavenVersion = runtimeInformation.getMavenVersion();
-
-            checkVersionRequirements( server, mavenVersion );
-
             if ( server.supportsSonarQubeRunnerBootstrappingFromMaven() )
             {
                 new RunnerBootstraper( runtimeInformation, getLog(), session, lifecycleExecutor,
@@ -147,24 +141,6 @@ public class SonarMojo
         catch ( IOException e )
         {
             throw new MojoExecutionException( "Failed to execute SonarQube analysis", e );
-        }
-    }
-
-    @VisibleForTesting
-    void checkVersionRequirements( ServerMetadata server, String mavenVersion )
-        throws IOException, MojoExecutionException
-    {
-        if ( !server.supportsMaven3() )
-        {
-            throw new MojoExecutionException( "SonarQube " + server.getVersion() + " does not support Maven 3" );
-        }
-        ArtifactVersion artifactMavenVersion = new DefaultArtifactVersion( mavenVersion );
-        if ( ( artifactMavenVersion.getMajorVersion() > 3 || artifactMavenVersion.getMajorVersion() == 3
-            && artifactMavenVersion.getMinorVersion() >= 1 )
-            && !server.supportsMaven3_1() )
-        {
-            throw new MojoExecutionException( "SonarQube " + server.getVersion()
-                + " does not support Maven 3.1+. Please upgrade to SonarQube 3.7 or greater." );
         }
     }
 

@@ -188,12 +188,9 @@ public class SonarMojoTest
             + "{\"k\":\"junit:junit\",\"v\":\"3.8.1\",\"s\":\"test\",\"d\":[]}]",
                                  libJson, true );
 
-        assertThat( outProps.getProperty( "sonar.java.binaries" ) ).endsWith( "export-dependencies/target/classes" );
-        // assertThat( outProps.getProperty( "sonar.java.libraries" ) ).endsWith( "export-dependencies/target/classes"
-        // );
-        assertThat( outProps.getProperty( "sonar.java.test.binaries" ) ).endsWith( "export-dependencies/target/test-classes" );
-        // assertThat( outProps.getProperty( "sonar.java.test.libraries" ) ).endsWith(
-        // "export-dependencies/target/classes" );
+        assertThat( outProps.getProperty( "sonar.java.binaries" ) ).isEqualTo( new File( baseDir, "target/classes" ).getAbsolutePath() );
+        assertThat( outProps.getProperty( "sonar.java.test.binaries" ) ).isEqualTo( new File( baseDir,
+                                                                                              "target/test-classes" ).getAbsolutePath() );
     }
 
     // MSONAR-113

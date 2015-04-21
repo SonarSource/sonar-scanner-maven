@@ -370,7 +370,7 @@ public class MavenProjectConverter
             {
                 for ( String classPathString : classpathElements )
                 {
-                    if ( !classPathString.equals( test ? pom.getBuild().getOutputDirectory()
+                    if ( !classPathString.equals( test ? pom.getBuild().getTestOutputDirectory()
                                     : pom.getBuild().getOutputDirectory() ) )
                     {
                         File libPath = resolvePath( classPathString, pom.getBasedir() );

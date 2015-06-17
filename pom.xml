@@ -82,8 +82,8 @@
   </scm>
 
   <issueManagement>
-    <system>github</system>
-    <url>https://github.com/mojohaus/sonar-maven-plugin/issues</url>
+    <system>JIRA</system>
+    <url>http://jira.sonarsource.com/browse/MSONAR</url>
   </issueManagement>
 
   <properties>

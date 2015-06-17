@@ -76,14 +76,14 @@
   </prerequisites>
 
   <scm>
-    <connection>scm:svn:https://svn.codehaus.org/mojo/trunk/mojo/sonar-maven-plugin</connection>
-    <developerConnection>scm:svn:https://svn.codehaus.org/mojo/trunk/mojo/sonar-maven-plugin</developerConnection>
-    <url>http://fisheye.codehaus.org/browse/mojo/trunk/mojo/sonar-maven-plugin</url>
+    <connection>scm:git:git@github.com:mojohaus/sonar-maven-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:mojohaus/jdepend-maven-plugin.git</developerConnection>
+    <url>https://github.com/mojohaus/sonar-maven-plugin</url>
   </scm>
 
   <issueManagement>
-    <system>JIRA</system>
-    <url>http://jira.codehaus.org/browse/MSONAR</url>
+    <system>github</system>
+    <url>https://github.com/mojohaus/sonar-maven-plugin/issues</url>
   </issueManagement>
 
   <properties>

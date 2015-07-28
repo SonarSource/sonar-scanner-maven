@@ -8,7 +8,8 @@ function installTravisTools {
   source ~/.local/bin/install
 }
 
-mvn verify -B -e -V
+# Need install because mvn org.codehaus.mojo:sonar-maven-plugin:<version>:sonar in ITs will take artifact from local repo
+mvn install -B -e -V
                                                                                                                                                                  
 if [ "${RUN_ITS}" == "true" ]                                                                                                                                    
 then                                                                                                                                                             

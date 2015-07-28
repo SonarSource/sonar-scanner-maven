@@ -20,7 +20,6 @@
 package com.sonar.maven.it.suite;
 
 import com.sonar.orchestrator.Orchestrator;
-import com.sonar.orchestrator.locator.MavenLocation;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -35,11 +34,14 @@ public class MavenTestSuite {
   public static final Orchestrator ORCHESTRATOR = Orchestrator.builderEnv()
     .setOrchestratorProperty("javaVersion", "LATEST_RELEASE")
     .addPlugin("java")
-
-    .addPlugin(MavenLocation.create("org.codehaus.sonar-plugins.javascript", "sonar-javascript-plugin", "2.5"))
-    .addPlugin(MavenLocation.create("org.codehaus.sonar-plugins.python", "sonar-python-plugin", "1.5"))
-    .addPlugin(MavenLocation.create("org.sonarsource.sonar-web-plugin", "sonar-web-plugin", "2.4"))
-    .addPlugin(MavenLocation.create("org.codehaus.sonar-plugins.xml", "sonar-xml-plugin", "1.2"))
+    .setOrchestratorProperty("javascriptVersion", "LATEST_RELEASE")
+    .addPlugin("javascript")
+    .setOrchestratorProperty("pythonVersion", "LATEST_RELEASE")
+    .addPlugin("python")
+    .setOrchestratorProperty("webVersion", "LATEST_RELEASE")
+    .addPlugin("web")
+    .setOrchestratorProperty("xmlVersion", "LATEST_RELEASE")
+    .addPlugin("xml")
 
   .build();
 }

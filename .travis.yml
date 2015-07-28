@@ -6,7 +6,16 @@ jdk:
   - oraclejdk7
 
 script:
-  - mvn clean verify -B -e -V
+  - ./travis.sh
+
+env:
+  matrix:
+    - RUN_ITS=false
+    - RUN_ITS=true SQ_VERSION=LTS
+    - RUN_ITS=true SQ_VERSION=DEV
+
+matrix:
+  fast_finish: true
 
 cache:
   directories:

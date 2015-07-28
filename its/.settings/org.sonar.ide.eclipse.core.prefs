@@ -1,0 +1,5 @@
+eclipse.preferences.version=1
+extraProperties=sonar.snapshotRepository.url\=\r\nsonar.snapshotRepository.id\=snapshot
+projectKey=org.sonarsource.parent\:it-sonar-maven
+serverUrl=
+version=2

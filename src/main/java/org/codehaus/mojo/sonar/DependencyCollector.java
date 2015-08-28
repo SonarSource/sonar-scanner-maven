@@ -1,4 +1,4 @@
-package org.codehaus.mojo.sonar.bootstrap;
+package org.codehaus.mojo.sonar;
 
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
@@ -31,9 +31,9 @@ public class DependencyCollector
 
     private final ArtifactCollector artifactCollector;
 
-    public DependencyCollector( DependencyTreeBuilder dependencyTreeBuilder,
-                                ArtifactFactory artifactFactory, ArtifactRepository localRepository,
-                                ArtifactMetadataSource artifactMetadataSource, ArtifactCollector artifactCollector )
+    public DependencyCollector( DependencyTreeBuilder dependencyTreeBuilder, ArtifactFactory artifactFactory,
+                                ArtifactRepository localRepository, ArtifactMetadataSource artifactMetadataSource,
+                                ArtifactCollector artifactCollector )
     {
         this.dependencyTreeBuilder = dependencyTreeBuilder;
         this.artifactFactory = artifactFactory;
@@ -146,8 +146,7 @@ public class DependencyCollector
         }
         catch ( DependencyTreeBuilderException e )
         {
-            throw new IllegalStateException( "Can not load the graph of dependencies of the project "
-                + project, e );
+            throw new IllegalStateException( "Can not load the graph of dependencies of the project " + project, e );
         }
         return result;
     }

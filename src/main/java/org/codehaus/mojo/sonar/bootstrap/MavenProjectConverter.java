@@ -19,6 +19,8 @@
  */
 package org.codehaus.mojo.sonar.bootstrap;
 
+import org.codehaus.mojo.sonar.DependencyCollector;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -87,16 +89,13 @@ public class MavenProjectConverter
 
     private static final String SUREFIRE_REPORTS_PATH_PROPERTY = "sonar.junit.reportsPath";
 
-    private final boolean includePomXml;
-
     private Properties userProperties;
 
     private DependencyCollector dependencyCollector;
 
-    public MavenProjectConverter( Log log, boolean includePomXml, DependencyCollector dependencyCollector )
+    public MavenProjectConverter( Log log, DependencyCollector dependencyCollector )
     {
         this.log = log;
-        this.includePomXml = includePomXml;
         this.dependencyCollector = dependencyCollector;
     }
 
@@ -467,10 +466,8 @@ public class MavenProjectConverter
             sources.add( MavenUtils.getPluginSetting( pom, ARTIFACT_MAVEN_WAR_PLUGIN, "warSourceDirectory",
                                                       "src/main/webapp" ) );
         }
-        if ( includePomXml )
-        {
-            sources.add( pom.getFile().getPath() );
-        }
+        
+        sources.add( pom.getFile().getPath() );
         sources.addAll( pom.getCompileSourceRoots() );
         return sourcePaths( pom, ScanProperties.PROJECT_SOURCE_DIRS, sources );
     }

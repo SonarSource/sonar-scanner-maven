@@ -12,6 +12,7 @@ env:
   matrix:
     - RUN_ITS=false
     - RUN_ITS=true SQ_VERSION=LTS
+    - RUN_ITS=true SQ_VERSION=5.1.2
     - RUN_ITS=true SQ_VERSION=DEV
 
 matrix:

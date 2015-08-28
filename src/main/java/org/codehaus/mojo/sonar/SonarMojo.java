@@ -24,6 +24,11 @@ package org.codehaus.mojo.sonar;
  * SOFTWARE.
  */
 
+import org.codehaus.mojo.sonar.bootstrap.MavenProjectConverter;
+
+import org.sonar.runner.api.EmbeddedRunner;
+import org.codehaus.mojo.sonar.bootstrap.LogHandler;
+import org.codehaus.mojo.sonar.bootstrap.RunnerFactory;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
@@ -43,8 +48,7 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
-import org.codehaus.mojo.sonar.bootstrap.InternalMojoBootstraper;
-import org.codehaus.mojo.sonar.bootstrap.RunnerBootstraper;
+import org.codehaus.mojo.sonar.bootstrap.RunnerBootstrapper;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import java.io.IOException;
@@ -52,9 +56,7 @@ import java.io.IOException;
 /**
  * Analyze project. SonarQube server must be started.
  */
-@Mojo( name = "sonar",
-                aggregator = true,
-                requiresDependencyResolution = ResolutionScope.TEST )
+@Mojo( name = "sonar", aggregator = true, requiresDependencyResolution = ResolutionScope.TEST )
 public class SonarMojo
     extends AbstractMojo
 {
@@ -122,21 +124,21 @@ public class SonarMojo
         }
         try
         {
-            ServerMetadata server = new ServerMetadata( sonarHostURL );
-            server.logSettings( getLog() );
+            ExtensionsFactory extensionsFactory =
+                new ExtensionsFactory( getLog(), session, lifecycleExecutor, artifactFactory, localRepository,
+                                       artifactMetadataSource, artifactCollector, dependencyTreeBuilder, projectBuilder );
+            DependencyCollector dependencyCollector =
+                new DependencyCollector( dependencyTreeBuilder, artifactFactory, localRepository,
+                                         artifactMetadataSource, artifactCollector );
+            MavenProjectConverter mavenProjectConverter = new MavenProjectConverter( getLog(), dependencyCollector );
+            LogHandler logHandler = new LogHandler( getLog() );
+            RunnerFactory runnerFactory =
+                new RunnerFactory( logHandler, getLog().isDebugEnabled(), runtimeInformation, session );
 
-            if ( server.supportsSonarQubeRunnerBootstrappingFromMaven() )
-            {
-                new RunnerBootstraper( runtimeInformation, getLog(), session, lifecycleExecutor,
-                                       artifactFactory, localRepository, artifactMetadataSource, artifactCollector,
-                                       dependencyTreeBuilder, projectBuilder, securityDispatcher, server ).execute();
-            }
-            else
-            {
-                new InternalMojoBootstraper( server, mavenPluginManager, mavenPluginManagerHelper ).start( project,
-                                                                                                           session );
-            }
+            EmbeddedRunner runner = runnerFactory.create();
 
+            new RunnerBootstrapper( getLog(), session, securityDispatcher, runner, mavenProjectConverter,
+                                    extensionsFactory ).execute();
         }
         catch ( IOException e )
         {
@@ -149,11 +151,4 @@ public class SonarMojo
     {
         this.localRepository = localRepository;
     }
-
-    @VisibleForTesting
-    void setSonarHostURL( String sonarHostURL )
-    {
-        this.sonarHostURL = sonarHostURL;
-    }
-
 }

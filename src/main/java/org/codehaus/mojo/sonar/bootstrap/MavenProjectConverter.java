@@ -19,8 +19,11 @@
  */
 package org.codehaus.mojo.sonar.bootstrap;
 
-import org.codehaus.mojo.sonar.DependencyCollector;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 
+import org.apache.maven.model.ReportPlugin;
+import org.apache.maven.model.Reporting;
+import org.codehaus.mojo.sonar.DependencyCollector;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -78,6 +81,10 @@ public class MavenProjectConverter
     public static final String ARTIFACT_MAVEN_WAR_PLUGIN = "org.apache.maven.plugins:maven-war-plugin";
 
     public static final String ARTIFACT_MAVEN_SUREFIRE_PLUGIN = "org.apache.maven.plugins:maven-surefire-plugin";
+
+    public static final String ARTIFACT_FINDBUGS_MAVEN_PLUGIN = "org.codehaus.mojo:findbugs-maven-plugin";
+
+    public static final String FINDBUGS_EXCLUDE_FILTERS = "sonar.findbugs.excludeFilters";
 
     private static final String JAVA_PROJECT_MAIN_BINARY_DIRS = "sonar.java.binaries";
 
@@ -220,6 +227,7 @@ public class MavenProjectConverter
         convertMavenLinksToProperties( props, pom );
         props.setProperty( "sonar.maven.projectDependencies", dependencyCollector.toJson( pom ) );
         synchronizeFileSystemAndOtherProps( pom, props );
+        findBugsExcludeFileMaven( pom, props );
     }
 
     private void defineProjectKey( MavenProject pom, Properties props )
@@ -267,6 +275,29 @@ public class MavenProjectConverter
         }
     }
 
+    private void findBugsExcludeFileMaven( MavenProject pom, Properties props )
+    {
+        Reporting reporting = pom.getModel().getReporting();
+
+        if ( reporting != null )
+        {
+            ReportPlugin findbugsPlugin = reporting.getReportPluginsAsMap().get( ARTIFACT_FINDBUGS_MAVEN_PLUGIN );
+
+            if ( findbugsPlugin != null )
+            {
+                Xpp3Dom configDom = (Xpp3Dom) findbugsPlugin.getConfiguration();
+                if ( configDom != null )
+                {
+                    Xpp3Dom excludeFilter = configDom.getChild( "excludeFilterFile" );
+                    if ( excludeFilter != null )
+                    {
+                        props.put( FINDBUGS_EXCLUDE_FILTERS, excludeFilter.getValue() );
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * For SONAR-3676
      */
@@ -297,8 +328,7 @@ public class MavenProjectConverter
         setPropertyIfNotAlreadyExists( props, LINKS_ISSUE_TRACKER, issues.getUrl() );
     }
 
-    private static void setPropertyIfNotAlreadyExists( Properties props, String propertyKey,
-                                                       String propertyValue )
+    private static void setPropertyIfNotAlreadyExists( Properties props, String propertyKey, String propertyValue )
     {
         if ( StringUtils.isBlank( props.getProperty( propertyKey ) ) )
         {
@@ -332,13 +362,11 @@ public class MavenProjectConverter
         props.putAll( userProperties );
 
         List<File> mainDirs = mainSources( pom );
-        props.setProperty( ScanProperties.PROJECT_SOURCE_DIRS,
-                           StringUtils.join( toPaths( mainDirs ), SEPARATOR ) );
+        props.setProperty( ScanProperties.PROJECT_SOURCE_DIRS, StringUtils.join( toPaths( mainDirs ), SEPARATOR ) );
         List<File> testDirs = testSources( pom );
         if ( !testDirs.isEmpty() )
         {
-            props.setProperty( ScanProperties.PROJECT_TEST_DIRS,
-                               StringUtils.join( toPaths( testDirs ), SEPARATOR ) );
+            props.setProperty( ScanProperties.PROJECT_TEST_DIRS, StringUtils.join( toPaths( testDirs ), SEPARATOR ) );
         }
         else
         {
@@ -466,7 +494,7 @@ public class MavenProjectConverter
             sources.add( MavenUtils.getPluginSetting( pom, ARTIFACT_MAVEN_WAR_PLUGIN, "warSourceDirectory",
                                                       "src/main/webapp" ) );
         }
-        
+
         sources.add( pom.getFile().getPath() );
         sources.addAll( pom.getCompileSourceRoots() );
         return sourcePaths( pom, ScanProperties.PROJECT_SOURCE_DIRS, sources );
@@ -519,8 +547,7 @@ public class MavenProjectConverter
             if ( !dir.exists() )
             {
                 throw new MojoExecutionException(
-                                                  String.format(
-                                                                 "The directory '%s' does not exist for Maven module %s. Please check the property %s",
+                                                  String.format( "The directory '%s' does not exist for Maven module %s. Please check the property %s",
                                                                  dir.getAbsolutePath(), pom.getId(), propertyKey ) );
             }
         }
@@ -529,16 +556,14 @@ public class MavenProjectConverter
 
     private static List<File> keepExistingPaths( List<File> files )
     {
-        return Lists.newArrayList( Collections2.filter( files,
-                                                        new Predicate<File>()
-                                                        {
-                                                            @Override
-                                                            public boolean apply( File fileOrDir )
-                                                            {
-                                                                return fileOrDir != null
-                                                                    && fileOrDir.exists();
-                                                            }
-                                                        } ) );
+        return Lists.newArrayList( Collections2.filter( files, new Predicate<File>()
+        {
+            @Override
+            public boolean apply( File fileOrDir )
+            {
+                return fileOrDir != null && fileOrDir.exists();
+            }
+        } ) );
     }
 
     private List<File> removeNested( List<File> originalPaths )
@@ -570,15 +595,14 @@ public class MavenProjectConverter
 
     private static String[] toPaths( Collection<File> dirs )
     {
-        Collection<String> paths =
-            Collections2.transform( dirs, new Function<File, String>()
+        Collection<String> paths = Collections2.transform( dirs, new Function<File, String>()
+        {
+            @Override
+            public String apply( File dir )
             {
-                @Override
-                public String apply( File dir )
-                {
-                    return dir.getAbsolutePath();
-                }
-            } );
+                return dir.getAbsolutePath();
+            }
+        } );
         return paths.toArray( new String[paths.size()] );
     }
 }

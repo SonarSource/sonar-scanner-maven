@@ -152,6 +152,14 @@ public class SonarMojoTest
         assertPropsContains( entry( "sonar.junit.reportsPath", new File( baseDir, "target/tests" ).getAbsolutePath() ) );
     }
 
+    @Test
+    public void findbugsExcludeFile()
+        throws IOException, Exception
+    {
+        executeProject( "project-with-findbugs", temp.newFile() );
+        assertPropsContains( entry( "sonar.findbugs.excludeFilters", "findbugs-exclude.xml" ) );
+    }
+
     private File executeProject( String projectName, File localRepo )
         throws Exception
     {

@@ -8,18 +8,15 @@ function installTravisTools {
   source ~/.local/bin/install
 }
 
+installTravisTools
+build_snapshot "SonarSource/sonarqube"
+build_snapshot "SonarSource/sonar-runner"
+
 # Need install because mvn org.codehaus.mojo:sonar-maven-plugin:<version>:sonar in ITs will take artifact from local repo
 mvn install -B -e -V
-                                                                                                                                                                 
+ 
 if [ "${RUN_ITS}" == "true" ]                                                                                                                                    
 then                                                                                                                                                             
-  installTravisTools                                                                                                                                             
-                                                                                                                                                                 
-  if [ "${SQ_VERSION}" == "DEV" ]
-  then
-    build_snapshot "SonarSource/sonarqube"
-  fi
-
   cd its  
   mvn -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false verify
 fi

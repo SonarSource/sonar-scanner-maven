@@ -115,6 +115,8 @@ public class RunnerBootstrapper
         // Include slf4j Logger that is exposed by some Sonar components
         runner.unmask( "org.slf4j.Logger" );
         runner.unmask( "org.slf4j.ILoggerFactory" );
+        // MSONAR-122
+        runner.unmask( "org.slf4j.Marker" );
         // Exclude other slf4j classes
         // .unmask("org.slf4j.impl.")
         runner.mask( "org.slf4j." );

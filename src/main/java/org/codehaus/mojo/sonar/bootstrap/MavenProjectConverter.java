@@ -19,32 +19,37 @@
  */
 package org.codehaus.mojo.sonar.bootstrap;
 
-import org.codehaus.plexus.util.xml.Xpp3Dom;
-
-import org.apache.maven.model.ReportPlugin;
-import org.apache.maven.model.Reporting;
-import org.codehaus.mojo.sonar.DependencyCollector;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.model.CiManagement;
 import org.apache.maven.model.IssueManagement;
+import org.apache.maven.model.ReportPlugin;
+import org.apache.maven.model.Reporting;
 import org.apache.maven.model.Scm;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.mojo.sonar.DependencyCollector;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.sonar.runner.api.RunnerProperties;
 import org.sonar.runner.api.ScanProperties;
-
-import javax.annotation.Nullable;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
 
 public class MavenProjectConverter
 {
@@ -110,16 +115,14 @@ public class MavenProjectConverter
         throws MojoExecutionException
     {
         this.userProperties = userProperties;
-        // projects by canonical path to pom.xml
-        Map<String, MavenProject> paths = new HashMap<String, MavenProject>();
         Map<MavenProject, Properties> propsByModule = new HashMap<MavenProject, Properties>();
 
         try
         {
-            configureModules( mavenProjects, paths, propsByModule );
+            configureModules( mavenProjects, propsByModule );
             Properties props = new Properties();
             props.setProperty( ScanProperties.PROJECT_KEY, getSonarKey( root ) );
-            rebuildModuleHierarchy( props, paths, propsByModule, root, "" );
+            rebuildModuleHierarchy( props, propsByModule, root, "" );
             if ( !propsByModule.isEmpty() )
             {
                 throw new IllegalStateException( UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE + " \""
@@ -134,79 +137,67 @@ public class MavenProjectConverter
 
     }
 
-    private boolean rebuildModuleHierarchy( Properties properties, Map<String, MavenProject> paths,
-                                            Map<MavenProject, Properties> propsByModule, MavenProject current,
-                                            String prefix )
-        throws IOException
+    private void rebuildModuleHierarchy( Properties properties, Map<MavenProject, Properties> propsByModule,
+                                         MavenProject current, String prefix )
+                                             throws IOException
     {
         Properties currentProps = propsByModule.get( current );
         if ( currentProps == null )
         {
             throw new IllegalStateException( UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE );
         }
-        boolean skipped = "true".equals( currentProps.getProperty( "sonar.skip" ) );
-        if ( !skipped )
+        for ( Map.Entry<Object, Object> prop : currentProps.entrySet() )
         {
-            for ( Map.Entry<Object, Object> prop : currentProps.entrySet() )
-            {
-                properties.put( prefix + prop.getKey(), prop.getValue() );
-            }
-        }
-        else
-        {
-            log.debug( "Module " + current + " skipped by property 'sonar.skip'" );
+            properties.put( prefix + prop.getKey(), prop.getValue() );
         }
         propsByModule.remove( current );
         List<String> moduleIds = new ArrayList<String>();
         for ( String modulePathStr : current.getModules() )
         {
             File modulePath = new File( current.getBasedir(), modulePathStr );
-            MavenProject module = findMavenProject( modulePath, paths );
+            MavenProject module = findMavenProject( modulePath, propsByModule.keySet() );
             if ( module != null )
             {
                 String moduleId = module.getGroupId() + ":" + module.getArtifactId();
-                if ( rebuildModuleHierarchy( properties, paths, propsByModule, module, prefix + moduleId + "." ) )
-                {
-                    moduleIds.add( moduleId );
-                }
+                rebuildModuleHierarchy( properties, propsByModule, module, prefix + moduleId + "." );
+                moduleIds.add( moduleId );
             }
         }
-        if ( !moduleIds.isEmpty() && !skipped )
+        if ( !moduleIds.isEmpty() )
         {
             properties.put( prefix + "sonar.modules", StringUtils.join( moduleIds, SEPARATOR ) );
         }
-        return !skipped;
     }
 
-    private void configureModules( List<MavenProject> mavenProjects, Map<String, MavenProject> paths,
+    private void configureModules( List<MavenProject> mavenProjects,
                                    Map<MavenProject, Properties> propsByModule )
-        throws IOException, MojoExecutionException
+                                       throws IOException, MojoExecutionException
     {
         for ( MavenProject pom : mavenProjects )
         {
-            paths.put( pom.getFile().getCanonicalPath(), pom );
+            boolean skipped = "true".equals( pom.getModel().getProperties().getProperty( "sonar.skip" ) );
+            if ( skipped )
+            {
+                log.debug( "Module " + pom + " skipped by property 'sonar.skip'" );
+                continue;
+            }
             Properties props = new Properties();
             merge( pom, props );
             propsByModule.put( pom, props );
         }
     }
 
-    private static MavenProject findMavenProject( final File modulePath, Map<String, MavenProject> paths )
+    private static MavenProject findMavenProject( final File modulePath, Collection<MavenProject> modules )
         throws IOException
     {
-        if ( modulePath.exists() && modulePath.isDirectory() )
+        for ( MavenProject module : modules )
         {
-            for ( Map.Entry<String, MavenProject> entry : paths.entrySet() )
+            if ( module.getBasedir().equals( modulePath ) || module.getFile().equals( modulePath ) )
             {
-                String pomFileParentDir = new File( entry.getKey() ).getParent();
-                if ( pomFileParentDir.equals( modulePath.getCanonicalPath() ) )
-                {
-                    return entry.getValue();
-                }
+                return module;
             }
-            return null;
         }
-        return paths.get( modulePath.getCanonicalPath() );
+        return null;
     }
 
     @VisibleForTesting

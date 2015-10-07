@@ -101,6 +101,17 @@ public class MavenProjectConverter
 
     private static final String SUREFIRE_REPORTS_PATH_PROPERTY = "sonar.junit.reportsPath";
 
+    /**
+     * Optional paths to binaries, for example to declare the directory of Java bytecode. Example : "binDir"
+     */
+    private static final String PROJECT_BINARY_DIRS = "sonar.binaries";
+
+    /**
+     * Optional comma-separated list of paths to libraries. Example :
+     * <code>path/to/library/*.jar,path/to/specific/library/myLibrary.jar,parent/*.jar</code>
+     */
+    private static final String PROJECT_LIBRARIES = "sonar.libraries";
+
     private Properties userProperties;
 
     private DependencyCollector dependencyCollector;
@@ -139,7 +150,7 @@ public class MavenProjectConverter
 
     private void rebuildModuleHierarchy( Properties properties, Map<MavenProject, Properties> propsByModule,
                                          MavenProject current, String prefix )
-                                             throws IOException
+        throws IOException
     {
         Properties currentProps = propsByModule.get( current );
         if ( currentProps == null )
@@ -169,9 +180,8 @@ public class MavenProjectConverter
         }
     }
 
-    private void configureModules( List<MavenProject> mavenProjects,
-                                   Map<MavenProject, Properties> propsByModule )
-                                       throws IOException, MojoExecutionException
+    private void configureModules( List<MavenProject> mavenProjects, Map<MavenProject, Properties> propsByModule )
+        throws IOException, MojoExecutionException
     {
         for ( MavenProject pom : mavenProjects )
         {
@@ -414,7 +424,7 @@ public class MavenProjectConverter
             else
             {
                 // Populate both deprecated and new property for backward compatibility
-                props.setProperty( ScanProperties.PROJECT_LIBRARIES, librariesValue );
+                props.setProperty( PROJECT_LIBRARIES, librariesValue );
                 props.setProperty( JAVA_PROJECT_MAIN_LIBRARIES, librariesValue );
             }
         }
@@ -427,7 +437,7 @@ public class MavenProjectConverter
         {
             String binPath = mainBinaryDir.getAbsolutePath();
             // Populate both deprecated and new property for backward compatibility
-            props.setProperty( ScanProperties.PROJECT_BINARY_DIRS, binPath );
+            props.setProperty( PROJECT_BINARY_DIRS, binPath );
             props.setProperty( JAVA_PROJECT_MAIN_BINARY_DIRS, binPath );
         }
         File testBinaryDir = resolvePath( pom.getBuild().getTestOutputDirectory(), pom.getBasedir() );

@@ -23,6 +23,8 @@
  */
 package org.codehaus.mojo.sonar;
 
+import org.junit.Before;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -42,6 +44,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 
+import static org.mockito.Mockito.atLeastOnce;
+
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.MapAssert.entry;
 
@@ -56,10 +63,18 @@ public class SonarMojoTest
     @Rule
     public MojoRule mojoRule = new MojoRule();
 
+    private Log mockedLogger;
+
     private SonarMojo getMojo( File baseDir )
         throws Exception
     {
         return (SonarMojo) mojoRule.lookupConfiguredMojo( baseDir, "sonar" );
+    }
+
+    @Before
+    public void setUpMocks()
+    {
+        mockedLogger = mock( Log.class );
     }
 
     @Test
@@ -120,7 +135,7 @@ public class SonarMojoTest
             new DefaultArtifactRepository( "local", localRepo.toURI().toURL().toString(), new DefaultRepositoryLayout() );
         File baseDir = executeProject( "export-dependencies", localRepo );
 
-        Properties outProps = readProps();
+        Properties outProps = readProps( "target/dump.properties" );
         String libJson = outProps.getProperty( "sonar.maven.projectDependencies" );
 
         JSONAssert.assertEquals( "[{\"k\":\"commons-io:commons-io\",\"v\":\"2.4\",\"s\":\"compile\",\"d\":["
@@ -158,6 +173,18 @@ public class SonarMojoTest
     {
         executeProject( "project-with-findbugs", temp.newFile() );
         assertPropsContains( entry( "sonar.findbugs.excludeFilters", "findbugs-exclude.xml" ) );
+        assertThat( readProps( "target/dump.properties.global" ) ).excludes( ( entry( "sonar.verbose", "true" ) ) );
+
+    }
+
+    @Test
+    public void verbose()
+        throws Exception
+    {
+        when( mockedLogger.isDebugEnabled() ).thenReturn( true );
+        executeProject( "project-with-findbugs", temp.newFile() );
+        verify( mockedLogger, atLeastOnce() ).isDebugEnabled();
+        assertThat( readProps( "target/dump.properties.global" ) ).includes( ( entry( "sonar.verbose", "true" ) ) );
     }
 
     private File executeProject( String projectName, File localRepo )
@@ -169,6 +196,8 @@ public class SonarMojoTest
         File baseDir = new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/" + projectName );
         SonarMojo mojo = getMojo( baseDir );
         mojo.setLocalRepository( artifactRepo );
+        mojo.setLog( mockedLogger );
+
         mojo.execute();
 
         return baseDir;
@@ -177,16 +206,16 @@ public class SonarMojoTest
     private void assertPropsContains( MapAssert.Entry... entries )
         throws FileNotFoundException, IOException
     {
-        assertThat( readProps() ).includes( entries );
+        assertThat( readProps( "target/dump.properties" ) ).includes( entries );
     }
 
-    private Properties readProps()
+    private Properties readProps( String filePath )
         throws FileNotFoundException, IOException
     {
         FileInputStream fis = null;
         try
         {
-            File dump = new File( "target/dump.properties" );
+            File dump = new File( filePath );
             Properties props = new Properties();
             fis = new FileInputStream( dump );
             props.load( fis );

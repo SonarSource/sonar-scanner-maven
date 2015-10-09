@@ -276,7 +276,7 @@ public class MavenProjectConverter
         }
     }
 
-    private void findBugsExcludeFileMaven( MavenProject pom, Properties props )
+    private static void findBugsExcludeFileMaven( MavenProject pom, Properties props )
     {
         Reporting reporting = pom.getModel().getReporting();
 

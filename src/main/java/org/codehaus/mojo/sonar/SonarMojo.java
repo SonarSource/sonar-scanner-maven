@@ -56,7 +56,7 @@ import java.io.IOException;
 /**
  * Analyze project. SonarQube server must be started.
  */
-@Mojo( name = "sonar", aggregator = true, requiresDependencyResolution = ResolutionScope.TEST )
+@Mojo( name = "sonar", requiresDependencyResolution = ResolutionScope.TEST, aggregator = true )
 public class SonarMojo
     extends AbstractMojo
 {

@@ -247,6 +247,29 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <configuration>
+          <skipDeploy>true</skipDeploy><!-- don't deploy site with maven-site-plugin -->
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-scm-publish-plugin</artifactId>
+        <configuration>
+          <content>${project.build.directory}/site</content><!-- mono-module doesn't require site:stage -->
+        </configuration>
+        <executions>
+          <execution>
+            <id>scm-publish</id>
+            <phase>site-deploy</phase><!-- deploy site with maven-scm-publish-plugin -->
+            <goals>
+              <goal>publish-scm</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 

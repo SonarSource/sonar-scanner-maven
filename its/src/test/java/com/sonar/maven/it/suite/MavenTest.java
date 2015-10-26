@@ -91,6 +91,16 @@ public class MavenTest extends AbstractMavenTest {
     assertThat(result.isSuccess()).isFalse();
     assertThat(result.getLogs()).contains("http://dummy-url.org");
   }
+  
+  @Test
+  /**
+   * See MSONAR-130
+   */
+  public void structureWithRelativePaths() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-structure-relative-paths"))
+      .setGoals(cleanSonarGoal());
+    orchestrator.executeBuild(build);
+  }
 
   @Test
   public void shouldSupportJarWithoutSources() {

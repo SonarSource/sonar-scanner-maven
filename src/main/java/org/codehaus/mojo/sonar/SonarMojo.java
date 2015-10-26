@@ -68,12 +68,6 @@ public class SonarMojo
     private MavenSession session;
 
     /**
-     * Sonar host URL.
-     */
-    @Parameter( property = "sonar.host.url", defaultValue = "http://localhost:9000", alias = "sonar.host.url" )
-    private String sonarHostURL;
-
-    /**
      * Set this to 'true' to skip analysis.
      *
      * @since 2.3

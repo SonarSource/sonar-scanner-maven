@@ -1,10 +1,11 @@
 package org.codehaus.mojo.sonar.bootstrap;
 
-import org.apache.maven.rtinfo.RuntimeInformation;
-
-import org.sonar.runner.api.LogOutput;
-import org.sonar.runner.api.EmbeddedRunner;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.rtinfo.RuntimeInformation;
+import org.sonar.runner.api.EmbeddedRunner;
+import org.sonar.runner.api.LogOutput;
+
+import java.util.Properties;
 
 public class RunnerFactory
 {
@@ -30,7 +31,9 @@ public class RunnerFactory
     {
         EmbeddedRunner runner = EmbeddedRunner.create( logOutput );
         runner.setApp( "Maven", runtimeInformation.getMavenVersion() );
-        runner.addGlobalProperties( session.getSystemProperties() );
+
+        runner.addGlobalProperties( createGlobalProperties() );
+
         // Secret property to manage backward compatibility on SQ side (see ProjectScanContainer)
         runner.setGlobalProperty( "sonar.mojoUseRunner", "true" );
         if ( debugEnabled )
@@ -39,5 +42,14 @@ public class RunnerFactory
         }
 
         return runner;
+    }
+
+    private Properties createGlobalProperties()
+    {
+        Properties p = new Properties();
+        p.putAll( session.getTopLevelProject().getProperties() );
+        p.putAll( session.getSystemProperties() );
+        p.putAll( session.getUserProperties() );
+        return p;
     }
 }

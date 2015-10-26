@@ -73,9 +73,6 @@ public class RunnerBootstrapper
     {
         try
         {
-            Properties props = collectProperties();
-            checkDumpToFile( props );
-
             applyMasks();
             runner.start();
             serverVersion = runner.serverVersion();
@@ -99,7 +96,7 @@ public class RunnerBootstrapper
                 runner.setGlobalProperty( "sonar.verbose", "true" );
             }
 
-            runner.runAnalysis( props );
+            runner.runAnalysis( collectProperties() );
             runner.stop();
         }
         catch ( Exception e )

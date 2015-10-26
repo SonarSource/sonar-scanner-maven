@@ -10,6 +10,7 @@
   
   <properties>
     <sonarRunner.dumpToFile>target/dump.properties</sonarRunner.dumpToFile>
+    <sonar.host.url2>http://myserver:9000</sonar.host.url2>
   </properties>
   
 
@@ -31,9 +32,19 @@
     <plugins>
       <plugin>
         <artifactId>sonar-maven-plugin</artifactId>
-        <configuration>
-        </configuration>
       </plugin>
     </plugins>
   </build>
+  
+  <profiles>
+    <profile>
+      <id>sonar</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <sonar.host.url1>http://myserver:9000</sonar.host.url1>
+      </properties>
+    </profile>
+  </profiles>
 </project>

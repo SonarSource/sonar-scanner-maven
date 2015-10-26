@@ -19,15 +19,20 @@
  */
 package com.sonar.maven.it.suite;
 
+import org.apache.commons.io.FileUtils;
+import com.sonar.orchestrator.build.BuildRunner;
 import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.MavenBuild;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -36,7 +41,6 @@ import org.junit.rules.TemporaryFolder;
 import org.sonar.wsclient.Sonar;
 import org.sonar.wsclient.services.Resource;
 import org.sonar.wsclient.services.ResourceQuery;
-
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
@@ -49,6 +53,53 @@ public class MavenTest extends AbstractMavenTest {
   @Before
   public void deleteData() {
     orchestrator.resetData();
+  }
+
+  @Test
+  /**
+   * See MSONAR-129
+   */
+  public void useUserPropertiesGlobalConfig() throws Exception {
+    BuildRunner runner = new BuildRunner(orchestrator.getConfiguration(), orchestrator.getDatabase());
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
+      .setGoals(cleanSonarGoal());
+
+    File settingsXml = temp.newFile();
+    Map<String, String> props = orchestrator.getDatabase().getSonarProperties();
+    props.put("sonar.host.url", orchestrator.getServer().getUrl());
+    FileUtils.write(settingsXml, ItUtils.createSettingsXml(props));
+
+    build.addArgument("--settings=" + settingsXml.getAbsolutePath());
+    build.addArgument("-Psonar");
+    // we build without sonarqube server settings, it will need to fetch it from the profile defined in the settings xml file
+    BuildResult result = runner.run(null, build);
+
+    assertThat(result.getLogs()).contains(orchestrator.getServer().getUrl());
+  }
+
+  @Test
+  /**
+   * See MSONAR-129
+   */
+  public void supportSonarHostURLParam() {
+    BuildRunner runner = new BuildRunner(orchestrator.getConfiguration(), orchestrator.getDatabase());
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-global-properties"))
+      .setGoals(cleanSonarGoal());
+
+    BuildResult result = runner.runQuietly(null, build);
+
+    assertThat(result.isSuccess()).isFalse();
+    assertThat(result.getLogs()).contains("http://dummy-url.org");
+  }
+  
+  @Test
+  /**
+   * See MSONAR-130
+   */
+  public void structureWithRelativePaths() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-structure-relative-paths"))
+      .setGoals(cleanSonarGoal());
+    orchestrator.executeBuild(build);
   }
 
   @Test
@@ -68,7 +119,7 @@ public class MavenTest extends AbstractMavenTest {
     Resource subProject = orchestrator.getServer().getWsClient().find(ResourceQuery.create("com.sonarsource.it.samples.project-with-module-without-sources:without-sources"));
     assertThat(subProject).isNotNull();
   }
-
+  
   /**
    * See SONAR-594
    */

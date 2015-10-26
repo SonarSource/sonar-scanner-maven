@@ -200,9 +200,12 @@ public class MavenProjectConverter
     private static MavenProject findMavenProject( final File modulePath, Collection<MavenProject> modules )
         throws IOException
     {
+
+        File canonical = modulePath.getCanonicalFile();
         for ( MavenProject module : modules )
         {
-            if ( module.getBasedir().equals( modulePath ) || module.getFile().equals( modulePath ) )
+            if ( module.getBasedir().getCanonicalFile().equals( canonical )
+                || module.getFile().getCanonicalFile().equals( canonical ) )
             {
                 return module;
             }

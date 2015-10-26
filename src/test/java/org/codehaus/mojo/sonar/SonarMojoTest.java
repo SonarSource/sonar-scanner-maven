@@ -45,7 +45,6 @@ import java.io.IOException;
 import java.util.Properties;
 
 import static org.mockito.Mockito.atLeastOnce;
-
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
@@ -82,7 +81,10 @@ public class SonarMojoTest
         throws Exception
     {
         File baseDir = executeProject( "sample-project", temp.newFile() );
-        assertPropsContains( entry( "sonar.projectKey", "org.codehaus.sonar:sample-project" ) );
+        
+        // passed in the properties of the profile and project
+        assertGlobalPropsContains( entry( "sonar.host.url1", "http://myserver:9000" ) );
+        assertGlobalPropsContains( entry( "sonar.host.url2", "http://myserver:9000" ) );
     }
 
     @Test
@@ -207,6 +209,12 @@ public class SonarMojoTest
         throws FileNotFoundException, IOException
     {
         assertThat( readProps( "target/dump.properties" ) ).includes( entries );
+    }
+
+    private void assertGlobalPropsContains( MapAssert.Entry... entries )
+        throws FileNotFoundException, IOException
+    {
+        assertThat( readProps( "target/dump.properties.global" ) ).includes( entries );
     }
 
     private Properties readProps( String filePath )

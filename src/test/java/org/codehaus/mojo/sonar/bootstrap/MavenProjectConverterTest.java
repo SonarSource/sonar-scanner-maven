@@ -1,8 +1,10 @@
 package org.codehaus.mojo.sonar.bootstrap;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Properties;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -36,7 +38,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -133,6 +134,36 @@ public class MavenProjectConverterTest
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
         assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
         assertThat( props.getProperty( "sonar.sources" ) ).contains( "pom.xml" );
+    }
+    
+    @Test
+    public void convertMultiModuleProjectRelativePaths()
+        throws IOException, MojoExecutionException
+    {
+        File rootBaseDir = new File( temp.getRoot(), "root" );
+        MavenProject root = new MavenProject();
+        root.getModel().setGroupId( "com.foo" );
+        root.getModel().setArtifactId( "myProject" );
+        root.getModel().setName( "My Project" );
+        root.getModel().setDescription( "My sample project" );
+        root.getModel().setVersion( "2.1" );
+        root.setFile( new File( rootBaseDir, "pom.xml" ) );
+
+        MavenProject module1 = new MavenProject();
+        module1.getModel().setGroupId( "com.foo" );
+        module1.getModel().setArtifactId( "module1" );
+        module1.getModel().setName( "My Project - Module 1" );
+        module1.getModel().setDescription( "My sample project - Module 1" );
+        module1.getModel().setVersion( "2.1" );
+        File module1BaseDir = new File( temp.getRoot(), "module1" );
+        module1BaseDir.mkdir();
+        module1.setFile( new File( module1BaseDir, "pom.xml" ) );
+        module1.setParent( root );
+
+        root.getModules().add( "../module1" );
+
+        new MavenProjectConverter( log, dependencyCollector ).configure( Arrays.asList( module1, root ), root,
+                                                                         new Properties() );
     }
 
     @Test

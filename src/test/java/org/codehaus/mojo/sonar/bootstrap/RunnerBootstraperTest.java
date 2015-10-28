@@ -1,6 +1,9 @@
 package org.codehaus.mojo.sonar.bootstrap;
 
 import static org.mockito.Mockito.when;
+
+import org.fest.assertions.Assertions;
+
 import org.apache.maven.project.MavenProject;
 import org.junit.Before;
 import org.mockito.MockitoAnnotations;
@@ -124,7 +127,15 @@ public class RunnerBootstraperTest
         verify( runner ).addExtensions( any( Object[].class ) );
         verifyNoMoreInteractions( runner );
     }
-
+    
+    @Test
+    public void testNullServerVersion()
+    {
+        when( runner.serverVersion() ).thenReturn( null );
+        Assertions.assertThat( runnerBootstrapper.isVersionPriorTo5Dot0() ).isTrue();
+        Assertions.assertThat( runnerBootstrapper.isVersionPriorTo5Dot2() ).isTrue();
+    }
+    
     private void verifyCommonCalls()
     {
         verify( runner, atLeastOnce() ).mask( anyString() );

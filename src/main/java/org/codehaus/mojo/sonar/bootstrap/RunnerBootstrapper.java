@@ -186,6 +186,10 @@ public class RunnerBootstrapper
 
     public boolean isVersionPriorTo5Dot2()
     {
+        if ( serverVersion == null )
+        {
+            return true;
+        }
         ArtifactVersion artifactVersion = new DefaultArtifactVersion( serverVersion );
         if ( artifactVersion.getMajorVersion() < 5 )
         {
@@ -197,6 +201,10 @@ public class RunnerBootstrapper
 
     public boolean isVersionPriorTo5Dot0()
     {
+        if ( serverVersion == null )
+        {
+            return true;
+        }
         ArtifactVersion artifactVersion = new DefaultArtifactVersion( serverVersion );
         return artifactVersion.getMajorVersion() < 5;
     }

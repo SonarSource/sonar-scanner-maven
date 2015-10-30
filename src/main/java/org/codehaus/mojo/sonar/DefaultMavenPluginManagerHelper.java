@@ -101,6 +101,7 @@ public class DefaultMavenPluginManagerHelper
         }
     }
 
+    @Override
     public PluginDescriptor getPluginDescriptor( Plugin plugin, MavenSession session )
         throws PluginResolutionException, PluginDescriptorParsingException, InvalidPluginDescriptorException
     {
@@ -149,6 +150,7 @@ public class DefaultMavenPluginManagerHelper
         return null;
     }
 
+    @Override
     public void setupPluginRealm( PluginDescriptor pluginDescriptor, MavenSession session, ClassLoader parent,
                                   List<String> imports )
         throws PluginResolutionException, PluginContainerException

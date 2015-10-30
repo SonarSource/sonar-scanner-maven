@@ -25,7 +25,6 @@ package org.codehaus.mojo.sonar;
  */
 
 import org.codehaus.mojo.sonar.bootstrap.MavenProjectConverter;
-
 import org.sonar.runner.api.EmbeddedRunner;
 import org.codehaus.mojo.sonar.bootstrap.LogHandler;
 import org.codehaus.mojo.sonar.bootstrap.RunnerFactory;
@@ -108,6 +107,7 @@ public class SonarMojo
     @Component
     private RuntimeInformation runtimeInformation;
 
+    @Override
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {

@@ -126,7 +126,7 @@ public class MavenProjectConverter
         throws MojoExecutionException
     {
         this.userProperties = userProperties;
-        Map<MavenProject, Properties> propsByModule = new HashMap<MavenProject, Properties>();
+        Map<MavenProject, Properties> propsByModule = new HashMap<>();
 
         try
         {
@@ -148,8 +148,8 @@ public class MavenProjectConverter
 
     }
 
-    private void rebuildModuleHierarchy( Properties properties, Map<MavenProject, Properties> propsByModule,
-                                         MavenProject current, String prefix )
+    private static void rebuildModuleHierarchy( Properties properties, Map<MavenProject, Properties> propsByModule,
+                                                MavenProject current, String prefix )
         throws IOException
     {
         Properties currentProps = propsByModule.get( current );
@@ -162,7 +162,7 @@ public class MavenProjectConverter
             properties.put( prefix + prop.getKey(), prop.getValue() );
         }
         propsByModule.remove( current );
-        List<String> moduleIds = new ArrayList<String>();
+        List<String> moduleIds = new ArrayList<>();
         for ( String modulePathStr : current.getModules() )
         {
             File modulePath = new File( current.getBasedir(), modulePathStr );
@@ -234,7 +234,7 @@ public class MavenProjectConverter
         findBugsExcludeFileMaven( pom, props );
     }
 
-    private void defineProjectKey( MavenProject pom, Properties props )
+    private static void defineProjectKey( MavenProject pom, Properties props )
     {
         String key;
         if ( pom.getModel().getProperties().containsKey( ScanProperties.PROJECT_KEY ) )
@@ -378,7 +378,7 @@ public class MavenProjectConverter
         }
     }
 
-    private void populateSurefireReportsPath( MavenProject pom, Properties props )
+    private static void populateSurefireReportsPath( MavenProject pom, Properties props )
     {
         String surefireReportsPath =
             MavenUtils.getPluginSetting( pom, ARTIFACT_MAVEN_SUREFIRE_PLUGIN, "reportsDirectory",
@@ -390,7 +390,7 @@ public class MavenProjectConverter
         }
     }
 
-    private void populateLibraries( MavenProject pom, Properties props, boolean test )
+    private static void populateLibraries( MavenProject pom, Properties props, boolean test )
         throws MojoExecutionException
     {
         List<File> libraries = Lists.newArrayList();
@@ -433,7 +433,7 @@ public class MavenProjectConverter
         }
     }
 
-    private void populateBinaries( MavenProject pom, Properties props )
+    private static void populateBinaries( MavenProject pom, Properties props )
     {
         File mainBinaryDir = resolvePath( pom.getBuild().getOutputDirectory(), pom.getBasedir() );
         if ( mainBinaryDir != null && mainBinaryDir.exists() )
@@ -492,7 +492,7 @@ public class MavenProjectConverter
     private List<File> mainSources( MavenProject pom )
         throws MojoExecutionException
     {
-        Set<String> sources = new LinkedHashSet<String>();
+        Set<String> sources = new LinkedHashSet<>();
         if ( MAVEN_PACKAGING_WAR.equals( pom.getModel().getPackaging() ) )
         {
             sources.add( MavenUtils.getPluginSetting( pom, ARTIFACT_MAVEN_WAR_PLUGIN, "warSourceDirectory",
@@ -543,7 +543,7 @@ public class MavenProjectConverter
         }
     }
 
-    private List<File> existingPathsOrFail( List<File> dirs, MavenProject pom, String propertyKey )
+    private static List<File> existingPathsOrFail( List<File> dirs, MavenProject pom, String propertyKey )
         throws MojoExecutionException
     {
         for ( File dir : dirs )
@@ -560,19 +560,12 @@ public class MavenProjectConverter
 
     private static List<File> keepExistingPaths( List<File> files )
     {
-        return Lists.newArrayList( Collections2.filter( files, new Predicate<File>()
-        {
-            @Override
-            public boolean apply( File fileOrDir )
-            {
-                return fileOrDir != null && fileOrDir.exists();
-            }
-        } ) );
+        return Lists.newArrayList( Collections2.filter( files, new FileExistsFilter() ) );
     }
 
-    private List<File> removeNested( List<File> originalPaths )
+    private static List<File> removeNested( List<File> originalPaths )
     {
-        List<File> result = new ArrayList<File>();
+        List<File> result = new ArrayList<>();
         for ( File maybeChild : originalPaths )
         {
             boolean hasParent = false;
@@ -591,7 +584,7 @@ public class MavenProjectConverter
         return result;
     }
 
-    boolean isStrictChild( File maybeChild, File possibleParent )
+    static boolean isStrictChild( File maybeChild, File possibleParent )
     {
         return maybeChild.getAbsolutePath().startsWith( possibleParent.getAbsolutePath() )
             && !maybeChild.getAbsolutePath().equals( possibleParent.getAbsolutePath() );
@@ -599,14 +592,27 @@ public class MavenProjectConverter
 
     private static String[] toPaths( Collection<File> dirs )
     {
-        Collection<String> paths = Collections2.transform( dirs, new Function<File, String>()
-        {
-            @Override
-            public String apply( File dir )
-            {
-                return dir.getAbsolutePath();
-            }
-        } );
+        Collection<String> paths = Collections2.transform( dirs, new AbsolutePathTransform() );
         return paths.toArray( new String[paths.size()] );
+    }
+
+    private static class FileExistsFilter
+        implements Predicate<File>
+    {
+        @Override
+        public boolean apply( File fileOrDir )
+        {
+            return fileOrDir != null && fileOrDir.exists();
+        }
+    }
+
+    private static class AbsolutePathTransform
+        implements Function<File, String>
+    {
+        @Override
+        public String apply( File dir )
+        {
+            return dir.getAbsolutePath();
+        }
     }
 }

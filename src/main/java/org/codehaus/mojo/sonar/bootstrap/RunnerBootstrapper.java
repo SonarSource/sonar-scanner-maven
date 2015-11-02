@@ -76,7 +76,8 @@ public class RunnerBootstrapper
             applyMasks();
             runner.start();
             serverVersion = runner.serverVersion();
-            log.info( "SonarQube version: " + serverVersion );
+
+            checkSQVersion();
 
             if ( this.isVersionPriorTo5Dot2() )
             {
@@ -126,15 +127,6 @@ public class RunnerBootstrapper
         runner.unmask( "" );
     }
 
-    private void checkDumpToFile( Properties props )
-    {
-        String dumpToFile = props.getProperty( "sonarRunner.dumpToFile" );
-        if ( dumpToFile != null )
-        {
-            runner.setGlobalProperty( "sonarRunner.dumpToFile", dumpToFile );
-        }
-    }
-
     private Properties collectProperties()
         throws MojoExecutionException
     {
@@ -179,6 +171,34 @@ public class RunnerBootstrapper
         }
     }
 
+    public void checkSQVersion()
+    {
+        if ( serverVersion != null )
+        {
+            log.info( "SonarQube version: " + serverVersion );
+        }
+
+        if ( isVersionPriorTo4Dot5() )
+        {
+            log.warn( "With SonarQube prior to 4.5, it is recommended to use maven-sonar-plugin 2.6" );
+        }
+    }
+
+    public boolean isVersionPriorTo4Dot5()
+    {
+        if ( serverVersion == null )
+        {
+            return true;
+        }
+        ArtifactVersion artifactVersion = new DefaultArtifactVersion( serverVersion );
+        if ( artifactVersion.getMajorVersion() < 4 )
+        {
+            return true;
+        }
+
+        return artifactVersion.getMajorVersion() == 4 && artifactVersion.getMinorVersion() < 5;
+    }
+
     public boolean supportsNewDependencyProperty()
     {
         return !isVersionPriorTo5Dot0();
@@ -186,6 +206,10 @@ public class RunnerBootstrapper
 
     public boolean isVersionPriorTo5Dot2()
     {
+        if ( serverVersion == null )
+        {
+            return true;
+        }
         ArtifactVersion artifactVersion = new DefaultArtifactVersion( serverVersion );
         if ( artifactVersion.getMajorVersion() < 5 )
         {
@@ -197,6 +221,10 @@ public class RunnerBootstrapper
 
     public boolean isVersionPriorTo5Dot0()
     {
+        if ( serverVersion == null )
+        {
+            return true;
+        }
         ArtifactVersion artifactVersion = new DefaultArtifactVersion( serverVersion );
         return artifactVersion.getMajorVersion() < 5;
     }

@@ -52,7 +52,7 @@ public class ExtensionsFactory
 
     public List<Object> createExtensionsWithDependencyProperty()
     {
-        List<Object> extensions = new LinkedList<Object>();
+        List<Object> extensions = new LinkedList<>();
 
         extensions.add( log );
         extensions.add( session );

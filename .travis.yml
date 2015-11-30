@@ -12,11 +12,10 @@ env:
   matrix:
     - RUN_ITS=false
     - RUN_ITS=true SQ_VERSION=LTS
+# 5.1 is the latest version with design feature
     - RUN_ITS=true SQ_VERSION=5.1.2
+    - RUN_ITS=true SQ_VERSION=5.2
     - RUN_ITS=true SQ_VERSION=DEV
-
-matrix:
-  fast_finish: true
 
 cache:
   directories:

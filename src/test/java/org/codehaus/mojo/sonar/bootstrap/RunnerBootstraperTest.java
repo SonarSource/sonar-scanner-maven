@@ -1,33 +1,33 @@
 package org.codehaus.mojo.sonar.bootstrap;
 
-import static org.mockito.Mockito.when;
-import org.fest.assertions.Assertions;
-import org.apache.maven.project.MavenProject;
-import org.junit.Before;
-import org.mockito.MockitoAnnotations;
-import org.apache.maven.plugin.MojoExecutionException;
-
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.project.MavenProject;
+import org.codehaus.mojo.sonar.ExtensionsFactory;
+import org.fest.assertions.Assertions;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.sonar.runner.api.EmbeddedRunner;
+import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
-import static org.mockito.Matchers.contains;
-
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Matchers.any;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
-import org.sonar.runner.api.EmbeddedRunner;
-import org.codehaus.mojo.sonar.ExtensionsFactory;
-import org.mockito.Mock;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.execution.MavenSession;
-import org.junit.Test;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 public class RunnerBootstraperTest
 {
@@ -59,6 +59,10 @@ public class RunnerBootstraperTest
     {
         MockitoAnnotations.initMocks( this );
 
+        MavenProject rootProject = mock( MavenProject.class );
+        when( rootProject.isExecutionRoot() ).thenReturn( true );
+        when( session.getSortedProjects() ).thenReturn( Arrays.asList( rootProject ) );
+
         projectProperties = new Properties();
         when(
               mavenProjectConverter.configure( anyListOf( MavenProject.class ), any( MavenProject.class ),
@@ -71,7 +75,8 @@ public class RunnerBootstraperTest
         when( runner.mask( anyString() ) ).thenReturn( runner );
         when( runner.unmask( anyString() ) ).thenReturn( runner );
         runnerBootstrapper =
-            new RunnerBootstrapper( log, session, securityDispatcher, runner, mavenProjectConverter, extensionsFactory );
+            new RunnerBootstrapper( log, session, securityDispatcher, runner, mavenProjectConverter,
+                                    extensionsFactory );
     }
 
     @Test

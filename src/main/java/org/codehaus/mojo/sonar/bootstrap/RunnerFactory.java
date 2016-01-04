@@ -1,11 +1,10 @@
 package org.codehaus.mojo.sonar.bootstrap;
 
+import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.execution.RuntimeInformation;
 import org.sonar.runner.api.EmbeddedRunner;
 import org.sonar.runner.api.LogOutput;
-
-import java.util.Properties;
 
 public class RunnerFactory
 {
@@ -30,7 +29,7 @@ public class RunnerFactory
     public EmbeddedRunner create()
     {
         EmbeddedRunner runner = EmbeddedRunner.create( logOutput );
-        runner.setApp( "Maven", runtimeInformation.getMavenVersion() );
+        runner.setApp( "Maven", runtimeInformation.getApplicationVersion().toString() );
 
         runner.addGlobalProperties( createGlobalProperties() );
 
@@ -47,9 +46,8 @@ public class RunnerFactory
     private Properties createGlobalProperties()
     {
         Properties p = new Properties();
-        p.putAll( session.getTopLevelProject().getProperties() );
-        p.putAll( session.getSystemProperties() );
-        p.putAll( session.getUserProperties() );
+        p.putAll( session.getCurrentProject().getProperties() );
+        p.putAll( session.getExecutionProperties() );
         return p;
     }
 }

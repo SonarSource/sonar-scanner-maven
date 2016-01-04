@@ -1,5 +1,10 @@
 package org.codehaus.mojo.sonar;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.List;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -15,8 +20,6 @@ import org.apache.maven.shared.dependency.tree.traversal.BuildingDependencyNodeV
 import org.apache.maven.shared.dependency.tree.traversal.CollectingDependencyNodeVisitor;
 import org.apache.maven.shared.dependency.tree.traversal.DependencyNodeVisitor;
 import org.apache.maven.shared.dependency.tree.traversal.FilteringDependencyNodeVisitor;
-
-import java.util.*;
 
 public class DependencyCollector
 {
@@ -130,7 +133,7 @@ public class DependencyCollector
                 }
             } );
 
-            // mode verbose OFF : do not show the same lib many times
+            /// mode verbose OFF : do not show the same lib many times
             DependencyNodeFilter filter = StateDependencyNodeFilter.INCLUDED;
 
             CollectingDependencyNodeVisitor collectingVisitor = new CollectingDependencyNodeVisitor();

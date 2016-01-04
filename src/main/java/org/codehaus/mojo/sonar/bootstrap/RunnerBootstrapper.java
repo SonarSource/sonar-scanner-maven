@@ -1,41 +1,18 @@
 package org.codehaus.mojo.sonar.bootstrap;
 
-/*
- * The MIT License
- *
- * Copyright 2009 The Codehaus.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
- * of the Software, and to permit persons to whom the Software is furnished to do
- * so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
-import org.codehaus.mojo.sonar.ExtensionsFactory;
+import java.io.IOException;
+import java.util.List;
+import java.util.Properties;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.project.MavenProject;
+import org.codehaus.mojo.sonar.ExtensionsFactory;
 import org.sonar.runner.api.EmbeddedRunner;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
-
-import java.io.IOException;
-import java.util.Properties;
 
 /**
  * Configure properties and bootstrap using SonarQube runner API (need SQ 4.3+)
@@ -130,9 +107,22 @@ public class RunnerBootstrapper
     private Properties collectProperties()
         throws MojoExecutionException
     {
+        List<MavenProject> sortedProjects = session.getSortedProjects();
+        MavenProject topLevelProject = null;
+        for ( MavenProject project : sortedProjects )
+        {
+            if ( project.isExecutionRoot() )
+            {
+                topLevelProject = project;
+                break;
+            }
+        }
+        if ( topLevelProject == null )
+        {
+            throw new IllegalStateException( "Maven session does not declare a top level project" );
+        }
         Properties props =
-            mavenProjectConverter.configure( session.getProjects(), session.getTopLevelProject(),
-                                             session.getUserProperties() );
+            mavenProjectConverter.configure( sortedProjects, topLevelProject, session.getUserProperties() );
         props.putAll( decryptProperties( props ) );
 
         return props;

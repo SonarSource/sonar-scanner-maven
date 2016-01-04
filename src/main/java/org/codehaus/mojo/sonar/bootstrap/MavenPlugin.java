@@ -19,13 +19,12 @@
  */
 package org.codehaus.mojo.sonar.bootstrap;
 
+import java.util.Collection;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
-
-import java.util.Collection;
 
 /**
  * A class to handle maven plugins
@@ -231,10 +230,9 @@ public class MavenPlugin
     @Override
     public String toString()
     {
-        return new ToStringBuilder( this )
-                                          .append( "groupId", plugin.getGroupId() )
-                                          .append( "artifactId", plugin.getArtifactId() )
-                                          .append( "version", plugin.getVersion() )
-                                          .toString();
+        return new ToStringBuilder( this ).append( "groupId",
+                                                   plugin.getGroupId() ).append( "artifactId",
+                                                                                 plugin.getArtifactId() ).append( "version",
+                                                                                                                  plugin.getVersion() ).toString();
     }
 }

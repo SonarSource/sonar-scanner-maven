@@ -2,7 +2,7 @@
 <document>
   <properties>
     <author email="simn.brandhof@gmail.com">Simon Brandhof</author>
-    <title>SonarQube Maven Plugin</title>
+    <title>SonarQube Scanner for Maven</title>
   </properties>
   <head>
     <meta/>

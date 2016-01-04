@@ -23,33 +23,31 @@
  */
 package org.codehaus.mojo.sonar;
 
-import org.junit.Before;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.commons.io.FileUtils;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Properties;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.DefaultArtifactRepository;
 import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.testing.MojoRule;
 import org.fest.assertions.MapAssert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.skyscreamer.jsonassert.JSONAssert;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Properties;
-
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.mock;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.MapAssert.entry;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class SonarMojoTest
 {
@@ -80,8 +78,8 @@ public class SonarMojoTest
     public void executeMojo()
         throws Exception
     {
-        File baseDir = executeProject( "sample-project", temp.newFile() );
-        
+        File baseDir = executeProject( "sample-project" );
+
         // passed in the properties of the profile and project
         assertGlobalPropsContains( entry( "sonar.host.url1", "http://myserver:9000" ) );
         assertGlobalPropsContains( entry( "sonar.host.url2", "http://myserver:9000" ) );
@@ -91,17 +89,7 @@ public class SonarMojoTest
     public void shouldExportBinaries()
         throws Exception
     {
-        File localRepo = temp.newFolder();
-        final ArtifactRepository localRepository =
-            new DefaultArtifactRepository( "local", localRepo.toURI().toURL().toString(), new DefaultRepositoryLayout() );
-        File commonsIo = new File( localRepo, "commons-io/commons-io/2.4/commons-io-2.4.jar" );
-        FileUtils.forceMkdir( commonsIo.getParentFile() );
-        commonsIo.createNewFile();
-
-        File baseDir = new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/sample-project" );
-        SonarMojo mojo = getMojo( baseDir );
-        mojo.setLocalRepository( localRepository );
-        mojo.execute();
+        File baseDir = executeProject( "sample-project" );
 
         assertPropsContains( entry( "sonar.binaries", new File( baseDir, "target/classes" ).getAbsolutePath() ) );
     }
@@ -110,7 +98,7 @@ public class SonarMojoTest
     public void shouldExportDefaultWarWebSource()
         throws Exception
     {
-        File baseDir = executeProject( "sample-war-project", temp.newFile() );
+        File baseDir = executeProject( "sample-war-project" );
         assertPropsContains( entry( "sonar.sources",
                                     new File( baseDir, "src/main/webapp" ).getAbsolutePath() + ","
                                         + new File( baseDir, "pom.xml" ).getAbsolutePath() + ","
@@ -121,7 +109,7 @@ public class SonarMojoTest
     public void shouldExportOverridenWarWebSource()
         throws Exception
     {
-        File baseDir = executeProject( "war-project-override-web-dir", temp.newFile() );
+        File baseDir = executeProject( "war-project-override-web-dir" );
         assertPropsContains( entry( "sonar.sources",
                                     new File( baseDir, "web" ).getAbsolutePath() + ","
                                         + new File( baseDir, "pom.xml" ).getAbsolutePath() + ","
@@ -132,10 +120,7 @@ public class SonarMojoTest
     public void shouldExportDependencies()
         throws Exception
     {
-        File localRepo = new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/repository" );
-        final ArtifactRepository localRepository =
-            new DefaultArtifactRepository( "local", localRepo.toURI().toURL().toString(), new DefaultRepositoryLayout() );
-        File baseDir = executeProject( "export-dependencies", localRepo );
+        File baseDir = executeProject( "export-dependencies" );
 
         Properties outProps = readProps( "target/dump.properties" );
         String libJson = outProps.getProperty( "sonar.maven.projectDependencies" );
@@ -144,9 +129,25 @@ public class SonarMojoTest
             + "{\"k\":\"commons-lang:commons-lang\",\"v\":\"2.6\",\"s\":\"compile\",\"d\":[]}" + "]},"
             + "{\"k\":\"junit:junit\",\"v\":\"3.8.1\",\"s\":\"test\",\"d\":[]}]", libJson, true );
 
-        assertThat( outProps.getProperty( "sonar.java.binaries" ) ).isEqualTo( new File( baseDir, "target/classes" ).getAbsolutePath() );
+        assertThat( outProps.getProperty( "sonar.java.binaries" ) ).isEqualTo( new File( baseDir,
+                                                                                         "target/classes" ).getAbsolutePath() );
         assertThat( outProps.getProperty( "sonar.java.test.binaries" ) ).isEqualTo( new File( baseDir,
                                                                                               "target/test-classes" ).getAbsolutePath() );
+    }
+
+    // MSONAR-135
+    @Test
+    public void shouldExportDependenciesWithSystemScopeTransitive()
+        throws Exception
+    {
+        executeProject( "system-scope" );
+
+        Properties outProps = readProps( "target/dump.properties" );
+        String libJson = outProps.getProperty( "sonar.maven.projectDependencies" );
+
+        JSONAssert.assertEquals( "[{\"k\":\"org.codehaus.xfire:xfire-core\",\"v\":\"1.2.6\",\"s\":\"compile\","
+            + "\"d\":[{\"k\":\"javax.activation:activation\",\"v\":\"1.1.1\",\"s\":\"system\",\"d\":[]}]}]", libJson,
+                                 true );
     }
 
     // MSONAR-113
@@ -155,7 +156,7 @@ public class SonarMojoTest
         throws Exception
     {
 
-        File baseDir = executeProject( "sample-project-with-surefire", temp.newFile() );
+        File baseDir = executeProject( "sample-project-with-surefire" );
         assertPropsContains( entry( "sonar.junit.reportsPath",
                                     new File( baseDir, "target/surefire-reports" ).getAbsolutePath() ) );
     }
@@ -165,15 +166,16 @@ public class SonarMojoTest
     public void shouldExportSurefireCustomReportsPath()
         throws Exception
     {
-        File baseDir = executeProject( "sample-project-with-custom-surefire-path", temp.newFile() );
-        assertPropsContains( entry( "sonar.junit.reportsPath", new File( baseDir, "target/tests" ).getAbsolutePath() ) );
+        File baseDir = executeProject( "sample-project-with-custom-surefire-path" );
+        assertPropsContains( entry( "sonar.junit.reportsPath",
+                                    new File( baseDir, "target/tests" ).getAbsolutePath() ) );
     }
 
     @Test
     public void findbugsExcludeFile()
         throws IOException, Exception
     {
-        executeProject( "project-with-findbugs", temp.newFile() );
+        executeProject( "project-with-findbugs" );
         assertPropsContains( entry( "sonar.findbugs.excludeFilters", "findbugs-exclude.xml" ) );
         assertThat( readProps( "target/dump.properties.global" ) ).excludes( ( entry( "sonar.verbose", "true" ) ) );
 
@@ -184,19 +186,22 @@ public class SonarMojoTest
         throws Exception
     {
         when( mockedLogger.isDebugEnabled() ).thenReturn( true );
-        executeProject( "project-with-findbugs", temp.newFile() );
+        executeProject( "project-with-findbugs" );
         verify( mockedLogger, atLeastOnce() ).isDebugEnabled();
         assertThat( readProps( "target/dump.properties.global" ) ).includes( ( entry( "sonar.verbose", "true" ) ) );
     }
 
-    private File executeProject( String projectName, File localRepo )
+    private File executeProject( String projectName )
         throws Exception
     {
         ArtifactRepository artifactRepo =
-            new DefaultArtifactRepository( "local", localRepo.toURI().toURL().toString(), new DefaultRepositoryLayout() );
+            new DefaultArtifactRepository( "local",
+                                           this.getClass().getResource( "SonarMojoTest/repository" ).toString(),
+                                           new DefaultRepositoryLayout() );
 
         File baseDir = new File( "src/test/resources/org/codehaus/mojo/sonar/SonarMojoTest/" + projectName );
         SonarMojo mojo = getMojo( baseDir );
+        mojo.getSession().getSortedProjects().get( 0 ).setExecutionRoot( true );
         mojo.setLocalRepository( artifactRepo );
         mojo.setLog( mockedLogger );
 

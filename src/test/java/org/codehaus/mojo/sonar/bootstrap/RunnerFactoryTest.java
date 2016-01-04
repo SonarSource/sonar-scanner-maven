@@ -1,14 +1,14 @@
 package org.codehaus.mojo.sonar.bootstrap;
 
+import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.execution.RuntimeInformation;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.rtinfo.RuntimeInformation;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.sonar.runner.api.EmbeddedRunner;
 import org.sonar.runner.api.LogOutput;
-
-import java.util.Properties;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.MapAssert.entry;
@@ -30,22 +30,20 @@ public class RunnerFactoryTest
     public void setUp()
     {
         logOutput = mock( LogOutput.class );
-        runtimeInformation = mock( RuntimeInformation.class );
+        runtimeInformation = mock( RuntimeInformation.class, Mockito.RETURNS_DEEP_STUBS );
         mavenSession = mock( MavenSession.class );
         rootProject = mock( MavenProject.class );
 
         Properties system = new Properties();
         system.put( "system", "value" );
-        Properties user = new Properties();
-        user.put( "user", "value" );
+        system.put( "user", "value" );
         Properties root = new Properties();
         root.put( "root", "value" );
 
-        when( runtimeInformation.getMavenVersion() ).thenReturn( "1.0" );
-        when( mavenSession.getSystemProperties() ).thenReturn( system );
-        when( mavenSession.getUserProperties() ).thenReturn( user );
+        when( runtimeInformation.getApplicationVersion().toString() ).thenReturn( "1.0" );
+        when( mavenSession.getExecutionProperties() ).thenReturn( system );
         when( rootProject.getProperties() ).thenReturn( root );
-        when( mavenSession.getTopLevelProject() ).thenReturn( rootProject );
+        when( mavenSession.getCurrentProject() ).thenReturn( rootProject );
     }
 
     @Test
@@ -53,8 +51,7 @@ public class RunnerFactoryTest
     {
         RunnerFactory factory = new RunnerFactory( logOutput, false, runtimeInformation, mavenSession );
         EmbeddedRunner runner = factory.create();
-        verify( mavenSession ).getUserProperties();
-        verify( mavenSession ).getSystemProperties();
+        verify( mavenSession ).getExecutionProperties();
         verify( rootProject ).getProperties();
 
         assertThat( runner.globalProperties() ).includes( entry( "system", "value" ), entry( "user", "value" ),

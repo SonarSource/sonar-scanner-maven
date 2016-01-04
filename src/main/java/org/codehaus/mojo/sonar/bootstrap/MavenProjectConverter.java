@@ -150,7 +150,7 @@ public class MavenProjectConverter
 
     private static void rebuildModuleHierarchy( Properties properties, Map<MavenProject, Properties> propsByModule,
                                                 MavenProject current, String prefix )
-        throws IOException
+                                                    throws IOException
     {
         Properties currentProps = propsByModule.get( current );
         if ( currentProps == null )

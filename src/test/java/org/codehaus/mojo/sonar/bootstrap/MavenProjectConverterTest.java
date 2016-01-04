@@ -1,10 +1,8 @@
 package org.codehaus.mojo.sonar.bootstrap;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Properties;
-
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -38,6 +36,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -66,13 +65,8 @@ public class MavenProjectConverterTest
         throws Exception
     {
         File baseDir = temp.newFolder();
-        MavenProject project = new MavenProject();
-        project.getModel().setGroupId( "com.foo" );
-        project.getModel().setArtifactId( "myProject" );
-        project.getModel().setName( "My Project" );
-        project.getModel().setDescription( "My sample project" );
-        project.getModel().setVersion( "2.1" );
-        project.setFile( new File( baseDir, "pom.xml" ) );
+        MavenProject project = createProject( new File( baseDir, "pom.xml" ), new Properties(), "jar" );
+
         Properties props =
             new MavenProjectConverter( log, dependencyCollector ).configure( Arrays.asList( project ),
                                                                              project, new Properties() );
@@ -89,14 +83,7 @@ public class MavenProjectConverterTest
         File baseDir = temp.newFolder();
         File webappDir = new File( baseDir, "src/main/webapp" );
         webappDir.mkdirs();
-        MavenProject project = new MavenProject();
-        project.getModel().setGroupId( "com.foo" );
-        project.getModel().setArtifactId( "myProject" );
-        project.getModel().setName( "My Project" );
-        project.getModel().setDescription( "My sample project" );
-        project.getModel().setVersion( "2.1" );
-        project.getModel().setPackaging( "war" );
-        project.setFile( new File( baseDir, "pom.xml" ) );
+        MavenProject project = createProject( new File( baseDir, "pom.xml" ), new Properties(), "war" );
         Properties props =
             new MavenProjectConverter( log, dependencyCollector ).configure( Arrays.asList( project ),
                                                                              project, new Properties() );
@@ -118,15 +105,10 @@ public class MavenProjectConverterTest
         throws Exception
     {
         File baseDir = temp.newFolder();
-        MavenProject project = new MavenProject();
-        project.getModel().setGroupId( "com.foo" );
-        project.getModel().setArtifactId( "myProject" );
-        project.getModel().setName( "My Project" );
-        project.getModel().setDescription( "My sample project" );
-        project.getModel().setVersion( "2.1" );
         File pom = new File( baseDir, "pom.xml" );
         pom.createNewFile();
-        project.setFile( pom );
+        MavenProject project = createProject( pom, new Properties(), "jar" );
+
         Properties props =
             new MavenProjectConverter( log, dependencyCollector ).configure( Arrays.asList( project ), project,
                                                                              new Properties() );
@@ -135,29 +117,20 @@ public class MavenProjectConverterTest
         assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
         assertThat( props.getProperty( "sonar.sources" ) ).contains( "pom.xml" );
     }
-    
+
     @Test
     public void convertMultiModuleProjectRelativePaths()
-        throws IOException, MojoExecutionException
+        throws Exception
     {
         File rootBaseDir = new File( temp.getRoot(), "root" );
-        MavenProject root = new MavenProject();
-        root.getModel().setGroupId( "com.foo" );
-        root.getModel().setArtifactId( "myProject" );
-        root.getModel().setName( "My Project" );
-        root.getModel().setDescription( "My sample project" );
-        root.getModel().setVersion( "2.1" );
-        root.setFile( new File( rootBaseDir, "pom.xml" ) );
+        MavenProject root = createProject( new File( rootBaseDir, "pom.xml" ), new Properties(), "pom" );
 
-        MavenProject module1 = new MavenProject();
-        module1.getModel().setGroupId( "com.foo" );
+        File module1BaseDir = new File( temp.getRoot(), "module1" );
+        module1BaseDir.mkdir();
+        MavenProject module1 = createProject( new File( module1BaseDir, "pom.xml" ), new Properties(), "jar" );
         module1.getModel().setArtifactId( "module1" );
         module1.getModel().setName( "My Project - Module 1" );
         module1.getModel().setDescription( "My sample project - Module 1" );
-        module1.getModel().setVersion( "2.1" );
-        File module1BaseDir = new File( temp.getRoot(), "module1" );
-        module1BaseDir.mkdir();
-        module1.setFile( new File( module1BaseDir, "pom.xml" ) );
         module1.setParent( root );
 
         root.getModules().add( "../module1" );
@@ -171,59 +144,42 @@ public class MavenProjectConverterTest
         throws Exception
     {
         File baseDir = temp.newFolder();
-        MavenProject root = new MavenProject();
-        root.getModel().setGroupId( "com.foo" );
-        root.getModel().setArtifactId( "myProject" );
-        root.getModel().setName( "My Project" );
-        root.getModel().setDescription( "My sample project" );
-        root.getModel().setVersion( "2.1" );
+        MavenProject root = createProject( new File( baseDir, "pom.xml" ), new Properties(), "pom" );
         root.setFile( new File( baseDir, "pom.xml" ) );
 
-        MavenProject module1 = new MavenProject();
-        module1.getModel().setGroupId( "com.foo" );
+        File module1BaseDir = new File( baseDir, "module1" );
+        module1BaseDir.mkdir();
+        MavenProject module1 = createProject( new File( module1BaseDir, "pom.xml" ), new Properties(), "pom" );
         module1.getModel().setArtifactId( "module1" );
         module1.getModel().setName( "My Project - Module 1" );
         module1.getModel().setDescription( "My sample project - Module 1" );
-        module1.getModel().setVersion( "2.1" );
-        File module1BaseDir = new File( baseDir, "module1" );
-        module1BaseDir.mkdir();
-        module1.setFile( new File( module1BaseDir, "pom.xml" ) );
         module1.setParent( root );
         root.getModules().add( "module1" );
 
-        MavenProject module11 = new MavenProject();
-        module11.getModel().setGroupId( "com.foo" );
+        File module11BaseDir = new File( module1BaseDir, "module1" );
+        module11BaseDir.mkdir();
+        MavenProject module11 = createProject( new File( module11BaseDir, "pom.xml" ), new Properties(), "jar" );
         module11.getModel().setArtifactId( "module11" );
         module11.getModel().setName( "My Project - Module 1 - Module 1" );
         module11.getModel().setDescription( "My sample project - Module 1 - Module 1" );
-        module11.getModel().setVersion( "2.1" );
-        File module11BaseDir = new File( module1BaseDir, "module1" );
-        module11BaseDir.mkdir();
-        module11.setFile( new File( baseDir, "module1/module1/pom.xml" ) );
         module11.setParent( module1 );
         module1.getModules().add( "module1" );
 
-        MavenProject module12 = new MavenProject();
-        module12.getModel().setGroupId( "com.foo" );
+        File module12BaseDir = new File( module1BaseDir, "module2" );
+        module12BaseDir.mkdir();
+        MavenProject module12 = createProject( new File( module12BaseDir, "pom.xml" ), new Properties(), "jar" );
         module12.getModel().setArtifactId( "module12" );
         module12.getModel().setName( "My Project - Module 1 - Module 2" );
         module12.getModel().setDescription( "My sample project - Module 1 - Module 2" );
-        module12.getModel().setVersion( "2.1" );
-        File module12BaseDir = new File( module1BaseDir, "module2" );
-        module12BaseDir.mkdir();
-        module12.setFile( new File( baseDir, "module1/module2/pom.xml" ) );
         module12.setParent( module1 );
         module1.getModules().add( "module2" );
 
-        MavenProject module2 = new MavenProject();
-        module2.getModel().setGroupId( "com.foo" );
+        File module2BaseDir = new File( baseDir, "module2" );
+        module2BaseDir.mkdir();
+        MavenProject module2 = createProject( new File( module2BaseDir, "pom.xml" ), new Properties(), "jar" );
         module2.getModel().setArtifactId( "module2" );
         module2.getModel().setName( "My Project - Module 2" );
         module2.getModel().setDescription( "My sample project - Module 2" );
-        module2.getModel().setVersion( "2.1" );
-        File module2BaseDir = new File( baseDir, "module2" );
-        module2BaseDir.mkdir();
-        module2.setFile( new File( module2BaseDir, "pom.xml" ) );
         module2.setParent( root );
         root.getModules().add( "module2" );
 
@@ -264,60 +220,44 @@ public class MavenProjectConverterTest
         throws Exception
     {
         File baseDir = temp.newFolder();
-        MavenProject root = new MavenProject();
-        root.getModel().setGroupId( "com.foo" );
-        root.getModel().setArtifactId( "myProject" );
-        root.getModel().setName( "My Project" );
-        root.getModel().setDescription( "My sample project" );
-        root.getModel().setVersion( "2.1" );
+        MavenProject root = createProject( new File( baseDir, "pom.xml" ), new Properties(), "pom" );
         root.setFile( new File( baseDir, "pom.xml" ) );
 
-        MavenProject module1 = new MavenProject();
-        module1.getModel().setGroupId( "com.foo" );
+        File module1BaseDir = new File( baseDir, "module1" );
+        module1BaseDir.mkdir();
+        MavenProject module1 = createProject( new File( module1BaseDir, "pom.xml" ), new Properties(), "pom" );
         module1.getModel().setArtifactId( "module1" );
         module1.getModel().setName( "My Project - Module 1" );
         module1.getModel().setDescription( "My sample project - Module 1" );
-        module1.getModel().setVersion( "2.1" );
-        File module1BaseDir = new File( baseDir, "module1" );
-        module1BaseDir.mkdir();
-        module1.setFile( new File( module1BaseDir, "pom.xml" ) );
         module1.setParent( root );
         root.getModules().add( "module1" );
 
-        MavenProject module11 = new MavenProject();
-        module11.getModel().setGroupId( "com.foo" );
+        File module11BaseDir = new File( module1BaseDir, "module1" );
+        module11BaseDir.mkdir();
+        Properties module11Props = new Properties();
+        module11Props.setProperty( "sonar.skip", "true" );
+        MavenProject module11 = createProject( new File( module11BaseDir, "pom.xml" ), module11Props, "jar" );
         module11.getModel().setArtifactId( "module11" );
         module11.getModel().setName( "My Project - Module 1 - Module 1" );
         module11.getModel().setDescription( "My sample project - Module 1 - Module 1" );
-        module11.getModel().setVersion( "2.1" );
-        File module11BaseDir = new File( module1BaseDir, "module1" );
-        module11BaseDir.mkdir();
-        module11.setFile( new File( baseDir, "module1/module1/pom.xml" ) );
         module11.setParent( module1 );
-        module11.getModel().getProperties().setProperty( "sonar.skip", "true" );
         module1.getModules().add( "module1" );
 
-        MavenProject module12 = new MavenProject();
-        module12.getModel().setGroupId( "com.foo" );
+        File module12BaseDir = new File( module1BaseDir, "module2" );
+        module12BaseDir.mkdir();
+        MavenProject module12 = createProject( new File( module12BaseDir, "pom.xml" ), new Properties(), "jar" );
         module12.getModel().setArtifactId( "module12" );
         module12.getModel().setName( "My Project - Module 1 - Module 2" );
         module12.getModel().setDescription( "My sample project - Module 1 - Module 2" );
-        module12.getModel().setVersion( "2.1" );
-        File module12BaseDir = new File( module1BaseDir, "module2" );
-        module12BaseDir.mkdir();
-        module12.setFile( new File( baseDir, "module1/module2/pom.xml" ) );
         module12.setParent( module1 );
         module1.getModules().add( "module2" );
 
-        MavenProject module2 = new MavenProject();
-        module2.getModel().setGroupId( "com.foo" );
+        File module2BaseDir = new File( baseDir, "module2" );
+        module2BaseDir.mkdir();
+        MavenProject module2 = createProject( new File( module2BaseDir, "pom.xml" ), new Properties(), "jar" );
         module2.getModel().setArtifactId( "module2" );
         module2.getModel().setName( "My Project - Module 2" );
         module2.getModel().setDescription( "My sample project - Module 2" );
-        module2.getModel().setVersion( "2.1" );
-        File module2BaseDir = new File( baseDir, "module2" );
-        module2BaseDir.mkdir();
-        module2.setFile( new File( module2BaseDir, "pom.xml" ) );
         module2.setParent( root );
         root.getModules().add( "module2" );
 
@@ -361,35 +301,24 @@ public class MavenProjectConverterTest
         throws Exception
     {
         File baseDir = temp.newFolder();
-        MavenProject root = new MavenProject();
-        root.getModel().setGroupId( "com.foo" );
-        root.getModel().setArtifactId( "myProject" );
-        root.getModel().setName( "My Project" );
-        root.getModel().setDescription( "My sample project" );
-        root.getModel().setVersion( "2.1" );
-        root.setFile( new File( baseDir, "pom.xml" ) );
+        MavenProject root = createProject( new File( baseDir, "pom.xml" ), new Properties(), "pom" );
 
-        MavenProject module1 = new MavenProject();
-        module1.getModel().setGroupId( "com.foo" );
+        File module1BaseDir = new File( baseDir, "module1" );
+        module1BaseDir.mkdir();
+        MavenProject module1 = createProject( new File( module1BaseDir, "pom.xml" ), new Properties(), "pom" );
         module1.getModel().setArtifactId( "module1" );
         module1.getModel().setName( "My Project - Module 1" );
         module1.getModel().setDescription( "My sample project - Module 1" );
-        module1.getModel().setVersion( "2.1" );
-        File module1BaseDir = new File( baseDir, "module1" );
-        module1BaseDir.mkdir();
-        module1.setFile( new File( module1BaseDir, "pom.xml" ) );
         module1.setParent( root );
         root.getModules().add( "module1" );
 
-        MavenProject module2 = new MavenProject();
-        module2.getModel().setGroupId( "com.foo" );
+        File module2BaseDir = new File( baseDir, "module2" );
+        module2BaseDir.mkdir();
+        MavenProject module2 = createProject( new File( module2BaseDir, "pom.xml" ), new Properties(), "pom" );
         module2.getModel().setArtifactId( "module2" );
         module2.getModel().setName( "My Project - Module 2" );
         module2.getModel().setDescription( "My sample project - Module 2" );
-        module2.getModel().setVersion( "2.1" );
         module2.getModel().getProperties().setProperty( "sonar.skip", "true" );
-        File module2BaseDir = new File( baseDir, "module2" );
-        module2BaseDir.mkdir();
         // MSHADE-124 it is possible to change location of pom.xml
         module2.setFile( new File( module2BaseDir, "target/dependency-reduced-pom.xml" ) );
         module2.setParent( root );
@@ -430,14 +359,7 @@ public class MavenProjectConverterTest
         Properties pomProps = new Properties();
         pomProps.put( "sonar.sources", "src/main" );
 
-        MavenProject project = new MavenProject();
-        project.getModel().setGroupId( "com.foo" );
-        project.getModel().setArtifactId( "myProject" );
-        project.getModel().setName( "My Project" );
-        project.getModel().setDescription( "My sample project" );
-        project.getModel().setVersion( "2.1" );
-        project.getModel().setProperties( pomProps );
-        project.setFile( pom );
+        MavenProject project = createProject( pom, pomProps, "jar" );
 
         Properties props =
             new MavenProjectConverter( log, dependencyCollector ).configure( Arrays.asList( project ), project,
@@ -459,41 +381,25 @@ public class MavenProjectConverterTest
         pomProps.put( "sonar.tests", "src/test" );
 
         File pomRoot = temp.newFile( "pom.xml" );
-        MavenProject root = new MavenProject();
-        root.getModel().setGroupId( "com.foo" );
-        root.getModel().setArtifactId( "myProject" );
-        root.getModel().setName( "My Project" );
-        root.getModel().setDescription( "My sample project" );
-        root.getModel().setVersion( "2.1" );
-        root.getModel().setPackaging( "pom" );
-        root.getModel().setProperties( pomProps );
-        root.setFile( pomRoot );
+        MavenProject root = createProject( pomRoot, pomProps, "pom" );
 
         File module1BaseDir = temp.newFolder( "module1" ).getAbsoluteFile();
         File module1SrcDir = temp.newFolder( "module1", "src", "main" ).getAbsoluteFile();
         File module1TestDir = temp.newFolder( "module1", "src", "test" ).getAbsoluteFile();
-        MavenProject module1 = new MavenProject();
-        module1.getModel().setGroupId( "com.foo" );
+        MavenProject module1 = createProject( new File( module1BaseDir, "pom.xml" ), pomProps, "jar" );
         module1.getModel().setArtifactId( "module1" );
         module1.getModel().setName( "My Project - Module 1" );
         module1.getModel().setDescription( "My sample project - Module 1" );
-        module1.getModel().setVersion( "2.1" );
-        module1.getModel().setProperties( pomProps );
-        module1.setFile( new File( module1BaseDir, "pom.xml" ) );
         module1.setParent( root );
         root.getModules().add( "module1" );
 
         File module2BaseDir = temp.newFolder( "module2" ).getAbsoluteFile();
         File module2SrcDir = temp.newFolder( "module2", "src", "main" ).getAbsoluteFile();
         File module2TestDir = temp.newFolder( "module2", "src", "test" ).getAbsoluteFile();
-        MavenProject module2 = new MavenProject();
-        module2.getModel().setGroupId( "com.foo" );
+        MavenProject module2 = createProject( new File( module2BaseDir, "pom.xml" ), pomProps, "jar" );
         module2.getModel().setArtifactId( "module2" );
         module2.getModel().setName( "My Project - Module 2" );
         module2.getModel().setDescription( "My sample project - Module 2" );
-        module2.getModel().setVersion( "2.1" );
-        module2.getModel().setProperties( pomProps );
-        module2.setFile( new File( module2BaseDir, "pom.xml" ) );
         module2.setParent( root );
         root.getModules().add( "module2" );
 
@@ -535,14 +441,7 @@ public class MavenProjectConverterTest
         Properties pomProps = new Properties();
         pomProps.put( "sonar.sources", "nonexistent-folder" );
 
-        MavenProject project = new MavenProject();
-        project.getModel().setGroupId( "com.foo" );
-        project.getModel().setArtifactId( "myProject" );
-        project.getModel().setName( "My Project" );
-        project.getModel().setDescription( "My sample project" );
-        project.getModel().setVersion( "2.1" );
-        project.getModel().setProperties( pomProps );
-        project.setFile( pom );
+        MavenProject project = createProject( pom, pomProps, "jar" );
 
         new MavenProjectConverter( log, dependencyCollector ).configure( Arrays.asList( project ), project,
                                                                          new Properties() );
@@ -552,20 +451,12 @@ public class MavenProjectConverterTest
     public void overrideProjectKeySingleModuleProject()
         throws Exception
     {
-        temp.newFolder( "src" );
         File pom = temp.newFile( "pom.xml" );
 
         Properties pomProps = new Properties();
         pomProps.put( "sonar.projectKey", "myProject" );
 
-        MavenProject project = new MavenProject();
-        project.getModel().setGroupId( "com.foo" );
-        project.getModel().setArtifactId( "myProject" );
-        project.getModel().setName( "My Project" );
-        project.getModel().setDescription( "My sample project" );
-        project.getModel().setVersion( "2.1" );
-        project.getModel().setProperties( pomProps );
-        project.setFile( pom );
+        MavenProject project = createProject( pom, pomProps, "jar" );
 
         Properties props =
             new MavenProjectConverter( log, dependencyCollector ).configure( Arrays.asList( project ), project,
@@ -574,5 +465,22 @@ public class MavenProjectConverterTest
         assertThat( props.getProperty( "sonar.projectKey" ) ).isEqualTo( "myProject" );
         assertThat( props.getProperty( "sonar.projectName" ) ).isEqualTo( "My Project" );
         assertThat( props.getProperty( "sonar.projectVersion" ) ).isEqualTo( "2.1" );
+    }
+
+    private MavenProject createProject( File pom, Properties pomProps, String packaging )
+        throws Exception
+    {
+        MavenProject project = new MavenProject();
+        project.getModel().setGroupId( "com.foo" );
+        project.getModel().setArtifactId( "myProject" );
+        project.getModel().setName( "My Project" );
+        project.getModel().setDescription( "My sample project" );
+        project.getModel().setVersion( "2.1" );
+        project.getModel().setPackaging( packaging );
+        project.getBuild().setOutputDirectory( temp.newFolder().getPath() );
+        project.getBuild().setTestOutputDirectory( temp.newFolder().getPath() );
+        project.getModel().setProperties( pomProps );
+        project.setFile( pom );
+        return project;
     }
 }

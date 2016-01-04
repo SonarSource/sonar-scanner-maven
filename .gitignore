@@ -11,6 +11,7 @@ target/
 .classpath
 .project
 .settings
+bin
 
 # ---- Mac OS X
 .DS_Store?

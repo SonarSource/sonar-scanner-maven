@@ -257,6 +257,7 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void maven_project_with_only_test_dir() {
+    // Need package to have test execution
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir")).setGoals(cleanPackageSonarGoal());
     orchestrator.executeBuild(build);
 

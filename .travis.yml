@@ -11,11 +11,12 @@ script:
 env:
   matrix:
     - RUN_ITS=false
-    - RUN_ITS=true SQ_VERSION=LTS
+    - RUN_ITS=true SQ_VERSION=LTS MAVEN_VERSION=2.2.1
+    - RUN_ITS=true SQ_VERSION=LTS MAVEN_VERSION=3.0.5
 # 5.1 is the latest version with design feature
-    - RUN_ITS=true SQ_VERSION=5.1.2
-    - RUN_ITS=true SQ_VERSION=5.2
-    - RUN_ITS=true SQ_VERSION=DEV
+    - RUN_ITS=true SQ_VERSION=5.1.2 MAVEN_VERSION=3.1.1
+    - RUN_ITS=true SQ_VERSION=5.2 MAVEN_VERSION=3.2.5
+    - RUN_ITS=true SQ_VERSION=DEV MAVEN_VERSION=3.3.9
 
 cache:
   directories:

@@ -5,10 +5,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactCollector;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.dependency.tree.DependencyNode;
 import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
@@ -26,23 +23,12 @@ public class DependencyCollector
 
     private final DependencyTreeBuilder dependencyTreeBuilder;
 
-    private final ArtifactFactory artifactFactory;
-
     private final ArtifactRepository localRepository;
 
-    private final ArtifactMetadataSource artifactMetadataSource;
-
-    private final ArtifactCollector artifactCollector;
-
-    public DependencyCollector( DependencyTreeBuilder dependencyTreeBuilder, ArtifactFactory artifactFactory,
-                                ArtifactRepository localRepository, ArtifactMetadataSource artifactMetadataSource,
-                                ArtifactCollector artifactCollector )
+    public DependencyCollector( DependencyTreeBuilder dependencyTreeBuilder, ArtifactRepository localRepository )
     {
         this.dependencyTreeBuilder = dependencyTreeBuilder;
-        this.artifactFactory = artifactFactory;
         this.localRepository = localRepository;
-        this.artifactMetadataSource = artifactMetadataSource;
-        this.artifactCollector = artifactCollector;
     }
 
     private static class Dependency
@@ -95,8 +81,7 @@ public class DependencyCollector
         try
         {
             DependencyNode root =
-                dependencyTreeBuilder.buildDependencyTree( project, localRepository, artifactFactory,
-                                                           artifactMetadataSource, null, artifactCollector );
+                dependencyTreeBuilder.buildDependencyTree( project, localRepository, null );
 
             DependencyNodeVisitor visitor = new BuildingDependencyNodeVisitor( new DependencyNodeVisitor()
             {

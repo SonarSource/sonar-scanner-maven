@@ -112,9 +112,7 @@ public class SonarMojo
                 new ExtensionsFactory( getLog(), session, lifecycleExecutor, artifactFactory, localRepository,
                                        artifactMetadataSource, artifactCollector, dependencyTreeBuilder,
                                        projectBuilder );
-            DependencyCollector dependencyCollector =
-                new DependencyCollector( dependencyTreeBuilder, artifactFactory, localRepository,
-                                         artifactMetadataSource, artifactCollector );
+            DependencyCollector dependencyCollector = new DependencyCollector( dependencyTreeBuilder, localRepository );
             MavenProjectConverter mavenProjectConverter = new MavenProjectConverter( getLog(), dependencyCollector );
             LogHandler logHandler = new LogHandler( getLog() );
             RunnerFactory runnerFactory =

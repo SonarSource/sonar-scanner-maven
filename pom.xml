@@ -8,7 +8,7 @@
   </parent>
 
   <groupId>org.sonarsource.scanner.maven</groupId>
-  <artifactId>sonarqube-maven-plugin</artifactId>
+  <artifactId>sonar-maven-plugin</artifactId>
   <version>3.0-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 

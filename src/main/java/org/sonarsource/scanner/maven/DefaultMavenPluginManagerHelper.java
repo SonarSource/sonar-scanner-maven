@@ -41,146 +41,107 @@ import org.codehaus.plexus.logging.Logger;
  * 
  * @since 2.1
  */
-@Component( role = MavenPluginManagerHelper.class )
+@Component(role = MavenPluginManagerHelper.class)
 public class DefaultMavenPluginManagerHelper
-    implements MavenPluginManagerHelper
-{
-    @Requirement
-    private Logger logger;
+  implements MavenPluginManagerHelper {
+  @Requirement
+  private Logger logger;
 
-    @Requirement
-    protected MavenPluginManager mavenPluginManager;
+  @Requirement
+  protected MavenPluginManager mavenPluginManager;
 
-    private Method setupPluginRealm;
+  private Method setupPluginRealm;
 
-    private Method getPluginDescriptor;
+  private Method getPluginDescriptor;
 
-    private Method getRepositorySession;
+  private Method getRepositorySession;
 
-    public DefaultMavenPluginManagerHelper()
-    {
-        try
-        {
-            for ( Method m : MavenPluginManager.class.getMethods() )
-            {
-                if ( "setupPluginRealm".equals( m.getName() ) )
-                {
-                    setupPluginRealm = m;
-                }
-                else if ( "getPluginDescriptor".equals( m.getName() ) )
-                {
-                    getPluginDescriptor = m;
-                }
-            }
+  public DefaultMavenPluginManagerHelper() {
+    try {
+      for (Method m : MavenPluginManager.class.getMethods()) {
+        if ("setupPluginRealm".equals(m.getName())) {
+          setupPluginRealm = m;
+        } else if ("getPluginDescriptor".equals(m.getName())) {
+          getPluginDescriptor = m;
         }
-        catch ( SecurityException e )
-        {
-            logger.warn( "unable to find MavenPluginManager.setupPluginRealm() method", e );
-        }
-
-        try
-        {
-            for ( Method m : MavenSession.class.getMethods() )
-            {
-                if ( "getRepositorySession".equals( m.getName() ) )
-                {
-                    getRepositorySession = m;
-                    break;
-                }
-            }
-        }
-        catch ( SecurityException e )
-        {
-            logger.warn( "unable to find MavenSession.getRepositorySession() method", e );
-        }
+      }
+    } catch (SecurityException e) {
+      logger.warn("unable to find MavenPluginManager.setupPluginRealm() method", e);
     }
 
-    @Override
-    public PluginDescriptor getPluginDescriptor( Plugin plugin, MavenSession session )
-        throws PluginResolutionException, PluginDescriptorParsingException, InvalidPluginDescriptorException
-    {
-        try
-        {
-            Object repositorySession = getRepositorySession.invoke( session );
-            List<?> remoteRepositories = session.getCurrentProject().getRemotePluginRepositories();
+    try {
+      for (Method m : MavenSession.class.getMethods()) {
+        if ("getRepositorySession".equals(m.getName())) {
+          getRepositorySession = m;
+          break;
+        }
+      }
+    } catch (SecurityException e) {
+      logger.warn("unable to find MavenSession.getRepositorySession() method", e);
+    }
+  }
 
-            return (PluginDescriptor) getPluginDescriptor.invoke( mavenPluginManager, plugin, remoteRepositories,
-                                                                  repositorySession );
-        }
-        catch ( IllegalArgumentException e )
-        {
-            logger.warn( "IllegalArgumentException during MavenPluginManager.getPluginDescriptor() call", e );
-        }
-        catch ( IllegalAccessException e )
-        {
-            logger.warn( "IllegalAccessException during MavenPluginManager.getPluginDescriptor() call", e );
-        }
-        catch ( InvocationTargetException e )
-        {
-            Throwable target = e.getTargetException();
-            if ( target instanceof PluginResolutionException )
-            {
-                throw (PluginResolutionException) target;
-            }
-            if ( target instanceof PluginDescriptorParsingException )
-            {
-                throw (PluginDescriptorParsingException) target;
-            }
-            if ( target instanceof InvalidPluginDescriptorException )
-            {
-                throw (InvalidPluginDescriptorException) target;
-            }
-            if ( target instanceof RuntimeException )
-            {
-                throw (RuntimeException) target;
-            }
-            if ( target instanceof Error )
-            {
-                throw (Error) target;
-            }
-            logger.warn( "Exception during MavenPluginManager.getPluginDescriptor() call", e );
-        }
+  @Override
+  public PluginDescriptor getPluginDescriptor(Plugin plugin, MavenSession session)
+    throws PluginResolutionException, PluginDescriptorParsingException, InvalidPluginDescriptorException {
+    try {
+      Object repositorySession = getRepositorySession.invoke(session);
+      List<?> remoteRepositories = session.getCurrentProject().getRemotePluginRepositories();
 
-        return null;
+      return (PluginDescriptor) getPluginDescriptor.invoke(mavenPluginManager, plugin, remoteRepositories,
+        repositorySession);
+    } catch (IllegalArgumentException e) {
+      logger.warn("IllegalArgumentException during MavenPluginManager.getPluginDescriptor() call", e);
+    } catch (IllegalAccessException e) {
+      logger.warn("IllegalAccessException during MavenPluginManager.getPluginDescriptor() call", e);
+    } catch (InvocationTargetException e) {
+      Throwable target = e.getTargetException();
+      if (target instanceof PluginResolutionException) {
+        throw (PluginResolutionException) target;
+      }
+      if (target instanceof PluginDescriptorParsingException) {
+        throw (PluginDescriptorParsingException) target;
+      }
+      if (target instanceof InvalidPluginDescriptorException) {
+        throw (InvalidPluginDescriptorException) target;
+      }
+      if (target instanceof RuntimeException) {
+        throw (RuntimeException) target;
+      }
+      if (target instanceof Error) {
+        throw (Error) target;
+      }
+      logger.warn("Exception during MavenPluginManager.getPluginDescriptor() call", e);
     }
 
-    @Override
-    public void setupPluginRealm( PluginDescriptor pluginDescriptor, MavenSession session, ClassLoader parent,
-                                  List<String> imports )
-                                      throws PluginResolutionException, PluginContainerException
-    {
-        try
-        {
-            setupPluginRealm.invoke( mavenPluginManager, pluginDescriptor, session, parent, imports, null );
-        }
-        catch ( IllegalArgumentException e )
-        {
-            logger.warn( "IllegalArgumentException during MavenPluginManager.setupPluginRealm() call", e );
-        }
-        catch ( IllegalAccessException e )
-        {
-            logger.warn( "IllegalAccessException during MavenPluginManager.setupPluginRealm() call", e );
-        }
-        catch ( InvocationTargetException e )
-        {
-            Throwable target = e.getTargetException();
-            if ( target instanceof PluginResolutionException )
-            {
-                throw (PluginResolutionException) target;
-            }
-            if ( target instanceof PluginContainerException )
-            {
-                throw (PluginContainerException) target;
-            }
-            if ( target instanceof RuntimeException )
-            {
-                throw (RuntimeException) target;
-            }
-            if ( target instanceof Error )
-            {
-                throw (Error) target;
-            }
-            logger.warn( "Exception during MavenPluginManager.setupPluginRealm() call", e );
-        }
+    return null;
+  }
+
+  @Override
+  public void setupPluginRealm(PluginDescriptor pluginDescriptor, MavenSession session, ClassLoader parent,
+    List<String> imports)
+      throws PluginResolutionException, PluginContainerException {
+    try {
+      setupPluginRealm.invoke(mavenPluginManager, pluginDescriptor, session, parent, imports, null);
+    } catch (IllegalArgumentException e) {
+      logger.warn("IllegalArgumentException during MavenPluginManager.setupPluginRealm() call", e);
+    } catch (IllegalAccessException e) {
+      logger.warn("IllegalAccessException during MavenPluginManager.setupPluginRealm() call", e);
+    } catch (InvocationTargetException e) {
+      Throwable target = e.getTargetException();
+      if (target instanceof PluginResolutionException) {
+        throw (PluginResolutionException) target;
+      }
+      if (target instanceof PluginContainerException) {
+        throw (PluginContainerException) target;
+      }
+      if (target instanceof RuntimeException) {
+        throw (RuntimeException) target;
+      }
+      if (target instanceof Error) {
+        throw (Error) target;
+      }
+      logger.warn("Exception during MavenPluginManager.setupPluginRealm() call", e);
     }
+  }
 }

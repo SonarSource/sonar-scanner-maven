@@ -47,91 +47,77 @@ import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 /**
  * Analyze project. SonarQube server must be started.
  */
-@Mojo( name = "sonar", requiresDependencyResolution = ResolutionScope.TEST, aggregator = true )
+@Mojo(name = "sonar", requiresDependencyResolution = ResolutionScope.TEST, aggregator = true)
 
-public class SonarQubeMojo
-    extends AbstractMojo
-{
+public class SonarQubeMojo extends AbstractMojo {
 
-    @Parameter( defaultValue = "${session}", readonly = true )
-    private MavenSession session;
+  @Parameter(defaultValue = "${session}", readonly = true)
+  private MavenSession session;
 
-    /**
-     * Set this to 'true' to skip analysis.
-     *
-     * @since 2.3
-     */
-    @Parameter( property = "sonar.skip", defaultValue = "false", alias = "sonar.skip" )
-    private boolean skip;
+  /**
+   * Set this to 'true' to skip analysis.
+   *
+   * @since 2.3
+   */
+  @Parameter(property = "sonar.skip", defaultValue = "false", alias = "sonar.skip")
+  private boolean skip;
 
-    @Component
-    private LifecycleExecutor lifecycleExecutor;
+  @Component
+  private LifecycleExecutor lifecycleExecutor;
 
-    @Component
-    private ArtifactFactory artifactFactory;
+  @Component
+  private ArtifactFactory artifactFactory;
 
-    @Parameter( defaultValue = "${localRepository}", readonly = true, required = true )
-    private ArtifactRepository localRepository;
+  @Parameter(defaultValue = "${localRepository}", readonly = true, required = true)
+  private ArtifactRepository localRepository;
 
-    @Component
-    private ArtifactMetadataSource artifactMetadataSource;
+  @Component
+  private ArtifactMetadataSource artifactMetadataSource;
 
-    @Component
-    private ArtifactCollector artifactCollector;
+  @Component
+  private ArtifactCollector artifactCollector;
 
-    @Component
-    private DependencyTreeBuilder dependencyTreeBuilder;
+  @Component
+  private DependencyTreeBuilder dependencyTreeBuilder;
 
-    @Component
-    private MavenProjectBuilder projectBuilder;
+  @Component
+  private MavenProjectBuilder projectBuilder;
 
-    @Component( hint = "mng-4384" )
-    private SecDispatcher securityDispatcher;
+  @Component(hint = "mng-4384")
+  private SecDispatcher securityDispatcher;
 
-    @Component
-    private RuntimeInformation runtimeInformation;
+  @Component
+  private RuntimeInformation runtimeInformation;
 
-    @Override
-    public void execute()
-        throws MojoExecutionException, MojoFailureException
-    {
-        if ( skip )
-        {
-            getLog().info( "sonar.skip = true: Skipping analysis" );
-            return;
-        }
-        try
-        {
-            ExtensionsFactory extensionsFactory =
-                new ExtensionsFactory( getLog(), session, lifecycleExecutor, artifactFactory, localRepository,
-                                       artifactMetadataSource, artifactCollector, dependencyTreeBuilder,
-                                       projectBuilder );
-            DependencyCollector dependencyCollector = new DependencyCollector( dependencyTreeBuilder, localRepository );
-            MavenProjectConverter mavenProjectConverter = new MavenProjectConverter( getLog(), dependencyCollector );
-            LogHandler logHandler = new LogHandler( getLog() );
-            RunnerFactory runnerFactory =
-                new RunnerFactory( logHandler, getLog().isDebugEnabled(), runtimeInformation, session );
-
-            EmbeddedRunner runner = runnerFactory.create();
-
-            new RunnerBootstrapper( getLog(), session, securityDispatcher, runner, mavenProjectConverter,
-                                    extensionsFactory ).execute();
-        }
-        catch ( IOException e )
-        {
-            throw new MojoExecutionException( "Failed to execute SonarQube analysis", e );
-        }
+  @Override
+  public void execute() throws MojoExecutionException, MojoFailureException {
+    if (skip) {
+      getLog().info("sonar.skip = true: Skipping analysis");
+      return;
     }
+    try {
+      ExtensionsFactory extensionsFactory = new ExtensionsFactory(getLog(), session, lifecycleExecutor, artifactFactory, localRepository, artifactMetadataSource, artifactCollector,
+        dependencyTreeBuilder, projectBuilder);
+      DependencyCollector dependencyCollector = new DependencyCollector(dependencyTreeBuilder, localRepository);
+      MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), dependencyCollector);
+      LogHandler logHandler = new LogHandler(getLog());
+      RunnerFactory runnerFactory = new RunnerFactory(logHandler, getLog().isDebugEnabled(), runtimeInformation, session);
 
-    @VisibleForTesting
-    void setLocalRepository( ArtifactRepository localRepository )
-    {
-        this.localRepository = localRepository;
-    }
+      EmbeddedRunner runner = runnerFactory.create();
 
-    @VisibleForTesting
-    MavenSession getSession()
-    {
-        return session;
+      new RunnerBootstrapper(getLog(), session, securityDispatcher, runner, mavenProjectConverter, extensionsFactory).execute();
+    } catch (IOException e) {
+      throw new MojoExecutionException("Failed to execute SonarQube analysis", e);
     }
+  }
+
+  @VisibleForTesting
+  void setLocalRepository(ArtifactRepository localRepository) {
+    this.localRepository = localRepository;
+  }
+
+  @VisibleForTesting
+  MavenSession getSession() {
+    return session;
+  }
 }

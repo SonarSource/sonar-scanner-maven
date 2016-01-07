@@ -28,92 +28,81 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
  *
  * @since 1.10
  */
-public final class MavenUtils
-{
+public final class MavenUtils {
 
-    private static final String MAVEN_COMPILER_PLUGIN = "maven-compiler-plugin";
+  private static final String MAVEN_COMPILER_PLUGIN = "maven-compiler-plugin";
 
-    public static final String GROUP_ID_APACHE_MAVEN = "org.apache.maven.plugins";
+  public static final String GROUP_ID_APACHE_MAVEN = "org.apache.maven.plugins";
 
-    public static final String GROUP_ID_CODEHAUS_MOJO = "org.codehaus.mojo";
+  public static final String GROUP_ID_CODEHAUS_MOJO = "org.codehaus.mojo";
 
-    private MavenUtils()
-    {
-        // utility class with only static methods
+  private MavenUtils() {
+    // utility class with only static methods
+  }
+
+  /**
+   * Returns the version of Java used by the maven compiler plugin
+   *
+   * @param pom the project pom
+   * @return the java version
+   */
+  public static String getJavaVersion(MavenProject pom) {
+    MavenPlugin compilerPlugin = MavenPlugin.getPlugin(pom, GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN);
+    if (compilerPlugin != null) {
+      return compilerPlugin.getParameter("target");
     }
+    return null;
+  }
 
-    /**
-     * Returns the version of Java used by the maven compiler plugin
-     *
-     * @param pom the project pom
-     * @return the java version
-     */
-    public static String getJavaVersion( MavenProject pom )
-    {
-        MavenPlugin compilerPlugin = MavenPlugin.getPlugin( pom, GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN );
-        if ( compilerPlugin != null )
-        {
-            return compilerPlugin.getParameter( "target" );
-        }
-        return null;
+  public static String getJavaSourceVersion(MavenProject pom) {
+    MavenPlugin compilerPlugin = MavenPlugin.getPlugin(pom, GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN);
+    if (compilerPlugin != null) {
+      return compilerPlugin.getParameter("source");
     }
+    return null;
+  }
 
-    public static String getJavaSourceVersion( MavenProject pom )
-    {
-        MavenPlugin compilerPlugin = MavenPlugin.getPlugin( pom, GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN );
-        if ( compilerPlugin != null )
-        {
-            return compilerPlugin.getParameter( "source" );
-        }
-        return null;
+  /**
+   * @return source encoding
+   */
+  public static String getSourceEncoding(MavenProject pom) {
+    return pom.getProperties().getProperty("project.build.sourceEncoding");
+  }
+
+  /**
+   * Search for a configuration setting of an other plugin for a configuration setting.
+   *
+   * @todo there should be a better way to do this
+   * @param project the current maven project to get the configuration from.
+   * @param pluginId the group id and artifact id of the plugin to search for
+   * @param optionName the option to get from the configuration
+   * @param defaultValue the default value if the configuration was not found
+   * @return the value of the option configured in the plugin configuration
+   */
+  public static String getPluginSetting(MavenProject project, String pluginId, String optionName,
+    String defaultValue) {
+    Xpp3Dom dom = getPluginConfigurationDom(project, pluginId);
+    if (dom != null && dom.getChild(optionName) != null) {
+      return dom.getChild(optionName).getValue();
     }
+    return defaultValue;
+  }
 
-    /**
-     * @return source encoding
-     */
-    public static String getSourceEncoding( MavenProject pom )
-    {
-        return pom.getProperties().getProperty( "project.build.sourceEncoding" );
+  /**
+   * Search for the configuration Xpp3 dom of an other plugin.
+   *
+   * @todo there should be a better way to do this
+   * @param project the current maven project to get the configuration from.
+   * @param pluginId the group id and artifact id of the plugin to search for
+   * @return the value of the option configured in the plugin configuration
+   */
+  private static Xpp3Dom getPluginConfigurationDom(MavenProject project, String pluginId) {
+
+    Plugin plugin = project.getBuild().getPluginsAsMap().get(pluginId);
+    if (plugin != null) {
+      // TODO: This may cause ClassCastExceptions eventually, if the dom impls differ.
+      return (Xpp3Dom) plugin.getConfiguration();
     }
-
-    /**
-     * Search for a configuration setting of an other plugin for a configuration setting.
-     *
-     * @todo there should be a better way to do this
-     * @param project the current maven project to get the configuration from.
-     * @param pluginId the group id and artifact id of the plugin to search for
-     * @param optionName the option to get from the configuration
-     * @param defaultValue the default value if the configuration was not found
-     * @return the value of the option configured in the plugin configuration
-     */
-    public static String getPluginSetting( MavenProject project, String pluginId, String optionName,
-                                           String defaultValue )
-    {
-        Xpp3Dom dom = getPluginConfigurationDom( project, pluginId );
-        if ( dom != null && dom.getChild( optionName ) != null )
-        {
-            return dom.getChild( optionName ).getValue();
-        }
-        return defaultValue;
-    }
-
-    /**
-     * Search for the configuration Xpp3 dom of an other plugin.
-     *
-     * @todo there should be a better way to do this
-     * @param project the current maven project to get the configuration from.
-     * @param pluginId the group id and artifact id of the plugin to search for
-     * @return the value of the option configured in the plugin configuration
-     */
-    private static Xpp3Dom getPluginConfigurationDom( MavenProject project, String pluginId )
-    {
-
-        Plugin plugin = project.getBuild().getPluginsAsMap().get( pluginId );
-        if ( plugin != null )
-        {
-            // TODO: This may cause ClassCastExceptions eventually, if the dom impls differ.
-            return (Xpp3Dom) plugin.getConfiguration();
-        }
-        return null;
-    }
+    return null;
+  }
 }

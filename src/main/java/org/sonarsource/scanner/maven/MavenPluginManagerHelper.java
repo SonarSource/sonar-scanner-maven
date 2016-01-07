@@ -35,13 +35,10 @@ import org.apache.maven.plugin.descriptor.PluginDescriptor;
  * 
  * @since 2.1
  */
-public interface MavenPluginManagerHelper
-{
-    PluginDescriptor getPluginDescriptor( Plugin plugin, MavenSession session )
-        throws PluginResolutionException, PluginDescriptorParsingException, InvalidPluginDescriptorException;
+public interface MavenPluginManagerHelper {
+  PluginDescriptor getPluginDescriptor(Plugin plugin, MavenSession session) throws PluginResolutionException, PluginDescriptorParsingException, InvalidPluginDescriptorException;
 
-    void setupPluginRealm( PluginDescriptor pluginDescriptor, MavenSession session, ClassLoader parent,
-                           List<String> imports )
-                               throws PluginResolutionException, PluginContainerException;
+  void setupPluginRealm(PluginDescriptor pluginDescriptor, MavenSession session, ClassLoader parent, List<String> imports)
+    throws PluginResolutionException, PluginContainerException;
 
 }

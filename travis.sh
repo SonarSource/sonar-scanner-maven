@@ -72,7 +72,7 @@ IT)
   fi
 
   # Need install because mvn org.sonarsource.scanner.maven:sonarqube-maven-plugin:<version>:sonar in ITs will take artifact from local repo
-  mvn verify -B -e -V -Dsource.skip=true -Denforcer.skip=true -Danimal.sniffer.skip=true -Dmaven.test.skip=true
+  mvn install -B -e -V -Dsource.skip=true -Denforcer.skip=true -Danimal.sniffer.skip=true -Dmaven.test.skip=true
   
   maven_home_for_its=${HOME}/maven-for-its
   mkdir -p $maven_home_for_its

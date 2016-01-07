@@ -1,4 +1,4 @@
-# SonarQube Maven Plugin
+# SonarQube Scanner for Maven
 
 
-[![Build Status](https://travis-ci.org/mojohaus/sonar-maven-plugin.svg?branch=master)](https://travis-ci.org/mojohaus/sonar-maven-plugin)
+[![Build Status](https://travis-ci.org/SonarSource/sonar-maven.svg)](https://travis-ci.org/SonarSource/sonar-maven)

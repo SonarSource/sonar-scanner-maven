@@ -53,8 +53,7 @@ public class MavenProjectConverterTest {
   }
 
   @Test
-  public void convertSingleModuleProject()
-    throws Exception {
+  public void convertSingleModuleProject() throws Exception {
     File baseDir = temp.newFolder();
     MavenProject project = createProject(new File(baseDir, "pom.xml"), new Properties(), "jar");
 
@@ -67,8 +66,7 @@ public class MavenProjectConverterTest {
 
   // MSONAR-104
   @Test
-  public void convertSingleModuleProjectAvoidNestedFolders()
-    throws Exception {
+  public void convertSingleModuleProjectAvoidNestedFolders() throws Exception {
     File baseDir = temp.newFolder();
     File webappDir = new File(baseDir, "src/main/webapp");
     webappDir.mkdirs();
@@ -89,8 +87,7 @@ public class MavenProjectConverterTest {
   }
 
   @Test
-  public void shouldIncludePomIfRequested()
-    throws Exception {
+  public void shouldIncludePomIfRequested() throws Exception {
     File baseDir = temp.newFolder();
     File pom = new File(baseDir, "pom.xml");
     pom.createNewFile();
@@ -105,8 +102,7 @@ public class MavenProjectConverterTest {
   }
 
   @Test
-  public void convertMultiModuleProjectRelativePaths()
-    throws Exception {
+  public void convertMultiModuleProjectRelativePaths() throws Exception {
     File rootBaseDir = new File(temp.getRoot(), "root");
     MavenProject root = createProject(new File(rootBaseDir, "pom.xml"), new Properties(), "pom");
 
@@ -125,8 +121,7 @@ public class MavenProjectConverterTest {
   }
 
   @Test
-  public void convertMultiModuleProject()
-    throws Exception {
+  public void convertMultiModuleProject() throws Exception {
     File baseDir = temp.newFolder();
     MavenProject root = createProject(new File(baseDir, "pom.xml"), new Properties(), "pom");
     root.setFile(new File(baseDir, "pom.xml"));
@@ -199,8 +194,7 @@ public class MavenProjectConverterTest {
 
   // MSONAR-91
   @Test
-  public void convertMultiModuleProjectSkipModule()
-    throws Exception {
+  public void convertMultiModuleProjectSkipModule() throws Exception {
     File baseDir = temp.newFolder();
     MavenProject root = createProject(new File(baseDir, "pom.xml"), new Properties(), "pom");
     root.setFile(new File(baseDir, "pom.xml"));
@@ -278,8 +272,7 @@ public class MavenProjectConverterTest {
 
   // MSONAR-125
   @Test
-  public void skipOrphanModule()
-    throws Exception {
+  public void skipOrphanModule() throws Exception {
     File baseDir = temp.newFolder();
     MavenProject root = createProject(new File(baseDir, "pom.xml"), new Properties(), "pom");
 
@@ -328,8 +321,7 @@ public class MavenProjectConverterTest {
   }
 
   @Test
-  public void overrideSourcesSingleModuleProject()
-    throws Exception {
+  public void overrideSourcesSingleModuleProject() throws Exception {
     temp.newFolder("src");
     File srcMainDir = temp.newFolder("src", "main").getAbsoluteFile();
     File pom = temp.newFile("pom.xml");
@@ -350,8 +342,7 @@ public class MavenProjectConverterTest {
   }
 
   @Test
-  public void overrideSourcesMultiModuleProject()
-    throws Exception {
+  public void overrideSourcesMultiModuleProject() throws Exception {
     Properties pomProps = new Properties();
     pomProps.put("sonar.sources", "src/main");
     pomProps.put("sonar.tests", "src/test");
@@ -408,8 +399,7 @@ public class MavenProjectConverterTest {
   }
 
   @Test(expected = MojoExecutionException.class)
-  public void overrideSourcesNonexistentFolder()
-    throws Exception {
+  public void overrideSourcesNonexistentFolder() throws Exception {
     File pom = temp.newFile("pom.xml");
 
     Properties pomProps = new Properties();
@@ -422,8 +412,7 @@ public class MavenProjectConverterTest {
   }
 
   @Test
-  public void overrideProjectKeySingleModuleProject()
-    throws Exception {
+  public void overrideProjectKeySingleModuleProject() throws Exception {
     File pom = temp.newFile("pom.xml");
 
     Properties pomProps = new Properties();
@@ -437,6 +426,23 @@ public class MavenProjectConverterTest {
     assertThat(props.getProperty("sonar.projectKey")).isEqualTo("myProject");
     assertThat(props.getProperty("sonar.projectName")).isEqualTo("My Project");
     assertThat(props.getProperty("sonar.projectVersion")).isEqualTo("2.1");
+  }
+
+  // MSONAR-134
+  @Test
+  public void preserveFoldersHavingCommonPrefix() throws Exception {
+    File baseDir = temp.newFolder();
+    File srcDir = new File(baseDir, "src");
+    srcDir.mkdirs();
+    File srcGenDir = new File(baseDir, "src-gen");
+    srcGenDir.mkdirs();
+    MavenProject project = createProject(new File(baseDir, "pom.xml"), new Properties(), "jar");
+    project.getCompileSourceRoots().add("src");
+    project.getCompileSourceRoots().add("src-gen");
+
+    Properties props = new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(project), project, new Properties());
+
+    assertThat(props.getProperty("sonar.sources")).contains(srcDir.getAbsolutePath(), srcGenDir.getAbsolutePath());
   }
 
   private MavenProject createProject(File pom, Properties pomProps, String packaging)

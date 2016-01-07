@@ -428,13 +428,11 @@ public class MavenProjectConverter {
     return sourcePaths(pom, ScanProperties.PROJECT_SOURCE_DIRS, sources);
   }
 
-  private List<File> testSources(MavenProject pom)
-    throws MojoExecutionException {
+  private List<File> testSources(MavenProject pom) throws MojoExecutionException {
     return sourcePaths(pom, ScanProperties.PROJECT_TEST_DIRS, pom.getTestCompileSourceRoots());
   }
 
-  private List<File> sourcePaths(MavenProject pom, String propertyKey, Collection<String> mavenPaths)
-    throws MojoExecutionException {
+  private List<File> sourcePaths(MavenProject pom, String propertyKey, Collection<String> mavenPaths) throws MojoExecutionException {
     List<String> paths;
     List<File> filesOrDirs;
     boolean userDefined = false;
@@ -491,8 +489,7 @@ public class MavenProjectConverter {
   }
 
   static boolean isStrictChild(File maybeChild, File possibleParent) {
-    return maybeChild.getAbsolutePath().startsWith(possibleParent.getAbsolutePath())
-      && !maybeChild.getAbsolutePath().equals(possibleParent.getAbsolutePath());
+    return !maybeChild.equals(possibleParent) && maybeChild.toPath().startsWith(possibleParent.toPath());
   }
 
   private static String[] toPaths(Collection<File> dirs) {
@@ -500,16 +497,14 @@ public class MavenProjectConverter {
     return paths.toArray(new String[paths.size()]);
   }
 
-  private static class FileExistsFilter
-    implements Predicate<File> {
+  private static class FileExistsFilter implements Predicate<File> {
     @Override
     public boolean apply(File fileOrDir) {
       return fileOrDir != null && fileOrDir.exists();
     }
   }
 
-  private static class AbsolutePathTransform
-    implements Function<File, String> {
+  private static class AbsolutePathTransform implements Function<File, String> {
     @Override
     public String apply(File dir) {
       return dir.getAbsolutePath();

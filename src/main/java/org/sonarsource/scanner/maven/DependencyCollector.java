@@ -56,7 +56,7 @@ public class DependencyCollector {
 
     private String scope;
 
-    List<Dependency> dependencies = new ArrayList<Dependency>();
+    List<Dependency> dependencies = new ArrayList<>();
 
     public Dependency(String key, String version) {
       this.key = key;
@@ -86,13 +86,13 @@ public class DependencyCollector {
   }
 
   private List<Dependency> collectProjectDependencies(MavenProject project) {
-    final List<Dependency> result = new ArrayList<Dependency>();
+    final List<Dependency> result = new ArrayList<>();
     try {
       DependencyNode root = dependencyTreeBuilder.buildDependencyTree(project, localRepository, null);
 
       DependencyNodeVisitor visitor = new BuildingDependencyNodeVisitor(new DependencyNodeVisitor() {
 
-        private Deque<Dependency> stack = new ArrayDeque<Dependency>();
+        private Deque<Dependency> stack = new ArrayDeque<>();
 
         @Override
         public boolean visit(DependencyNode node) {

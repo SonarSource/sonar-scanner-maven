@@ -69,6 +69,7 @@
   <properties>
     <mojo.java.target>1.7</mojo.java.target>
     <mavenVersion>3.3.9</mavenVersion>
+    <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java</sonar.exclusions>
   </properties>
 
   <dependencies>

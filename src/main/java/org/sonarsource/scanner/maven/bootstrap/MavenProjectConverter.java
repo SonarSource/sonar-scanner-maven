@@ -171,7 +171,7 @@ public class MavenProjectConverter {
     for (MavenProject pom : mavenProjects) {
       boolean skipped = "true".equals(pom.getModel().getProperties().getProperty("sonar.skip"));
       if (skipped) {
-        log.debug("Module " + pom + " skipped by property 'sonar.skip'");
+        log.info("Module " + pom + " skipped by property 'sonar.skip'");
         continue;
       }
       Properties props = new Properties();

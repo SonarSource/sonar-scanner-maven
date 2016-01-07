@@ -265,7 +265,7 @@ public class MavenProjectConverterTest {
     assertThat(props.getProperty(module2Key
       + ".sonar.projectBaseDir")).isEqualTo(module2BaseDir.getAbsolutePath());
 
-    verify(log).debug("Module MavenProject: com.foo:module11:2.1 @ "
+    verify(log).info("Module MavenProject: com.foo:module11:2.1 @ "
       + new File(module11BaseDir, "pom.xml").getAbsolutePath()
       + " skipped by property 'sonar.skip'");
   }
@@ -315,7 +315,7 @@ public class MavenProjectConverterTest {
     // Module 2 is skipped
     assertThat(props.getProperty(module2Key + ".sonar.projectBaseDir")).isNull();
 
-    verify(log).debug("Module MavenProject: com.foo:module2:2.1 @ "
+    verify(log).info("Module MavenProject: com.foo:module2:2.1 @ "
       + new File(module2BaseDir, "target/dependency-reduced-pom.xml").getAbsolutePath()
       + " skipped by property 'sonar.skip'");
   }

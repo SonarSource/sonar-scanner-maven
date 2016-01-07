@@ -40,7 +40,7 @@ public abstract class AbstractMavenTest {
   }
 
   protected static String sonarGoal() {
-    return "org.codehaus.mojo:sonar-maven-plugin:" + mojoVersion().toString() + ":sonar -V";
+    return "org.sonarsource.scanner.maven:sonarqube-maven-plugin:" + mojoVersion().toString() + ":sonar -V";
   }
 
   protected static String[] cleanSonarGoal() {

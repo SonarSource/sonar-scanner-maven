@@ -28,15 +28,13 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.fest.assertions.Assertions;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonar.runner.api.EmbeddedRunner;
 import org.sonarsource.scanner.maven.ExtensionsFactory;
-import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
-import org.sonarsource.scanner.maven.bootstrap.RunnerBootstrapper;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.mockito.Matchers.any;

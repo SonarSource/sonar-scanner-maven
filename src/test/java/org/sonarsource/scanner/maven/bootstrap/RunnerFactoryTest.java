@@ -28,10 +28,9 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.sonar.runner.api.EmbeddedRunner;
 import org.sonar.runner.api.LogOutput;
-import org.sonarsource.scanner.maven.bootstrap.RunnerFactory;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.fest.assertions.MapAssert.entry;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -74,9 +73,9 @@ public class RunnerFactoryTest
         verify( mavenSession ).getExecutionProperties();
         verify( rootProject ).getProperties();
 
-        assertThat( runner.globalProperties() ).includes( entry( "system", "value" ), entry( "user", "value" ),
+        assertThat( runner.globalProperties() ).contains( entry( "system", "value" ), entry( "user", "value" ),
                                                           entry( "root", "value" ) );
-        assertThat( runner.globalProperties() ).includes( entry( "sonar.mojoUseRunner", "true" ) );
+        assertThat( runner.globalProperties() ).contains( entry( "sonar.mojoUseRunner", "true" ) );
     }
 
     @Test
@@ -88,7 +87,7 @@ public class RunnerFactoryTest
         EmbeddedRunner runnerDebug = factoryDebug.create();
         EmbeddedRunner runner = factory.create();
 
-        assertThat( runnerDebug.globalProperties() ).includes( entry( "sonar.verbose", "true" ) );
-        assertThat( runner.globalProperties() ).excludes( entry( "sonar.verbose", "true" ) );
+        assertThat( runnerDebug.globalProperties() ).contains( entry( "sonar.verbose", "true" ) );
+        assertThat( runner.globalProperties() ).doesNotContain( entry( "sonar.verbose", "true" ) );
     }
 }

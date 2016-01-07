@@ -30,7 +30,7 @@ import org.apache.maven.artifact.repository.DefaultArtifactRepository;
 import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.testing.MojoRule;
-import org.fest.assertions.MapAssert;
+import org.assertj.core.data.MapEntry;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -38,8 +38,8 @@ import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.skyscreamer.jsonassert.JSONAssert;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.fest.assertions.MapAssert.entry;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -173,7 +173,8 @@ public class SonarQubeMojoTest
     {
         executeProject( "project-with-findbugs" );
         assertPropsContains( entry( "sonar.findbugs.excludeFilters", "findbugs-exclude.xml" ) );
-        assertThat( readProps( "target/dump.properties.global" ) ).excludes( ( entry( "sonar.verbose", "true" ) ) );
+        assertThat( readProps( "target/dump.properties.global" ) ).doesNotContain( ( entry( "sonar.verbose",
+                                                                                            "true" ) ) );
 
     }
 
@@ -184,7 +185,7 @@ public class SonarQubeMojoTest
         when( mockedLogger.isDebugEnabled() ).thenReturn( true );
         executeProject( "project-with-findbugs" );
         verify( mockedLogger, atLeastOnce() ).isDebugEnabled();
-        assertThat( readProps( "target/dump.properties.global" ) ).includes( ( entry( "sonar.verbose", "true" ) ) );
+        assertThat( readProps( "target/dump.properties.global" ) ).contains( ( entry( "sonar.verbose", "true" ) ) );
     }
 
     private File executeProject( String projectName )
@@ -206,16 +207,16 @@ public class SonarQubeMojoTest
         return baseDir;
     }
 
-    private void assertPropsContains( MapAssert.Entry... entries )
+    private void assertPropsContains( MapEntry... entries )
         throws FileNotFoundException, IOException
     {
-        assertThat( readProps( "target/dump.properties" ) ).includes( entries );
+        assertThat( readProps( "target/dump.properties" ) ).contains( entries );
     }
 
-    private void assertGlobalPropsContains( MapAssert.Entry... entries )
+    private void assertGlobalPropsContains( MapEntry entries )
         throws FileNotFoundException, IOException
     {
-        assertThat( readProps( "target/dump.properties.global" ) ).includes( entries );
+        assertThat( readProps( "target/dump.properties.global" ) ).contains( entries );
     }
 
     private Properties readProps( String filePath )

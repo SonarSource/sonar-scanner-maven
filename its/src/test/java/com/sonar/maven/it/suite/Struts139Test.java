@@ -23,9 +23,6 @@ import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.MavenBuild;
 import com.sonar.orchestrator.locator.FileLocation;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.sonar.wsclient.services.Dependency;
@@ -34,24 +31,14 @@ import org.sonar.wsclient.services.DependencyTree;
 import org.sonar.wsclient.services.DependencyTreeQuery;
 import org.sonar.wsclient.services.Event;
 import org.sonar.wsclient.services.EventQuery;
-import org.sonar.wsclient.services.Measure;
-import org.sonar.wsclient.services.ResourceQuery;
 
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.number.OrderingComparisons.greaterThan;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assume.assumeTrue;
 
 public class Struts139Test extends AbstractMavenTest {
 
   private static final String PROJECT_STRUTS = "org.apache.struts:struts-parent";
   private static final String MODULE_CORE = "org.apache.struts:struts-core";
-  private static final String DEPRECATED_PACKAGE_ACTION = "org.apache.struts:struts-core:org.apache.struts.action";
-  private static final String PACKAGE_ACTION = "org.apache.struts:struts-core:src/main/java/org/apache/struts/action";
-  private static final String DEPRECATED_FILE_ACTION = "org.apache.struts:struts-core:org.apache.struts.action.Action";
-  private static final String FILE_ACTION = "org.apache.struts:struts-core:src/main/java/org/apache/struts/action/Action.java";
 
   @BeforeClass
   public static void analyzeProject() {
@@ -77,19 +64,12 @@ public class Struts139Test extends AbstractMavenTest {
     // Design features have been dropped in 5.2
     assumeTrue(!orchestrator.getServer().version().isGreaterThanOrEquals("5.2"));
     List<DependencyTree> trees = orchestrator.getServer().getWsClient().findAll(DependencyTreeQuery.createForProject(PROJECT_STRUTS));
-    assertThat(trees.size(), is(0));
+    assertThat(trees).isEmpty();
 
     trees = orchestrator.getServer().getWsClient().findAll(DependencyTreeQuery.createForProject(MODULE_CORE));
-    assertThat(trees.size(), greaterThan(0));
+    assertThat(trees).isNotEmpty();
 
-    assertThat(trees, hasItem(new BaseMatcher<DependencyTree>() {
-      public boolean matches(Object o) {
-        return StringUtils.equals("antlr:antlr", ((DependencyTree) o).getResourceKey());
-      }
-
-      public void describeTo(Description description) {
-      }
-    }));
+    assertThat(trees).extracting("resourceKey").contains("antlr:antlr");
   }
 
   /**
@@ -100,10 +80,10 @@ public class Struts139Test extends AbstractMavenTest {
     // Design features have been dropped in 5.2
     assumeTrue(!orchestrator.getServer().version().isGreaterThanOrEquals("5.2"));
     List<Dependency> dependencies = orchestrator.getServer().getWsClient().findAll(DependencyQuery.createForResource(PROJECT_STRUTS));
-    assertThat(dependencies.size(), is(0));
+    assertThat(dependencies).isEmpty();
 
     dependencies = orchestrator.getServer().getWsClient().findAll(DependencyQuery.createForResource(MODULE_CORE));
-    assertThat(dependencies.size(), greaterThan(0));
+    assertThat(dependencies).isNotEmpty();
   }
 
   @Test
@@ -111,45 +91,11 @@ public class Struts139Test extends AbstractMavenTest {
     EventQuery query = new EventQuery(PROJECT_STRUTS);
     query.setCategories(new String[] {"Version"});
     List<Event> events = orchestrator.getServer().getWsClient().findAll(query);
-    assertThat(events.size(), is(1));
+    assertThat(events).hasSize(1);
 
     Event version = events.get(0);
-    assertThat(version.getName(), is("1.3.9"));
-    assertThat(version.getCategory(), is("Version"));
+    assertThat(version.getName()).isEqualTo("1.3.9");
+    assertThat(version.getCategory()).isEqualTo("Version");
   }
 
-  /**
-   * SONAR-2041
-   */
-  @Test
-  public void unknownMetric() {
-    assertThat(getProjectMeasure("notfound"), nullValue());
-    assertThat(getCoreModuleMeasure("notfound"), nullValue());
-    assertThat(getPackageMeasure("notfound"), nullValue());
-    assertThat(getFileMeasure("notfound"), nullValue());
-  }
-
-  private Measure getFileMeasure(String metricKey) {
-    if (orchestrator.getServer().version().isGreaterThanOrEquals("4.2")) {
-      return orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics(FILE_ACTION, metricKey)).getMeasure(metricKey);
-    } else {
-      return orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics(DEPRECATED_FILE_ACTION, metricKey)).getMeasure(metricKey);
-    }
-  }
-
-  private Measure getCoreModuleMeasure(String metricKey) {
-    return orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics(MODULE_CORE, metricKey)).getMeasure(metricKey);
-  }
-
-  private Measure getProjectMeasure(String metricKey) {
-    return orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics(PROJECT_STRUTS, metricKey)).getMeasure(metricKey);
-  }
-
-  private Measure getPackageMeasure(String metricKey) {
-    if (orchestrator.getServer().version().isGreaterThanOrEquals("4.2")) {
-      return orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics(PACKAGE_ACTION, metricKey)).getMeasure(metricKey);
-    } else {
-      return orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics(DEPRECATED_PACKAGE_ACTION, metricKey)).getMeasure(metricKey);
-    }
-  }
 }

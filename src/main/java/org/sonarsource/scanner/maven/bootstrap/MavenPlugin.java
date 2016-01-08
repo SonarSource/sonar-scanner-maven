@@ -20,9 +20,12 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.Collection;
+import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.maven.model.Plugin;
+import org.apache.maven.model.PluginManagement;
+import org.apache.maven.model.ReportPlugin;
+import org.apache.maven.model.Reporting;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
@@ -33,10 +36,6 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
  */
 public class MavenPlugin {
 
-  private static final String CONFIGURATION_ELEMENT = "configuration";
-
-  private Plugin plugin;
-
   private Xpp3Dom configuration;
 
   /**
@@ -44,20 +43,8 @@ public class MavenPlugin {
    *
    * @param plugin the plugin
    */
-  public MavenPlugin(Plugin plugin) {
-    this.plugin = plugin;
-    this.configuration = (Xpp3Dom) plugin.getConfiguration();
-    if (this.configuration == null) {
-      configuration = new Xpp3Dom(CONFIGURATION_ELEMENT);
-      plugin.setConfiguration(this.configuration);
-    }
-  }
-
-  /**
-   * @return the underlying plugin
-   */
-  public Plugin getPlugin() {
-    return plugin;
+  private MavenPlugin(Object configuration) {
+    this.configuration = (Xpp3Dom) configuration;
   }
 
   /**
@@ -84,8 +71,8 @@ public class MavenPlugin {
     return StringUtils.substringBefore(key, "[");
   }
 
+  @CheckForNull
   private Xpp3Dom findNodeWith(String key) {
-    checkKeyArgument(key);
     String[] keyParts = key.split("/");
     Xpp3Dom node = configuration;
     for (String keyPart : keyParts) {
@@ -102,15 +89,8 @@ public class MavenPlugin {
     return node;
   }
 
-  private static void checkKeyArgument(String key) {
-    if (key == null) {
-      throw new IllegalArgumentException("Parameter 'key' should not be null.");
-    }
-  }
-
   /**
    * Returns a plugin from a pom based on its group id and artifact id
-   * <p/>
    * <p>
    * It searches in the build section, then the reporting section and finally the pluginManagement section
    * </p>
@@ -120,51 +100,49 @@ public class MavenPlugin {
    * @param artifactId the plugin artifact id
    * @return the plugin if it exists, null otherwise
    */
+  @CheckForNull
   public static MavenPlugin getPlugin(MavenProject pom, String groupId, String artifactId) {
-    if (pom == null) {
-      return null;
-    }
+    Object pluginConfiguration = null;
+
     // look for plugin in <build> section
-    Plugin plugin = null;
-    if (pom.getBuildPlugins() != null) {
-      plugin = getPlugin(pom.getBuildPlugins(), groupId, artifactId);
-    }
+    Plugin plugin = getPlugin(pom.getBuildPlugins(), groupId, artifactId);
 
-    // look for plugin in <pluginManagement> section
-    if (pom.getPluginManagement() != null) {
-      Plugin pluginManagement = getPlugin(pom.getPluginManagement().getPlugins(), groupId, artifactId);
-      if (plugin == null) {
-        plugin = pluginManagement;
-
-      } else if (pluginManagement != null) {
-        if (pluginManagement.getConfiguration() != null) {
-          if (plugin.getConfiguration() == null) {
-            plugin.setConfiguration(pluginManagement.getConfiguration());
-          } else {
-            Xpp3Dom.mergeXpp3Dom((Xpp3Dom) plugin.getConfiguration(),
-              (Xpp3Dom) pluginManagement.getConfiguration());
-          }
-        }
-        if (plugin.getDependencies() == null && pluginManagement.getDependencies() != null) {
-          plugin.setDependencies(pluginManagement.getDependencies());
-        }
-        if (plugin.getVersion() == null) {
-          plugin.setVersion(pluginManagement.getVersion());
+    if (plugin != null) {
+      pluginConfiguration = plugin.getConfiguration();
+    } else {
+      // look for plugin in reporting
+      Reporting reporting = pom.getModel().getReporting();
+      if (reporting != null) {
+        ReportPlugin reportPlugin = getReportPlugin(reporting.getPlugins(), groupId, artifactId);
+        if (reportPlugin != null) {
+          pluginConfiguration = reportPlugin.getConfiguration();
         }
       }
     }
 
-    if (plugin != null) {
-      return new MavenPlugin(plugin);
+    // look for plugin in <pluginManagement> section
+    PluginManagement pluginManagement = pom.getPluginManagement();
+    if (pluginManagement != null) {
+      Plugin pluginFromManagement = getPlugin(pluginManagement.getPlugins(), groupId, artifactId);
+      if (pluginFromManagement != null) {
+        Object pluginConfigFromManagement = pluginFromManagement.getConfiguration();
+        if (pluginConfiguration == null) {
+          pluginConfiguration = pluginConfigFromManagement;
+        } else if (pluginConfigFromManagement != null) {
+          Xpp3Dom.mergeXpp3Dom((Xpp3Dom) pluginConfiguration, (Xpp3Dom) pluginConfigFromManagement);
+        }
+      }
+    }
+
+    if (pluginConfiguration != null) {
+      return new MavenPlugin(pluginConfiguration);
     }
     return null;
+
   }
 
+  @CheckForNull
   private static Plugin getPlugin(Collection<Plugin> plugins, String groupId, String artifactId) {
-    if (plugins == null) {
-      return null;
-    }
-
     for (Plugin plugin : plugins) {
       if (isEqual(plugin, groupId, artifactId)) {
         return plugin;
@@ -173,32 +151,22 @@ public class MavenPlugin {
     return null;
   }
 
-  /**
-   * Tests whether a plugin has got a given artifact id and group id
-   *
-   * @param plugin the plugin to test
-   * @param groupId the group id
-   * @param artifactId the artifact id
-   * @return whether the plugin has got group + artifact ids
-   */
   private static boolean isEqual(Plugin plugin, String groupId, String artifactId) {
-    if (plugin != null && plugin.getArtifactId().equals(artifactId)) {
-      if (plugin.getGroupId() == null) {
-        return groupId == null || groupId.equals(MavenUtils.GROUP_ID_APACHE_MAVEN)
-          || groupId.equals(MavenUtils.GROUP_ID_CODEHAUS_MOJO);
-      }
-      return plugin.getGroupId().equals(groupId);
-    }
-    return false;
+    return plugin.getArtifactId().equals(artifactId) && plugin.getGroupId().equals(groupId);
   }
 
-  @Override
-  public String toString() {
-    return new ToStringBuilder(this).append("groupId",
-      plugin.getGroupId()).append("artifactId",
-        plugin.getArtifactId())
-      .append("version",
-        plugin.getVersion())
-      .toString();
+  @CheckForNull
+  private static ReportPlugin getReportPlugin(Collection<ReportPlugin> plugins, String groupId, String artifactId) {
+    for (ReportPlugin plugin : plugins) {
+      if (isEqual(plugin, groupId, artifactId)) {
+        return plugin;
+      }
+    }
+    return null;
   }
+
+  private static boolean isEqual(ReportPlugin plugin, String groupId, String artifactId) {
+    return plugin.getArtifactId().equals(artifactId) && plugin.getGroupId().equals(groupId);
+  }
+
 }

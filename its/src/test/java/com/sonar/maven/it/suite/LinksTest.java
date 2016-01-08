@@ -23,19 +23,18 @@ import com.google.common.collect.Lists;
 import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.MavenBuild;
 import com.sonar.orchestrator.db.Database;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class LinksTest extends AbstractMavenTest {
 
-  private static Object[] expectedLinks = new String[] {
+  private static String[] expectedLinks = new String[] {
     "homepage=http://www.simplesample.org_OVERRIDDEN",
     "ci=http://bamboo.ci.codehaus.org/browse/SIMPLESAMPLE",
     "issue=http://jira.codehaus.org/browse/SIMPLESAMPLE",

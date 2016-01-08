@@ -36,7 +36,7 @@ public abstract class AbstractMavenTest {
   public static Orchestrator orchestrator = MavenTestSuite.ORCHESTRATOR;
 
   protected static String[] cleanInstallSonarGoal() {
-    return new String[] {"clean install", sonarGoal()};
+    return new String[] {"clean install " + sonarGoal()};
   }
 
   protected static String sonarGoal() {
@@ -44,15 +44,15 @@ public abstract class AbstractMavenTest {
   }
 
   protected static String[] cleanSonarGoal() {
-    return new String[] {"clean", sonarGoal()};
+    return new String[] {"clean " + sonarGoal()};
   }
 
   protected static String[] cleanPackageSonarGoal() {
-    return new String[] {"clean package", sonarGoal()};
+    return new String[] {"clean package " + sonarGoal()};
   }
 
   protected static String[] cleanVerifySonarGoal() {
-    return new String[] {"clean verify", sonarGoal()};
+    return new String[] {"clean verify " + sonarGoal()};
   }
 
   protected static Version mojoVersion() {

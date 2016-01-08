@@ -40,13 +40,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.model.CiManagement;
 import org.apache.maven.model.IssueManagement;
-import org.apache.maven.model.ReportPlugin;
-import org.apache.maven.model.Reporting;
 import org.apache.maven.model.Scm;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.sonar.runner.api.RunnerProperties;
 import org.sonar.runner.api.ScanProperties;
 import org.sonarsource.scanner.maven.DependencyCollector;
@@ -81,11 +78,11 @@ public class MavenProjectConverter {
 
   private static final String MAVEN_PACKAGING_WAR = "war";
 
-  public static final String ARTIFACT_MAVEN_WAR_PLUGIN = "org.apache.maven.plugins:maven-war-plugin";
+  public static final String ARTIFACTID_MAVEN_WAR_PLUGIN = "maven-war-plugin";
 
-  public static final String ARTIFACT_MAVEN_SUREFIRE_PLUGIN = "org.apache.maven.plugins:maven-surefire-plugin";
+  public static final String ARTIFACTID_MAVEN_SUREFIRE_PLUGIN = "maven-surefire-plugin";
 
-  public static final String ARTIFACT_FINDBUGS_MAVEN_PLUGIN = "org.codehaus.mojo:findbugs-maven-plugin";
+  public static final String ARTIFACTID_FINDBUGS_MAVEN_PLUGIN = "findbugs-maven-plugin";
 
   public static final String FINDBUGS_EXCLUDE_FILTERS = "sonar.findbugs.excludeFilters";
 
@@ -248,20 +245,10 @@ public class MavenProjectConverter {
   }
 
   private static void findBugsExcludeFileMaven(MavenProject pom, Properties props) {
-    Reporting reporting = pom.getModel().getReporting();
-
-    if (reporting != null) {
-      ReportPlugin findbugsPlugin = reporting.getReportPluginsAsMap().get(ARTIFACT_FINDBUGS_MAVEN_PLUGIN);
-
-      if (findbugsPlugin != null) {
-        Xpp3Dom configDom = (Xpp3Dom) findbugsPlugin.getConfiguration();
-        if (configDom != null) {
-          Xpp3Dom excludeFilter = configDom.getChild("excludeFilterFile");
-          if (excludeFilter != null) {
-            props.put(FINDBUGS_EXCLUDE_FILTERS, excludeFilter.getValue());
-          }
-        }
-      }
+    String excludeFilterFile = MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_CODEHAUS_MOJO, ARTIFACTID_FINDBUGS_MAVEN_PLUGIN, "excludeFilterFile", null);
+    File path = resolvePath(excludeFilterFile, pom.getBasedir());
+    if (path != null && path.exists()) {
+      props.put(FINDBUGS_EXCLUDE_FILTERS, path.getAbsolutePath());
     }
   }
 
@@ -331,7 +318,7 @@ public class MavenProjectConverter {
   }
 
   private static void populateSurefireReportsPath(MavenProject pom, Properties props) {
-    String surefireReportsPath = MavenUtils.getPluginSetting(pom, ARTIFACT_MAVEN_SUREFIRE_PLUGIN, "reportsDirectory",
+    String surefireReportsPath = MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_APACHE_MAVEN, ARTIFACTID_MAVEN_SUREFIRE_PLUGIN, "reportsDirectory",
       pom.getBuild().getDirectory() + File.separator + "surefire-reports");
     File path = resolvePath(surefireReportsPath, pom.getBasedir());
     if (path != null && path.exists()) {
@@ -346,8 +333,7 @@ public class MavenProjectConverter {
       List<String> classpathElements = test ? pom.getTestClasspathElements() : pom.getCompileClasspathElements();
       if (classpathElements != null) {
         for (String classPathString : classpathElements) {
-          if (!classPathString.equals(test ? pom.getBuild().getTestOutputDirectory()
-            : pom.getBuild().getOutputDirectory())) {
+          if (!classPathString.equals(test ? pom.getBuild().getTestOutputDirectory() : pom.getBuild().getOutputDirectory())) {
             File libPath = resolvePath(classPathString, pom.getBasedir());
             if (libPath != null && libPath.exists()) {
               libraries.add(libPath);
@@ -419,8 +405,7 @@ public class MavenProjectConverter {
     throws MojoExecutionException {
     Set<String> sources = new LinkedHashSet<>();
     if (MAVEN_PACKAGING_WAR.equals(pom.getModel().getPackaging())) {
-      sources.add(MavenUtils.getPluginSetting(pom, ARTIFACT_MAVEN_WAR_PLUGIN, "warSourceDirectory",
-        "src/main/webapp"));
+      sources.add(MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_APACHE_MAVEN, ARTIFACTID_MAVEN_WAR_PLUGIN, "warSourceDirectory", "src/main/webapp"));
     }
 
     sources.add(pom.getFile().getPath());
@@ -436,8 +421,7 @@ public class MavenProjectConverter {
     List<String> paths;
     List<File> filesOrDirs;
     boolean userDefined = false;
-    String prop = StringUtils.defaultIfEmpty(userProperties.getProperty(propertyKey),
-      pom.getProperties().getProperty(propertyKey));
+    String prop = StringUtils.defaultIfEmpty(userProperties.getProperty(propertyKey), pom.getProperties().getProperty(propertyKey));
     if (prop != null) {
       paths = Arrays.asList(StringUtils.split(prop, ","));
       filesOrDirs = resolvePaths(paths, pom.getBasedir());

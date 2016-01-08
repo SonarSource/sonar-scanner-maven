@@ -57,8 +57,7 @@ public class SonarQubeMojoTest {
 
   private Log mockedLogger;
 
-  private SonarQubeMojo getMojo(File baseDir)
-    throws Exception {
+  private SonarQubeMojo getMojo(File baseDir) throws Exception {
     return (SonarQubeMojo) mojoRule.lookupConfiguredMojo(baseDir, "sonar");
   }
 
@@ -68,8 +67,7 @@ public class SonarQubeMojoTest {
   }
 
   @Test
-  public void executeMojo()
-    throws Exception {
+  public void executeMojo() throws Exception {
     File baseDir = executeProject("sample-project");
 
     // passed in the properties of the profile and project
@@ -78,16 +76,14 @@ public class SonarQubeMojoTest {
   }
 
   @Test
-  public void shouldExportBinaries()
-    throws Exception {
+  public void shouldExportBinaries() throws Exception {
     File baseDir = executeProject("sample-project");
 
     assertPropsContains(entry("sonar.binaries", new File(baseDir, "target/classes").getAbsolutePath()));
   }
 
   @Test
-  public void shouldExportDefaultWarWebSource()
-    throws Exception {
+  public void shouldExportDefaultWarWebSource() throws Exception {
     File baseDir = executeProject("sample-war-project");
     assertPropsContains(entry("sonar.sources",
       new File(baseDir, "src/main/webapp").getAbsolutePath() + ","
@@ -96,8 +92,7 @@ public class SonarQubeMojoTest {
   }
 
   @Test
-  public void shouldExportOverridenWarWebSource()
-    throws Exception {
+  public void shouldExportOverridenWarWebSource() throws Exception {
     File baseDir = executeProject("war-project-override-web-dir");
     assertPropsContains(entry("sonar.sources",
       new File(baseDir, "web").getAbsolutePath() + ","
@@ -106,8 +101,7 @@ public class SonarQubeMojoTest {
   }
 
   @Test
-  public void shouldExportDependencies()
-    throws Exception {
+  public void shouldExportDependencies() throws Exception {
     File baseDir = executeProject("export-dependencies");
 
     Properties outProps = readProps("target/dump.properties");
@@ -117,30 +111,26 @@ public class SonarQubeMojoTest {
       + "{\"k\":\"commons-lang:commons-lang\",\"v\":\"2.6\",\"s\":\"compile\",\"d\":[]}" + "]},"
       + "{\"k\":\"junit:junit\",\"v\":\"3.8.1\",\"s\":\"test\",\"d\":[]}]", libJson, true);
 
-    assertThat(outProps.getProperty("sonar.java.binaries")).isEqualTo(new File(baseDir,
-      "target/classes").getAbsolutePath());
-    assertThat(outProps.getProperty("sonar.java.test.binaries")).isEqualTo(new File(baseDir,
-      "target/test-classes").getAbsolutePath());
+    assertThat(outProps.getProperty("sonar.java.binaries")).isEqualTo(new File(baseDir, "target/classes").getAbsolutePath());
+    assertThat(outProps.getProperty("sonar.java.test.binaries")).isEqualTo(new File(baseDir, "target/test-classes").getAbsolutePath());
   }
 
   // MSONAR-135
   @Test
-  public void shouldExportDependenciesWithSystemScopeTransitive()
-    throws Exception {
+  public void shouldExportDependenciesWithSystemScopeTransitive() throws Exception {
     executeProject("system-scope");
 
     Properties outProps = readProps("target/dump.properties");
     String libJson = outProps.getProperty("sonar.maven.projectDependencies");
 
-    JSONAssert.assertEquals("[{\"k\":\"org.codehaus.xfire:xfire-core\",\"v\":\"1.2.6\",\"s\":\"compile\","
-      + "\"d\":[{\"k\":\"javax.activation:activation\",\"v\":\"1.1.1\",\"s\":\"system\",\"d\":[]}]}]", libJson,
-      true);
+    JSONAssert.assertEquals(
+      "[{\"k\":\"org.codehaus.xfire:xfire-core\",\"v\":\"1.2.6\",\"s\":\"compile\",\"d\":[{\"k\":\"javax.activation:activation\",\"v\":\"1.1.1\",\"s\":\"system\",\"d\":[]}]}]",
+      libJson, true);
   }
 
   // MSONAR-113
   @Test
-  public void shouldExportSurefireReportsPath()
-    throws Exception {
+  public void shouldExportSurefireReportsPath() throws Exception {
 
     File baseDir = executeProject("sample-project-with-surefire");
     assertPropsContains(entry("sonar.junit.reportsPath",
@@ -149,37 +139,40 @@ public class SonarQubeMojoTest {
 
   // MSONAR-113
   @Test
-  public void shouldExportSurefireCustomReportsPath()
-    throws Exception {
+  public void shouldExportSurefireCustomReportsPath() throws Exception {
     File baseDir = executeProject("sample-project-with-custom-surefire-path");
-    assertPropsContains(entry("sonar.junit.reportsPath",
-      new File(baseDir, "target/tests").getAbsolutePath()));
+    assertPropsContains(entry("sonar.junit.reportsPath", new File(baseDir, "target/tests").getAbsolutePath()));
   }
 
   @Test
-  public void findbugsExcludeFile()
-    throws IOException, Exception {
-    executeProject("project-with-findbugs");
-    assertPropsContains(entry("sonar.findbugs.excludeFilters", "findbugs-exclude.xml"));
-    assertThat(readProps("target/dump.properties.global")).doesNotContain((entry("sonar.verbose",
-      "true")));
-
+  public void reuse_findbugs_exclusions_from_reporting() throws IOException, Exception {
+    File baseDir = executeProject("project-with-findbugs-reporting");
+    assertPropsContains(entry("sonar.findbugs.excludeFilters", new File(baseDir, "findbugs-exclude.xml").getAbsolutePath()));
   }
 
   @Test
-  public void verbose()
-    throws Exception {
+  public void reuse_findbugs_exclusions_from_plugin() throws IOException, Exception {
+    File baseDir = executeProject("project-with-findbugs-build");
+    assertPropsContains(entry("sonar.findbugs.excludeFilters", new File(baseDir, "findbugs-exclude.xml").getAbsolutePath()));
+  }
+
+  @Test
+  public void reuse_findbugs_exclusions_from_plugin_management() throws IOException, Exception {
+    File baseDir = executeProject("project-with-findbugs-plugin-management");
+    assertPropsContains(entry("sonar.findbugs.excludeFilters", new File(baseDir, "findbugs-exclude.xml").getAbsolutePath()));
+  }
+
+  @Test
+  public void verbose() throws Exception {
     when(mockedLogger.isDebugEnabled()).thenReturn(true);
-    executeProject("project-with-findbugs");
+    executeProject("project-with-findbugs-reporting");
     verify(mockedLogger, atLeastOnce()).isDebugEnabled();
     assertThat(readProps("target/dump.properties.global")).contains((entry("sonar.verbose", "true")));
   }
 
   private File executeProject(String projectName)
     throws Exception {
-    ArtifactRepository artifactRepo = new DefaultArtifactRepository("local",
-      this.getClass().getResource("SonarQubeMojoTest/repository").toString(),
-      new DefaultRepositoryLayout());
+    ArtifactRepository artifactRepo = new DefaultArtifactRepository("local", this.getClass().getResource("SonarQubeMojoTest/repository").toString(), new DefaultRepositoryLayout());
 
     File baseDir = new File("src/test/resources/org/sonarsource/scanner/maven/SonarQubeMojoTest/" + projectName);
     SonarQubeMojo mojo = getMojo(baseDir);
@@ -192,18 +185,15 @@ public class SonarQubeMojoTest {
     return baseDir;
   }
 
-  private void assertPropsContains(MapEntry... entries)
-    throws FileNotFoundException, IOException {
+  private void assertPropsContains(MapEntry... entries) throws FileNotFoundException, IOException {
     assertThat(readProps("target/dump.properties")).contains(entries);
   }
 
-  private void assertGlobalPropsContains(MapEntry entries)
-    throws FileNotFoundException, IOException {
+  private void assertGlobalPropsContains(MapEntry entries) throws FileNotFoundException, IOException {
     assertThat(readProps("target/dump.properties.global")).contains(entries);
   }
 
-  private Properties readProps(String filePath)
-    throws FileNotFoundException, IOException {
+  private Properties readProps(String filePath) throws FileNotFoundException, IOException {
     FileInputStream fis = null;
     try {
       File dump = new File(filePath);

@@ -40,9 +40,8 @@ import org.sonar.wsclient.Sonar;
 import org.sonar.wsclient.services.Resource;
 import org.sonar.wsclient.services.ResourceQuery;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assume.assumeFalse;
-import static org.junit.Assume.assumeTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.data.MapEntry.entry;
 
 public class MavenTest extends AbstractMavenTest {
 
@@ -54,10 +53,10 @@ public class MavenTest extends AbstractMavenTest {
     orchestrator.resetData();
   }
 
-  @Test
   /**
    * See MSONAR-129
    */
+  @Test
   public void useUserPropertiesGlobalConfig() throws Exception {
     BuildRunner runner = new BuildRunner(orchestrator.getConfiguration(), orchestrator.getDatabase());
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
@@ -210,34 +209,6 @@ public class MavenTest extends AbstractMavenTest {
     }
   }
 
-  @Test
-  public void build_helper_plugin_should_add_dirs_when_dynamic_analysis() {
-    // sonar.phase is no more supported in SQ 4.3
-    assumeFalse(orchestrator.getServer().version().isGreaterThanOrEquals("4.3"));
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/many-source-dirs"))
-      .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.dynamicAnalysis", "true");
-    orchestrator.executeBuild(build);
-
-    checkBuildHelperFiles();
-    checkBuildHelperTestFiles();
-  }
-
-  /**
-   * There was a regression in 2.9 and 2.10, which was fixed in 2.10.1 and 2.11 - SONAR-2744
-   */
-  @Test
-  public void build_helper_plugin_should_add_dirs_when_static_analysis() {
-    // sonar.phase is no more supported in SQ 4.3
-    assumeFalse(orchestrator.getServer().version().isGreaterThanOrEquals("4.3"));
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/many-source-dirs"))
-      .setGoals(cleanSonarGoal())
-      .setProperty("sonar.dynamicAnalysis", "false");
-    orchestrator.executeBuild(build);
-
-    checkBuildHelperFiles();
-  }
-
   /**
    * See SONAR-3843
    */
@@ -271,8 +242,6 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void override_sources() {
-    assumeTrue(orchestrator.getServer().version().isGreaterThanOrEquals("4.2"));
-
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-override-sources")).setGoals(sonarGoal());
     orchestrator.executeBuild(build);
 
@@ -288,8 +257,6 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void override_sources_in_multi_module() {
-    assumeTrue(mojoVersion().isGreaterThanOrEquals("2.4"));
-
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/multi-modules-override-sources")).setGoals(sonarGoal());
     orchestrator.executeBuild(build);
 
@@ -302,8 +269,6 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void override_sources_in_multi_module_aggregator() {
-    assumeTrue(mojoVersion().isGreaterThanOrEquals("2.4") && orchestrator.getServer().version().isGreaterThanOrEquals("4.3"));
-
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/multi-module-aggregator")).setGoals(sonarGoal())
       .setProperty("sonar.lang.patterns.web", "**/*.jsp");
     orchestrator.executeBuild(build);
@@ -317,8 +282,6 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void inclusions_apply_to_source_dirs() {
-    assumeTrue(orchestrator.getServer().version().isGreaterThanOrEquals("4.2"));
-
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/inclusions_apply_to_source_dirs")).setGoals(sonarGoal());
     orchestrator.executeBuild(build);
 
@@ -334,7 +297,6 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void fail_if_bad_value_of_sonar_sources_property() {
-    assumeTrue(orchestrator.getServer().version().isGreaterThanOrEquals("4.2"));
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-bad-sources-property")).setGoals(sonarGoal());
     BuildResult result = orchestrator.executeBuildQuietly(build);
     assertThat(result.getStatus()).isNotEqualTo(0);
@@ -347,7 +309,6 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void fail_if_bad_value_of_sonar_tests_property() {
-    assumeTrue(orchestrator.getServer().version().isGreaterThanOrEquals("4.2"));
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-bad-tests-property")).setGoals(sonarGoal());
     BuildResult result = orchestrator.executeBuildQuietly(build);
     assertThat(result.getStatus()).isNotEqualTo(0);
@@ -358,8 +319,6 @@ public class MavenTest extends AbstractMavenTest {
   // MSONAR-83
   @Test
   public void shouldPopulateLibraries() throws IOException {
-    assumeTrue(mojoVersion().isGreaterThanOrEquals("2.4") && orchestrator.getServer().version().isGreaterThanOrEquals("4.3"));
-
     File outputProps = temp.newFile();
     File projectPom = ItUtils.locateProjectPom("shared/struts-1.3.9-diet");
     MavenBuild build = MavenBuild.create(projectPom)
@@ -376,16 +335,13 @@ public class MavenTest extends AbstractMavenTest {
       }
     }
     assertThat(strutsCoreModuleId).isNotNull();
-    if (mojoVersion().isGreaterThanOrEquals("2.5")) {
-      assertThat(getProps(outputProps).getProperty(strutsCoreModuleId + ".sonar.java.libraries")).contains("antlr-2.7.2.jar");
-    }
+    assertThat(getProps(outputProps).getProperty(strutsCoreModuleId + ".sonar.java.libraries")).contains("antlr-2.7.2.jar");
     assertThat(getProps(outputProps).getProperty(strutsCoreModuleId + ".sonar.libraries")).contains("antlr-2.7.2.jar");
   }
 
   // MSONAR-91
   @Test
   public void shouldSkipModules() {
-    assumeTrue(mojoVersion().isGreaterThanOrEquals("2.5"));
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("exclusions/skip-one-module"))
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
@@ -396,6 +352,24 @@ public class MavenTest extends AbstractMavenTest {
     assertThat(sonar.find(new ResourceQuery("com.sonarsource.it.samples:module_a2")).getName()).isEqualTo("Sub-module A2");
     assertThat(sonar.find(new ResourceQuery("com.sonarsource.it.samples:module_b")).getName()).isEqualTo("Module B");
 
+  }
+
+  @Test
+  public void read_default_from_plugins_config() throws Exception {
+    File outputProps = temp.newFile();
+    // Need package to have test execution
+    // Surefire reports are not in standard directory
+    File pom = ItUtils.locateProjectPom("project-default-config");
+    MavenBuild build = MavenBuild.create(pom)
+      .setGoals(cleanPackageSonarGoal())
+      .setProperty("sonarRunner.dumpToFile", outputProps.getAbsolutePath());
+    orchestrator.executeBuild(build);
+
+    Properties props = getProps(outputProps);
+    assertThat(props).contains(
+      entry("sonar.findbugs.excludeFilters", new File(pom.getParentFile(), "findbugs-filter.xml").toString()),
+      entry("sonar.junit.reportsPath", new File(pom.getParentFile(), "target/surefire-output").toString()),
+      entry("sonar.java.source", "1.7"));
   }
 
   private Properties getProps(File outputProps)
@@ -409,25 +383,6 @@ public class MavenTest extends AbstractMavenTest {
     } finally {
       IOUtils.closeQuietly(fis);
     }
-  }
-
-  private void checkBuildHelperFiles() {
-    Resource project = getResource("com.sonarsource.it.samples:many-source-dirs");
-    assertThat(project).isNotNull();
-    assertThat(project.getMeasureIntValue("files")).isEqualTo(2);
-    if (orchestrator.getServer().version().isGreaterThanOrEquals("4.2")) {
-      assertThat(getResource("com.sonarsource.it.samples:many-source-dirs:src/main/java/FirstClass.java")).isNotNull();
-      assertThat(getResource("com.sonarsource.it.samples:many-source-dirs:src/main/java2/SecondClass.java")).isNotNull();
-    } else {
-      assertThat(getResource("com.sonarsource.it.samples:many-source-dirs:[default].FirstClass")).isNotNull();
-      assertThat(getResource("com.sonarsource.it.samples:many-source-dirs:[default].SecondClass")).isNotNull();
-    }
-  }
-
-  private void checkBuildHelperTestFiles() {
-    Resource project = getResource("com.sonarsource.it.samples:many-source-dirs");
-    assertThat(project).isNotNull();
-    assertThat(project.getMeasureIntValue("tests")).isEqualTo(2);
   }
 
   private Resource getResource(String key) {

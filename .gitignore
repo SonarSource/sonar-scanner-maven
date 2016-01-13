@@ -10,7 +10,7 @@ target/
 # Eclipse
 .classpath
 .project
-.settings
+.settings/
 bin
 
 # ---- Mac OS X

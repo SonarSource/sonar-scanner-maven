@@ -113,7 +113,12 @@
       <groupId>org.sonatype.plexus</groupId>
       <artifactId>plexus-sec-dispatcher</artifactId>
       <version>1.4</version>
-      <scope>compile</scope>
+    </dependency>
+    <!-- MSONAR-141 -->
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-utils</artifactId>
+      <version>3.0.22</version>
     </dependency>
  
     <dependency>

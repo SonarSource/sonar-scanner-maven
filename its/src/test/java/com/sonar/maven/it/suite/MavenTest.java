@@ -32,13 +32,16 @@ import java.util.Map;
 import java.util.Properties;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.sonar.wsclient.Sonar;
+import org.sonar.wsclient.services.PropertyUpdateQuery;
 import org.sonar.wsclient.services.Resource;
 import org.sonar.wsclient.services.ResourceQuery;
+import org.sonar.wsclient.user.UserParameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
@@ -51,6 +54,11 @@ public class MavenTest extends AbstractMavenTest {
   @Before
   public void deleteData() {
     orchestrator.resetData();
+  }
+
+  @After
+  public void cleanup() {
+    orchestrator.getServer().getAdminWsClient().update(new PropertyUpdateQuery("sonar.forceAuthentication", "false"));
   }
 
   /**
@@ -372,6 +380,28 @@ public class MavenTest extends AbstractMavenTest {
       entry("sonar.java.source", "1.7"));
   }
 
+  /**
+   * MSONAR-141
+   */
+  @Test
+  public void supportMavenEncryption() throws Exception {
+    orchestrator.getServer().getAdminWsClient().update(new PropertyUpdateQuery("sonar.forceAuthentication", "true"));
+    orchestrator.getServer().adminWsClient().userClient().create(UserParameters.create().login("julien").name("Julien").password("123abc").passwordConfirmation("123abc"));
+
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
+      .setGoals(cleanSonarGoal());
+
+    File securityXml = new File(this.getClass().getResource("/security-settings.xml").toURI());
+    File settingsXml = new File(this.getClass().getResource("/settings-with-encrypted-sonar-password.xml").toURI());
+
+    build.addArgument("--settings=" + settingsXml.getAbsolutePath());
+    // MNG-4853
+    build.addArgument("-Dsettings.security=" + securityXml.getAbsolutePath());
+    build.setProperty("sonar.login", "julien");
+    build.addArgument("-Psonar-password");
+    orchestrator.executeBuild(build);
+  }
+
   private Properties getProps(File outputProps)
     throws FileNotFoundException, IOException {
     FileInputStream fis = null;
@@ -383,10 +413,6 @@ public class MavenTest extends AbstractMavenTest {
     } finally {
       IOUtils.closeQuietly(fis);
     }
-  }
-
-  private Resource getResource(String key) {
-    return orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics(key, "files", "tests"));
   }
 
 }

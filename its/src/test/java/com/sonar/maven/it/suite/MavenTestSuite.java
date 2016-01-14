@@ -43,5 +43,5 @@ public class MavenTestSuite {
     .setOrchestratorProperty("xmlVersion", "LATEST_RELEASE")
     .addPlugin("xml")
 
-  .build();
+    .build();
 }

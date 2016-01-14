@@ -30,8 +30,6 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.sonar.runner.api.EmbeddedRunner;
 import org.sonarsource.scanner.maven.ExtensionsFactory;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
 /**
  * Configure properties and bootstrap using SonarQube runner API (need SQ 4.3+)
@@ -39,31 +37,24 @@ import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 public class RunnerBootstrapper {
 
   private final Log log;
-
   private final MavenSession session;
-
-  private final SecDispatcher securityDispatcher;
-
   private final EmbeddedRunner runner;
-
   private final MavenProjectConverter mavenProjectConverter;
-
   private final ExtensionsFactory extensionsFactory;
-
   private String serverVersion;
+  private PropertyDecryptor propertyDecryptor;
 
-  public RunnerBootstrapper(Log log, MavenSession session, SecDispatcher securityDispatcher, EmbeddedRunner runner,
-    MavenProjectConverter mavenProjectConverter, ExtensionsFactory extensionsFactory) {
+  public RunnerBootstrapper(Log log, MavenSession session, EmbeddedRunner runner, MavenProjectConverter mavenProjectConverter, ExtensionsFactory extensionsFactory,
+    PropertyDecryptor propertyDecryptor) {
     this.log = log;
     this.session = session;
-    this.securityDispatcher = securityDispatcher;
     this.runner = runner;
     this.mavenProjectConverter = mavenProjectConverter;
     this.extensionsFactory = extensionsFactory;
+    this.propertyDecryptor = propertyDecryptor;
   }
 
-  public void execute()
-    throws IOException, MojoExecutionException {
+  public void execute() throws IOException, MojoExecutionException {
     try {
       applyMasks();
       runner.start();
@@ -125,32 +116,9 @@ public class RunnerBootstrapper {
       throw new IllegalStateException("Maven session does not declare a top level project");
     }
     Properties props = mavenProjectConverter.configure(sortedProjects, topLevelProject, session.getUserProperties());
-    props.putAll(decryptProperties(props));
+    props.putAll(propertyDecryptor.decryptProperties(props));
 
     return props;
-  }
-
-  public Properties decryptProperties(Properties properties) {
-    Properties newProperties = new Properties();
-    try {
-      for (String key : properties.stringPropertyNames()) {
-        if (key.contains(".password")) {
-          decrypt(properties, newProperties, key);
-        }
-      }
-    } catch (Exception e) {
-      log.warn("Unable to decrypt properties", e);
-    }
-    return newProperties;
-  }
-
-  private void decrypt(Properties properties, Properties newProperties, String key) {
-    try {
-      String decrypted = securityDispatcher.decrypt(properties.getProperty(key));
-      newProperties.setProperty(key, decrypted);
-    } catch (SecDispatcherException e) {
-      log.debug("Unable to decrypt property " + key, e);
-    }
   }
 
   public void checkSQVersion() {

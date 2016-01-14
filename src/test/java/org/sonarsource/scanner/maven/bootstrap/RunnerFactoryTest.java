@@ -22,12 +22,14 @@ package org.sonarsource.scanner.maven.bootstrap;
 import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.execution.RuntimeInformation;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.sonar.runner.api.EmbeddedRunner;
 import org.sonar.runner.api.LogOutput;
+import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -37,12 +39,10 @@ import static org.mockito.Mockito.when;
 
 public class RunnerFactoryTest {
   private LogOutput logOutput;
-
   private RuntimeInformation runtimeInformation;
-
   private MavenSession mavenSession;
-
   private MavenProject rootProject;
+  private PropertyDecryptor propertyDecryptor;
 
   @Before
   public void setUp() {
@@ -61,24 +61,25 @@ public class RunnerFactoryTest {
     when(mavenSession.getExecutionProperties()).thenReturn(system);
     when(rootProject.getProperties()).thenReturn(root);
     when(mavenSession.getCurrentProject()).thenReturn(rootProject);
+    propertyDecryptor = new PropertyDecryptor(mock(Log.class), mock(SecDispatcher.class));
   }
 
   @Test
   public void testProperties() {
-    RunnerFactory factory = new RunnerFactory(logOutput, false, runtimeInformation, mavenSession);
+
+    RunnerFactory factory = new RunnerFactory(logOutput, false, runtimeInformation, mavenSession, propertyDecryptor);
     EmbeddedRunner runner = factory.create();
     verify(mavenSession).getExecutionProperties();
     verify(rootProject).getProperties();
 
-    assertThat(runner.globalProperties()).contains(entry("system", "value"), entry("user", "value"),
-      entry("root", "value"));
+    assertThat(runner.globalProperties()).contains(entry("system", "value"), entry("user", "value"), entry("root", "value"));
     assertThat(runner.globalProperties()).contains(entry("sonar.mojoUseRunner", "true"));
   }
 
   @Test
   public void testDebug() {
-    RunnerFactory factoryDebug = new RunnerFactory(logOutput, true, runtimeInformation, mavenSession);
-    RunnerFactory factory = new RunnerFactory(logOutput, false, runtimeInformation, mavenSession);
+    RunnerFactory factoryDebug = new RunnerFactory(logOutput, true, runtimeInformation, mavenSession, propertyDecryptor);
+    RunnerFactory factory = new RunnerFactory(logOutput, false, runtimeInformation, mavenSession, propertyDecryptor);
 
     EmbeddedRunner runnerDebug = factoryDebug.create();
     EmbeddedRunner runner = factory.create();

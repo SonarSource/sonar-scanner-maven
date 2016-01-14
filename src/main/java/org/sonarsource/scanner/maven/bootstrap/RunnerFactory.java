@@ -28,19 +28,17 @@ import org.sonar.runner.api.LogOutput;
 public class RunnerFactory {
 
   private final LogOutput logOutput;
-
   private final RuntimeInformation runtimeInformation;
-
   private final MavenSession session;
-
   private final boolean debugEnabled;
+  private PropertyDecryptor propertyDecryptor;
 
-  public RunnerFactory(LogOutput logOutput, boolean debugEnabled, RuntimeInformation runtimeInformation,
-    MavenSession session) {
+  public RunnerFactory(LogOutput logOutput, boolean debugEnabled, RuntimeInformation runtimeInformation, MavenSession session, PropertyDecryptor propertyDecryptor) {
     this.logOutput = logOutput;
     this.runtimeInformation = runtimeInformation;
     this.session = session;
     this.debugEnabled = debugEnabled;
+    this.propertyDecryptor = propertyDecryptor;
   }
 
   public EmbeddedRunner create() {
@@ -62,6 +60,7 @@ public class RunnerFactory {
     Properties p = new Properties();
     p.putAll(session.getCurrentProject().getProperties());
     p.putAll(session.getExecutionProperties());
+    p.putAll(propertyDecryptor.decryptProperties(p));
     return p;
   }
 }

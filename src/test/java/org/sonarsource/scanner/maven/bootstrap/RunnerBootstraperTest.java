@@ -91,8 +91,7 @@ public class RunnerBootstraperTest {
 
     when(runner.mask(anyString())).thenReturn(runner);
     when(runner.unmask(anyString())).thenReturn(runner);
-    runnerBootstrapper = new RunnerBootstrapper(log, session, securityDispatcher, runner, mavenProjectConverter,
-      extensionsFactory);
+    runnerBootstrapper = new RunnerBootstrapper(log, session, runner, mavenProjectConverter, extensionsFactory, new PropertyDecryptor(log, securityDispatcher));
   }
 
   @Test

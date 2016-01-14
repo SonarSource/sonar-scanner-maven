@@ -40,6 +40,7 @@ import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
 import org.sonar.runner.api.EmbeddedRunner;
 import org.sonarsource.scanner.maven.bootstrap.LogHandler;
 import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
+import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
 import org.sonarsource.scanner.maven.bootstrap.RunnerBootstrapper;
 import org.sonarsource.scanner.maven.bootstrap.RunnerFactory;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
@@ -101,11 +102,14 @@ public class SonarQubeMojo extends AbstractMojo {
       DependencyCollector dependencyCollector = new DependencyCollector(dependencyTreeBuilder, localRepository);
       MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), dependencyCollector);
       LogHandler logHandler = new LogHandler(getLog());
-      RunnerFactory runnerFactory = new RunnerFactory(logHandler, getLog().isDebugEnabled(), runtimeInformation, session);
+
+      PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
+
+      RunnerFactory runnerFactory = new RunnerFactory(logHandler, getLog().isDebugEnabled(), runtimeInformation, session, propertyDecryptor);
 
       EmbeddedRunner runner = runnerFactory.create();
 
-      new RunnerBootstrapper(getLog(), session, securityDispatcher, runner, mavenProjectConverter, extensionsFactory).execute();
+      new RunnerBootstrapper(getLog(), session, runner, mavenProjectConverter, extensionsFactory, propertyDecryptor).execute();
     } catch (IOException e) {
       throw new MojoExecutionException("Failed to execute SonarQube analysis", e);
     }

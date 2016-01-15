@@ -35,7 +35,7 @@ CI)
     mvn -B -e -V clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar \
         -Pcoverage-per-test \
         -Dmaven.test.redirectTestOutputToFile=false \
-        -Dsonar.analysis.mode=issues \                                                                                                                                       
+        -Dsonar.analysis.mode=issues \
         -Dsonar.github.pullRequest=$TRAVIS_PULL_REQUEST \
         -Dsonar.github.repository=$TRAVIS_REPO_SLUG \
         -Dsonar.github.oauth=$GITHUB_TOKEN \

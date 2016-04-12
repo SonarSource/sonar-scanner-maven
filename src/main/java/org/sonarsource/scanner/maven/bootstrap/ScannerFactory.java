@@ -22,10 +22,10 @@ package org.sonarsource.scanner.maven.bootstrap;
 import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.execution.RuntimeInformation;
-import org.sonar.runner.api.EmbeddedRunner;
-import org.sonar.runner.api.LogOutput;
+import org.sonarsource.scanner.api.EmbeddedScanner;
+import org.sonarsource.scanner.api.LogOutput;
 
-public class RunnerFactory {
+public class ScannerFactory {
 
   private final LogOutput logOutput;
   private final RuntimeInformation runtimeInformation;
@@ -33,7 +33,7 @@ public class RunnerFactory {
   private final boolean debugEnabled;
   private PropertyDecryptor propertyDecryptor;
 
-  public RunnerFactory(LogOutput logOutput, boolean debugEnabled, RuntimeInformation runtimeInformation, MavenSession session, PropertyDecryptor propertyDecryptor) {
+  public ScannerFactory(LogOutput logOutput, boolean debugEnabled, RuntimeInformation runtimeInformation, MavenSession session, PropertyDecryptor propertyDecryptor) {
     this.logOutput = logOutput;
     this.runtimeInformation = runtimeInformation;
     this.session = session;
@@ -41,19 +41,19 @@ public class RunnerFactory {
     this.propertyDecryptor = propertyDecryptor;
   }
 
-  public EmbeddedRunner create() {
-    EmbeddedRunner runner = EmbeddedRunner.create(logOutput);
-    runner.setApp("Maven", runtimeInformation.getApplicationVersion().toString());
+  public EmbeddedScanner create() {
+    EmbeddedScanner scanner = EmbeddedScanner.create(logOutput);
+    scanner.setApp("Maven", runtimeInformation.getApplicationVersion().toString());
 
-    runner.addGlobalProperties(createGlobalProperties());
+    scanner.addGlobalProperties(createGlobalProperties());
 
-    // Secret property to manage backward compatibility on SQ side (see ProjectScanContainer)
-    runner.setGlobalProperty("sonar.mojoUseRunner", "true");
+    // Secret property to manage backward compatibility on SQ side prior to 5.2 (see ProjectScanContainer)
+    scanner.setGlobalProperty("sonar.mojoUseRunner", "true");
     if (debugEnabled) {
-      runner.setGlobalProperty("sonar.verbose", "true");
+      scanner.setGlobalProperty("sonar.verbose", "true");
     }
 
-    return runner;
+    return scanner;
   }
 
   private Properties createGlobalProperties() {

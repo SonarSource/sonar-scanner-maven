@@ -27,8 +27,8 @@ import org.apache.maven.project.MavenProject;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.sonar.runner.api.EmbeddedRunner;
-import org.sonar.runner.api.LogOutput;
+import org.sonarsource.scanner.api.EmbeddedScanner;
+import org.sonarsource.scanner.api.LogOutput;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class RunnerFactoryTest {
+public class ScannerFactoryTest {
   private LogOutput logOutput;
   private RuntimeInformation runtimeInformation;
   private MavenSession mavenSession;
@@ -67,24 +67,24 @@ public class RunnerFactoryTest {
   @Test
   public void testProperties() {
 
-    RunnerFactory factory = new RunnerFactory(logOutput, false, runtimeInformation, mavenSession, propertyDecryptor);
-    EmbeddedRunner runner = factory.create();
+    ScannerFactory factory = new ScannerFactory(logOutput, false, runtimeInformation, mavenSession, propertyDecryptor);
+    EmbeddedScanner scanner = factory.create();
     verify(mavenSession).getExecutionProperties();
     verify(rootProject).getProperties();
 
-    assertThat(runner.globalProperties()).contains(entry("system", "value"), entry("user", "value"), entry("root", "value"));
-    assertThat(runner.globalProperties()).contains(entry("sonar.mojoUseRunner", "true"));
+    assertThat(scanner.globalProperties()).contains(entry("system", "value"), entry("user", "value"), entry("root", "value"));
+    assertThat(scanner.globalProperties()).contains(entry("sonar.mojoUseRunner", "true"));
   }
 
   @Test
   public void testDebug() {
-    RunnerFactory factoryDebug = new RunnerFactory(logOutput, true, runtimeInformation, mavenSession, propertyDecryptor);
-    RunnerFactory factory = new RunnerFactory(logOutput, false, runtimeInformation, mavenSession, propertyDecryptor);
+    ScannerFactory factoryDebug = new ScannerFactory(logOutput, true, runtimeInformation, mavenSession, propertyDecryptor);
+    ScannerFactory factory = new ScannerFactory(logOutput, false, runtimeInformation, mavenSession, propertyDecryptor);
 
-    EmbeddedRunner runnerDebug = factoryDebug.create();
-    EmbeddedRunner runner = factory.create();
+    EmbeddedScanner scannerDebug = factoryDebug.create();
+    EmbeddedScanner scanner = factory.create();
 
-    assertThat(runnerDebug.globalProperties()).contains(entry("sonar.verbose", "true"));
-    assertThat(runner.globalProperties()).doesNotContain(entry("sonar.verbose", "true"));
+    assertThat(scannerDebug.globalProperties()).contains(entry("sonar.verbose", "true"));
+    assertThat(scanner.globalProperties()).doesNotContain(entry("sonar.verbose", "true"));
   }
 }

@@ -9,6 +9,13 @@ function configureTravis {
 }
 configureTravis
 
+function strongEcho {
+  echo ""
+  echo "================ $1 ================="
+}
+
+#build_snapshot "SonarSource/sonar-scanner-api"
+
 case "$TARGET" in
 
 CI)

@@ -20,7 +20,7 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import org.apache.maven.plugin.logging.Log;
-import org.sonar.runner.api.LogOutput;
+import org.sonarsource.scanner.api.LogOutput;
 
 public class LogHandler implements LogOutput {
   private Log mavenLog;

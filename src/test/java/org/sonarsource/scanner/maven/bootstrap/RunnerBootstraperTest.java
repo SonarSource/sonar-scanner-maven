@@ -33,7 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.sonar.runner.api.EmbeddedRunner;
+import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.maven.ExtensionsFactory;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
@@ -59,7 +59,7 @@ public class RunnerBootstraperTest {
   private SecDispatcher securityDispatcher;
 
   @Mock
-  private EmbeddedRunner runner;
+  private EmbeddedScanner scanner;
 
   @Mock
   private MavenProjectConverter mavenProjectConverter;
@@ -67,7 +67,7 @@ public class RunnerBootstraperTest {
   @Mock
   private ExtensionsFactory extensionsFactory;
 
-  private RunnerBootstrapper runnerBootstrapper;
+  private ScannerBootstrapper runnerBootstrapper;
 
   private Properties projectProperties;
 
@@ -89,15 +89,15 @@ public class RunnerBootstraperTest {
     when(extensionsFactory.createExtensions()).thenReturn(extensions);
     when(extensionsFactory.createExtensionsWithDependencyProperty()).thenReturn(extensions);
 
-    when(runner.mask(anyString())).thenReturn(runner);
-    when(runner.unmask(anyString())).thenReturn(runner);
-    runnerBootstrapper = new RunnerBootstrapper(log, session, runner, mavenProjectConverter, extensionsFactory, new PropertyDecryptor(log, securityDispatcher));
+    when(scanner.mask(anyString())).thenReturn(scanner);
+    when(scanner.unmask(anyString())).thenReturn(scanner);
+    runnerBootstrapper = new ScannerBootstrapper(log, session, scanner, mavenProjectConverter, extensionsFactory, new PropertyDecryptor(log, securityDispatcher));
   }
 
   @Test
   public void testSQ52()
     throws MojoExecutionException, IOException {
-    when(runner.serverVersion()).thenReturn("5.2");
+    when(scanner.serverVersion()).thenReturn("5.2");
     runnerBootstrapper.execute();
 
     Assertions.assertThat(runnerBootstrapper.isVersionPriorTo4Dot5()).isFalse();
@@ -105,13 +105,13 @@ public class RunnerBootstraperTest {
     verifyCommonCalls();
 
     // no extensions, mask or unmask
-    verifyNoMoreInteractions(runner);
+    verifyNoMoreInteractions(scanner);
   }
 
   @Test
   public void testSQ51()
     throws MojoExecutionException, IOException {
-    when(runner.serverVersion()).thenReturn("5.1");
+    when(scanner.serverVersion()).thenReturn("5.1");
     runnerBootstrapper.execute();
 
     Assertions.assertThat(runnerBootstrapper.isVersionPriorTo4Dot5()).isFalse();
@@ -119,14 +119,14 @@ public class RunnerBootstraperTest {
     verifyCommonCalls();
 
     verify(extensionsFactory).createExtensionsWithDependencyProperty();
-    verify(runner).addExtensions(anyObject());
-    verifyNoMoreInteractions(runner);
+    verify(scanner).addExtensions(anyObject());
+    verifyNoMoreInteractions(scanner);
   }
 
   @Test
   public void testSQ60()
     throws MojoExecutionException, IOException {
-    when(runner.serverVersion()).thenReturn("6.0");
+    when(scanner.serverVersion()).thenReturn("6.0");
     runnerBootstrapper.execute();
 
     Assertions.assertThat(runnerBootstrapper.isVersionPriorTo4Dot5()).isFalse();
@@ -134,13 +134,13 @@ public class RunnerBootstraperTest {
     verifyCommonCalls();
 
     // no extensions, mask or unmask
-    verifyNoMoreInteractions(runner);
+    verifyNoMoreInteractions(scanner);
   }
 
   @Test
   public void testSQ48()
     throws MojoExecutionException, IOException {
-    when(runner.serverVersion()).thenReturn("4.8");
+    when(scanner.serverVersion()).thenReturn("4.8");
     runnerBootstrapper.execute();
 
     Assertions.assertThat(runnerBootstrapper.isVersionPriorTo4Dot5()).isFalse();
@@ -148,14 +148,14 @@ public class RunnerBootstraperTest {
     verifyCommonCalls();
 
     verify(extensionsFactory).createExtensions();
-    verify(runner).addExtensions(any(Object[].class));
-    verifyNoMoreInteractions(runner);
+    verify(scanner).addExtensions(any(Object[].class));
+    verifyNoMoreInteractions(scanner);
   }
 
   @Test
   public void testSQ44()
     throws MojoExecutionException, IOException {
-    when(runner.serverVersion()).thenReturn("4.4");
+    when(scanner.serverVersion()).thenReturn("4.4");
     runnerBootstrapper.execute();
 
     Assertions.assertThat(runnerBootstrapper.isVersionPriorTo4Dot5()).isTrue();
@@ -163,14 +163,14 @@ public class RunnerBootstraperTest {
     verifyCommonCalls();
 
     verify(extensionsFactory).createExtensions();
-    verify(runner).addExtensions(any(Object[].class));
-    verifyNoMoreInteractions(runner);
+    verify(scanner).addExtensions(any(Object[].class));
+    verifyNoMoreInteractions(scanner);
   }
 
   @Test
   public void testNullServerVersion()
     throws MojoExecutionException, IOException {
-    when(runner.serverVersion()).thenReturn(null);
+    when(scanner.serverVersion()).thenReturn(null);
     Assertions.assertThat(runnerBootstrapper.isVersionPriorTo5Dot0()).isTrue();
     Assertions.assertThat(runnerBootstrapper.isVersionPriorTo5Dot2()).isTrue();
     Assertions.assertThat(runnerBootstrapper.isVersionPriorTo4Dot5()).isTrue();
@@ -180,12 +180,12 @@ public class RunnerBootstraperTest {
   }
 
   private void verifyCommonCalls() {
-    verify(runner, atLeastOnce()).mask(anyString());
-    verify(runner, atLeastOnce()).unmask(anyString());
+    verify(scanner, atLeastOnce()).mask(anyString());
+    verify(scanner, atLeastOnce()).unmask(anyString());
 
-    verify(runner).serverVersion();
-    verify(runner).start();
-    verify(runner).stop();
-    verify(runner).runAnalysis(projectProperties);
+    verify(scanner).serverVersion();
+    verify(scanner).start();
+    verify(scanner).stop();
+    verify(scanner).runAnalysis(projectProperties);
   }
 }

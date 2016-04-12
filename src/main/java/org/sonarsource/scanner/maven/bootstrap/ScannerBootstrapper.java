@@ -28,27 +28,27 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.sonar.runner.api.EmbeddedRunner;
+import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.maven.ExtensionsFactory;
 
 /**
- * Configure properties and bootstrap using SonarQube runner API (need SQ 4.3+)
+ * Configure properties and bootstrap using SonarQube scanner API
  */
-public class RunnerBootstrapper {
+public class ScannerBootstrapper {
 
   private final Log log;
   private final MavenSession session;
-  private final EmbeddedRunner runner;
+  private final EmbeddedScanner scanner;
   private final MavenProjectConverter mavenProjectConverter;
   private final ExtensionsFactory extensionsFactory;
   private String serverVersion;
   private PropertyDecryptor propertyDecryptor;
 
-  public RunnerBootstrapper(Log log, MavenSession session, EmbeddedRunner runner, MavenProjectConverter mavenProjectConverter, ExtensionsFactory extensionsFactory,
+  public ScannerBootstrapper(Log log, MavenSession session, EmbeddedScanner scanner, MavenProjectConverter mavenProjectConverter, ExtensionsFactory extensionsFactory,
     PropertyDecryptor propertyDecryptor) {
     this.log = log;
     this.session = session;
-    this.runner = runner;
+    this.scanner = scanner;
     this.mavenProjectConverter = mavenProjectConverter;
     this.extensionsFactory = extensionsFactory;
     this.propertyDecryptor = propertyDecryptor;
@@ -57,26 +57,26 @@ public class RunnerBootstrapper {
   public void execute() throws IOException, MojoExecutionException {
     try {
       applyMasks();
-      runner.start();
-      serverVersion = runner.serverVersion();
+      scanner.start();
+      serverVersion = scanner.serverVersion();
 
       checkSQVersion();
 
       if (this.isVersionPriorTo5Dot2()) {
         // for these versions, global properties and extensions are only applied when calling runAnalisys()
         if (this.supportsNewDependencyProperty()) {
-          runner.addExtensions(extensionsFactory.createExtensionsWithDependencyProperty().toArray());
+          scanner.addExtensions(extensionsFactory.createExtensionsWithDependencyProperty().toArray());
         } else {
-          runner.addExtensions(extensionsFactory.createExtensions().toArray());
+          scanner.addExtensions(extensionsFactory.createExtensions().toArray());
         }
 
       }
       if (log.isDebugEnabled()) {
-        runner.setGlobalProperty("sonar.verbose", "true");
+        scanner.setGlobalProperty("sonar.verbose", "true");
       }
 
-      runner.runAnalysis(collectProperties());
-      runner.stop();
+      scanner.runAnalysis(collectProperties());
+      scanner.stop();
     } catch (Exception e) {
       throw ExceptionHandling.handle(e, log);
     }
@@ -84,22 +84,22 @@ public class RunnerBootstrapper {
 
   private void applyMasks() {
     // Exclude log implementation to not conflict with Maven 3.1 logging impl
-    runner.mask("org.slf4j.LoggerFactory");
+    scanner.mask("org.slf4j.LoggerFactory");
     // Include slf4j Logger that is exposed by some Sonar components
-    runner.unmask("org.slf4j.Logger");
-    runner.unmask("org.slf4j.ILoggerFactory");
+    scanner.unmask("org.slf4j.Logger");
+    scanner.unmask("org.slf4j.ILoggerFactory");
     // MSONAR-122
-    runner.unmask("org.slf4j.Marker");
+    scanner.unmask("org.slf4j.Marker");
     // Exclude other slf4j classes
     // .unmask("org.slf4j.impl.")
-    runner.mask("org.slf4j.");
+    scanner.mask("org.slf4j.");
     // Exclude logback
-    runner.mask("ch.qos.logback.");
-    runner.mask("org.sonar.");
+    scanner.mask("ch.qos.logback.");
+    scanner.mask("org.sonar.");
     // Guava is not the same version in SonarQube classloader
-    runner.mask("com.google.common");
+    scanner.mask("com.google.common");
     // Include everything else (we need to unmask all extensions that might be passed to the batch)
-    runner.unmask("");
+    scanner.unmask("");
   }
 
   private Properties collectProperties()

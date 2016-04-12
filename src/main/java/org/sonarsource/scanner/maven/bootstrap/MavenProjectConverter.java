@@ -44,8 +44,8 @@ import org.apache.maven.model.Scm;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.sonar.runner.api.RunnerProperties;
-import org.sonar.runner.api.ScanProperties;
+import org.sonarsource.scanner.api.ScanProperties;
+import org.sonarsource.scanner.api.ScannerProperties;
 import org.sonarsource.scanner.maven.DependencyCollector;
 
 public class MavenProjectConverter {
@@ -139,7 +139,7 @@ public class MavenProjectConverter {
 
   private static void rebuildModuleHierarchy(Properties properties, Map<MavenProject, Properties> propsByModule,
     MavenProject current, String prefix)
-      throws IOException {
+    throws IOException {
     Properties currentProps = propsByModule.get(current);
     if (currentProps == null) {
       throw new IllegalStateException(UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE);
@@ -290,7 +290,7 @@ public class MavenProjectConverter {
     File buildDir = getBuildDir(pom);
     if (buildDir != null) {
       props.setProperty(PROPERTY_PROJECT_BUILDDIR, buildDir.getAbsolutePath());
-      props.setProperty(RunnerProperties.WORK_DIR, getSonarWorkDir(pom).getAbsolutePath());
+      props.setProperty(ScannerProperties.WORK_DIR, getSonarWorkDir(pom).getAbsolutePath());
     }
     populateBinaries(pom, props);
 

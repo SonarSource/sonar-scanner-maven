@@ -1,0 +1,56 @@
+# Definition of QA pipeline at SonarSource
+#
+# Possible values for SLAVE: "performance" (for perf tests) and "linux" (for linux machines connected to DB services)
+
+SQ_VERSION: 
+  - LTS
+# 5.1 is the latest version with design feature  
+  - 5.1.2
+  - 5.2
+  - DEV
+
+MAVEN_VERSION:
+  - 2.2.1
+  - 3.0.5
+  - 3.1.1
+  - 3.2.5
+  - 3.3.9
+
+SLAVE:
+  - linux
+
+exclude:
+  - SQ_VERSION: LTS
+    MAVEN_VERSION: 3.1.1
+  - SQ_VERSION: LTS
+    MAVEN_VERSION: 3.2.5
+  - SQ_VERSION: LTS
+    MAVEN_VERSION: 3.3.9
+
+
+  - SQ_VERSION: 5.1.2
+    MAVEN_VERSION: 2.2.1
+  - SQ_VERSION: 5.1.2
+    MAVEN_VERSION: 3.0.5
+  - SQ_VERSION: 5.1.2
+    MAVEN_VERSION: 3.2.5
+  - SQ_VERSION: 5.1.2
+    MAVEN_VERSION: 3.3.9            
+
+  - SQ_VERSION: 5.2
+    MAVEN_VERSION: 2.2.1
+  - SQ_VERSION: 5.2
+    MAVEN_VERSION: 3.0.5
+  - SQ_VERSION: 5.2
+    MAVEN_VERSION: 3.1.1
+  - SQ_VERSION: 5.2
+    MAVEN_VERSION: 3.3.9
+
+  - SQ_VERSION: DEV
+    MAVEN_VERSION: 2.2.1
+  - SQ_VERSION: DEV
+    MAVEN_VERSION: 3.0.5
+  - SQ_VERSION: DEV
+    MAVEN_VERSION: 3.1.1
+  - SQ_VERSION: DEV
+    MAVEN_VERSION: 3.2.5

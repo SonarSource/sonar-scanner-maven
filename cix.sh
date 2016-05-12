@@ -18,7 +18,7 @@ echo "Running with SQ=$SQ_VERSION for $CI_BUILD_NUMBER"
 
 
 
-  maven_home_for_its=${HOME}/maven-for-its
+  maven_home_for_its=${WORKSPACE}/maven-for-its
   mkdir -p $maven_home_for_its
   curl -sSL http://repo1.maven.org/maven2/org/apache/maven/apache-maven/$MAVEN_VERSION/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar zx --strip-components 1 -C $maven_home_for_its
 

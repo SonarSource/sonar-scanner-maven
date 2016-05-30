@@ -3,7 +3,7 @@ sudo: false
 install: true
 
 jdk:
-  - oraclejdk7
+  - oraclejdk8
 
 script:
   - ./travis.sh
@@ -23,3 +23,10 @@ notifications:
   email: false
   webhooks:
     - secure: "oAwnOk+W053V7KtTIcM5arCynb1bP+jm+7bi1OV1xj5CAy9BLNBVMjp86jI6Tog2D+AjZCJNaANS1hR7ssJNe67yeJBubnqSYPGsnWgBjzpSXNQgCfqkqblHj6by2D5E1A+z5y2qI5ANmRalvOEnJndO8KJsCP2ureh67Cn9RmN3p81Z+u3MCopCLT1IuWdKb6MF+1DiEVDO1WCO/no6H+ZgvSHE0Sr6aAQDo2jR2ZfbeaTESHyMBkPSoFtItrsqu9v9lhtyZfoaC6oS9pa9ZoygFIQ0eBjDkGMGg4Xpeh8aOLZZkPrRNK9SuHQX/kqrpVgr7bm9eMyxtJjcNespDF5n6nuORyH0tjYY/ZKC7cEsZagjk4gsOx2HkSNTbMW+mm85MnxIeQdnrojfNhKGZ78/GeKOTWRVZs4Nl8+tkutZegIxZv9+uWkLQVa72sV0n2foBR1tcJwUuK7MwjM/Ff1cy2yVJLC6Zl/5jNiCV1MCw/SaGFZei9zRlbxlLS0uDSRQUZ6NvwygeOWdBsRewEr3zD3vzLv6dmX81RuELNDbaNh6TLpu8OAWXImptB/3T99XzCkbSJzSnwb7XWGBxoy8hHVrqWlq9AGXwxf/f9pPenRRC7ee3h8MO8qzaSeM3Qiz6XQhInYaW6M9KvYmRx8VW5jDNlDezj9oltxFc4k="
+
+addons:
+  apt:
+    packages:
+      # upgrade java 8 as the default version 1.8.0_31 prevents from compiling sources
+      # https://github.com/travis-ci/travis-ci/issues/4042
+      - oracle-java8-installer

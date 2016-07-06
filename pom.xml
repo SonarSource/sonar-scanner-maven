@@ -56,9 +56,9 @@
   </prerequisites>
 
   <scm>
-    <connection>scm:git:https://github.com/SonarSource/sonar-maven.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/SonarSource/sonar-maven.git</developerConnection>
-    <url>https://github.com/SonarSource/sonar-maven</url>
+    <connection>scm:git:https://github.com/SonarSource/sonar-scanner-maven.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/SonarSource/sonar-scanner-maven.git</developerConnection>
+    <url>https://github.com/SonarSource/sonar-scanner-maven</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -71,7 +71,7 @@
     <mojo.java.target>1.7</mojo.java.target>
     <mavenVersion>3.3.9</mavenVersion>
     <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*</sonar.exclusions>
-    <gitRepositoryName>sonar-maven</gitRepositoryName>
+    <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
   </properties>
 
   <dependencies>
@@ -301,7 +301,7 @@
     <site>
       <id>github</id>
       <name>GitHub</name>
-      <url>scm:git:git@github.com:SonarSource/sonar-maven.git</url>
+      <url>scm:git:git@github.com:SonarSource/sonar-scanner-maven.git</url>
     </site>
   </distributionManagement>
 </project>

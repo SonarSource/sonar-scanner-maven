@@ -19,23 +19,27 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.sonarsource.scanner.maven.DependencyCollector;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class MavenProjectConverterTest {
 
@@ -46,10 +50,19 @@ public class MavenProjectConverterTest {
 
   private Log log;
 
+  private Map<String, String> env;
+
+  private MavenProjectConverter projectConverter;
+
+  @Rule
+  public ExpectedException exception = ExpectedException.none();
+
   @Before
   public void prepare() {
     log = mock(Log.class);
+    env = new HashMap<>();
     when(dependencyCollector.toJson(any(MavenProject.class))).thenReturn("");
+    projectConverter = new MavenProjectConverter(log, dependencyCollector, env);
   }
 
   @Test
@@ -57,7 +70,7 @@ public class MavenProjectConverterTest {
     File baseDir = temp.newFolder();
     MavenProject project = createProject(new File(baseDir, "pom.xml"), new Properties(), "jar");
 
-    Properties props = new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(project),
+    Properties props = projectConverter.configure(Arrays.asList(project),
       project, new Properties());
     assertThat(props.getProperty("sonar.projectKey")).isEqualTo("com.foo:myProject");
     assertThat(props.getProperty("sonar.projectName")).isEqualTo("My Project");
@@ -71,8 +84,7 @@ public class MavenProjectConverterTest {
     File webappDir = new File(baseDir, "src/main/webapp");
     webappDir.mkdirs();
     MavenProject project = createProject(new File(baseDir, "pom.xml"), new Properties(), "war");
-    Properties props = new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(project),
-      project, new Properties());
+    Properties props = projectConverter.configure(Arrays.asList(project), project, new Properties());
     assertThat(props.getProperty("sonar.projectKey")).isEqualTo("com.foo:myProject");
     assertThat(props.getProperty("sonar.projectName")).isEqualTo("My Project");
     assertThat(props.getProperty("sonar.projectVersion")).isEqualTo("2.1");
@@ -81,8 +93,7 @@ public class MavenProjectConverterTest {
     project.getModel().getProperties().setProperty("sonar.sources", "src");
     File srcDir = new File(baseDir, "src");
     srcDir.mkdirs();
-    props = new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(project),
-      project, new Properties());
+    props = projectConverter.configure(Arrays.asList(project), project, new Properties());
     assertThat(props.getProperty("sonar.sources")).isEqualTo(srcDir.getAbsolutePath());
   }
 
@@ -93,12 +104,39 @@ public class MavenProjectConverterTest {
     pom.createNewFile();
     MavenProject project = createProject(pom, new Properties(), "jar");
 
-    Properties props = new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(project), project,
-      new Properties());
+    Properties props = projectConverter.configure(Arrays.asList(project), project, new Properties());
     assertThat(props.getProperty("sonar.projectKey")).isEqualTo("com.foo:myProject");
     assertThat(props.getProperty("sonar.projectName")).isEqualTo("My Project");
     assertThat(props.getProperty("sonar.projectVersion")).isEqualTo("2.1");
     assertThat(props.getProperty("sonar.sources")).contains("pom.xml");
+  }
+
+  @Test
+  public void shouldUseEnvironment() throws Exception {
+    env.put("SONARQUBE_SCANNER_PARAMS", "{ \"sonar.projectKey\" : \"com.foo:anotherProject\"}");
+    File baseDir = temp.newFolder();
+    File pom = new File(baseDir, "pom.xml");
+    pom.createNewFile();
+    MavenProject project = createProject(pom, new Properties(), "jar");
+
+    Properties props = projectConverter.configure(Arrays.asList(project), project, new Properties());
+    assertThat(props.getProperty("sonar.projectKey")).isEqualTo("com.foo:anotherProject");
+    assertThat(props.getProperty("sonar.projectName")).isEqualTo("My Project");
+    assertThat(props.getProperty("sonar.projectVersion")).isEqualTo("2.1");
+    assertThat(props.getProperty("sonar.sources")).contains("pom.xml");
+  }
+
+  @Test
+  public void invalidJsonInEnvironment() throws Exception {
+    env.put("SONARQUBE_SCANNER_PARAMS", "{ sonar.projectKey : \"com.foo:anotherProject\"}");
+    File baseDir = temp.newFolder();
+    File pom = new File(baseDir, "pom.xml");
+    pom.createNewFile();
+    MavenProject project = createProject(pom, new Properties(), "jar");
+
+    exception.expect(MojoExecutionException.class);
+    exception.expectMessage("JSON");
+    projectConverter.configure(Arrays.asList(project), project, new Properties());
   }
 
   @Test
@@ -116,8 +154,7 @@ public class MavenProjectConverterTest {
 
     root.getModules().add("../module1");
 
-    new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(module1, root), root,
-      new Properties());
+    projectConverter.configure(Arrays.asList(module1, root), root, new Properties());
   }
 
   @Test
@@ -162,9 +199,7 @@ public class MavenProjectConverterTest {
     module2.setParent(root);
     root.getModules().add("module2");
 
-    Properties props = new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(module12, module11,
-      module1, module2,
-      root),
+    Properties props = projectConverter.configure(Arrays.asList(module12, module11, module1, module2, root),
       root, new Properties());
 
     assertThat(props.getProperty("sonar.projectKey")).isEqualTo("com.foo:myProject");
@@ -237,9 +272,7 @@ public class MavenProjectConverterTest {
     module2.setParent(root);
     root.getModules().add("module2");
 
-    Properties props = new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(module12, module11,
-      module1, module2,
-      root),
+    Properties props = projectConverter.configure(Arrays.asList(module12, module11, module1, module2, root),
       root, new Properties());
 
     assertThat(props.getProperty("sonar.projectKey")).isEqualTo("com.foo:myProject");
@@ -297,7 +330,7 @@ public class MavenProjectConverterTest {
     module2.setParent(root);
     root.getModules().add("module2");
 
-    Properties props = new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(module1, module2, root),
+    Properties props = projectConverter.configure(Arrays.asList(module1, module2, root),
       root, new Properties());
 
     assertThat(props.getProperty("sonar.projectKey")).isEqualTo("com.foo:myProject");
@@ -331,8 +364,7 @@ public class MavenProjectConverterTest {
 
     MavenProject project = createProject(pom, pomProps, "jar");
 
-    Properties props = new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(project), project,
-      new Properties());
+    Properties props = projectConverter.configure(Arrays.asList(project), project, new Properties());
 
     assertThat(props.getProperty("sonar.projectKey")).isEqualTo("com.foo:myProject");
     assertThat(props.getProperty("sonar.projectName")).isEqualTo("My Project");
@@ -370,8 +402,7 @@ public class MavenProjectConverterTest {
     module2.setParent(root);
     root.getModules().add("module2");
 
-    Properties props = new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(module1, module2,
-      root),
+    Properties props = projectConverter.configure(Arrays.asList(module1, module2, root),
       root,
       new Properties());
 
@@ -407,8 +438,7 @@ public class MavenProjectConverterTest {
 
     MavenProject project = createProject(pom, pomProps, "jar");
 
-    new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(project), project,
-      new Properties());
+    projectConverter.configure(Arrays.asList(project), project, new Properties());
   }
 
   @Test
@@ -420,8 +450,7 @@ public class MavenProjectConverterTest {
 
     MavenProject project = createProject(pom, pomProps, "jar");
 
-    Properties props = new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(project), project,
-      new Properties());
+    Properties props = projectConverter.configure(Arrays.asList(project), project, new Properties());
 
     assertThat(props.getProperty("sonar.projectKey")).isEqualTo("myProject");
     assertThat(props.getProperty("sonar.projectName")).isEqualTo("My Project");
@@ -440,7 +469,7 @@ public class MavenProjectConverterTest {
     project.getCompileSourceRoots().add("src");
     project.getCompileSourceRoots().add("src-gen");
 
-    Properties props = new MavenProjectConverter(log, dependencyCollector).configure(Arrays.asList(project), project, new Properties());
+    Properties props = projectConverter.configure(Arrays.asList(project), project, new Properties());
 
     assertThat(props.getProperty("sonar.sources")).contains(srcDir.getAbsolutePath(), srcGenDir.getAbsolutePath());
   }

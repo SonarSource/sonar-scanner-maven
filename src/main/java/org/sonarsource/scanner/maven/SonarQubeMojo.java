@@ -100,7 +100,7 @@ public class SonarQubeMojo extends AbstractMojo {
       ExtensionsFactory extensionsFactory = new ExtensionsFactory(getLog(), session, lifecycleExecutor, artifactFactory, localRepository, artifactMetadataSource, artifactCollector,
         dependencyTreeBuilder, projectBuilder);
       DependencyCollector dependencyCollector = new DependencyCollector(dependencyTreeBuilder, localRepository);
-      MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), dependencyCollector);
+      MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), dependencyCollector, System.getenv());
       LogHandler logHandler = new LogHandler(getLog());
 
       PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);

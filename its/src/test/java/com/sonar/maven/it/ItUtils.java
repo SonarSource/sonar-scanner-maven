@@ -64,6 +64,7 @@ public final class ItUtils {
 
   /**
    * Creates a settings xml with a sonar profile, containing all the given properties
+   * Also adds repox to continue to use QAed artifacts 
    */
   public static String createSettingsXml(Map<String, String> props) throws Exception {
     DocumentBuilder docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -86,6 +87,9 @@ public final class ItUtils {
 
     profile.appendChild(id);
     profile.appendChild(properties);
+    profile.appendChild(createRepositories(doc));
+    profile.appendChild(createPluginRepositories(doc));
+
     profiles.appendChild(profile);
     settings.appendChild(profiles);
     doc.appendChild(settings);
@@ -94,6 +98,38 @@ public final class ItUtils {
     Transformer tf = TransformerFactory.newInstance().newTransformer();
     tf.transform(new DOMSource(doc), new StreamResult(writer));
     return writer.toString();
+  }
+
+  private static Element createRepositories(Document doc) {
+    Element repositories = doc.createElement("repositories");
+    Element repository = doc.createElement("repositories");
+    Element id = doc.createElement("id");
+    Element url = doc.createElement("url");
+
+    id.setTextContent("sonarsource");
+    url.setTextContent("https://repox.sonarsource.com/sonarsource");
+
+    repositories.appendChild(repository);
+    repository.appendChild(id);
+    repository.appendChild(url);
+
+    return repositories;
+  }
+
+  private static Element createPluginRepositories(Document doc) {
+    Element repositories = doc.createElement("pluginRepositories");
+    Element repository = doc.createElement("pluginRepository");
+    Element id = doc.createElement("id");
+    Element url = doc.createElement("url");
+
+    id.setTextContent("sonarsource");
+    url.setTextContent("https://repox.sonarsource.com/sonarsource");
+
+    repositories.appendChild(repository);
+    repository.appendChild(id);
+    repository.appendChild(url);
+
+    return repositories;
   }
 
 }

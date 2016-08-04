@@ -55,6 +55,9 @@ class MavenBuildExecutor extends AbstractBuildExecutor<MavenBuild> {
     final BuildResult result, CommandExecutor commandExecutor) {
     try {
       File mavenHome = config.fileSystem().mavenHome();
+      if(mavenHome == null) {
+        throw new IllegalStateException("No maven home defined for the IT");
+      }
       Command command = Command.create(getMvnPath(mavenHome));
       if (build.getExecutionDir() != null) {
         command.setDirectory(build.getExecutionDir());
@@ -78,8 +81,8 @@ class MavenBuildExecutor extends AbstractBuildExecutor<MavenBuild> {
         command.addArgument("-X");
       }
       command.addArguments(build.arguments());
-      for (Map.Entry entry : adjustedProperties.entrySet()) {
-        command.addSystemArgument(entry.getKey().toString(), entry.getValue().toString());
+      for (Map.Entry<String, String> entry : adjustedProperties.entrySet()) {
+        command.addSystemArgument(entry.getKey(), entry.getValue());
       }
       StreamConsumer.Pipe writer = new StreamConsumer.Pipe(result.getLogsWriter());
       LoggerFactory.getLogger(getClass()).info("Execute: " + command);

@@ -102,7 +102,7 @@ public final class ItUtils {
 
   private static Element createRepositories(Document doc) {
     Element repositories = doc.createElement("repositories");
-    Element repository = doc.createElement("repositories");
+    Element repository = doc.createElement("repository");
     Element id = doc.createElement("id");
     Element url = doc.createElement("url");
 

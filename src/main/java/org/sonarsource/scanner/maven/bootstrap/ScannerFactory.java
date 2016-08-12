@@ -31,13 +31,16 @@ public class ScannerFactory {
   private final RuntimeInformation runtimeInformation;
   private final MavenSession session;
   private final boolean debugEnabled;
-  private PropertyDecryptor propertyDecryptor;
+  private final PropertyDecryptor propertyDecryptor;
+  private final Properties envProps;
 
-  public ScannerFactory(LogOutput logOutput, boolean debugEnabled, RuntimeInformation runtimeInformation, MavenSession session, PropertyDecryptor propertyDecryptor) {
+  public ScannerFactory(LogOutput logOutput, boolean debugEnabled, RuntimeInformation runtimeInformation, MavenSession session, 
+    Properties envProps, PropertyDecryptor propertyDecryptor) {
     this.logOutput = logOutput;
     this.runtimeInformation = runtimeInformation;
     this.session = session;
     this.debugEnabled = debugEnabled;
+    this.envProps = envProps;
     this.propertyDecryptor = propertyDecryptor;
   }
 
@@ -59,6 +62,7 @@ public class ScannerFactory {
   private Properties createGlobalProperties() {
     Properties p = new Properties();
     p.putAll(session.getCurrentProject().getProperties());
+    p.putAll(envProps);
     p.putAll(session.getExecutionProperties());
     p.putAll(propertyDecryptor.decryptProperties(p));
     return p;

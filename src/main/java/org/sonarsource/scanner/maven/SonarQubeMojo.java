@@ -21,6 +21,8 @@ package org.sonarsource.scanner.maven;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
+import java.util.Properties;
+
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -38,6 +40,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
 import org.sonarsource.scanner.api.EmbeddedScanner;
+import org.sonarsource.scanner.maven.bootstrap.EnvSonarQubeScannerParams;
 import org.sonarsource.scanner.maven.bootstrap.LogHandler;
 import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
 import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
@@ -97,15 +100,16 @@ public class SonarQubeMojo extends AbstractMojo {
       return;
     }
     try {
+      Properties envProps = new EnvSonarQubeScannerParams().loadEnvironmentProperties();
       ExtensionsFactory extensionsFactory = new ExtensionsFactory(getLog(), session, lifecycleExecutor, artifactFactory, localRepository, artifactMetadataSource, artifactCollector,
         dependencyTreeBuilder, projectBuilder);
       DependencyCollector dependencyCollector = new DependencyCollector(dependencyTreeBuilder, localRepository);
-      MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), dependencyCollector, System.getenv());
+      MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), dependencyCollector, envProps);
       LogHandler logHandler = new LogHandler(getLog());
 
       PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
 
-      ScannerFactory runnerFactory = new ScannerFactory(logHandler, getLog().isDebugEnabled(), runtimeInformation, session, propertyDecryptor);
+      ScannerFactory runnerFactory = new ScannerFactory(logHandler, getLog().isDebugEnabled(), runtimeInformation, session, envProps, propertyDecryptor);
 
       EmbeddedScanner runner = runnerFactory.create();
 

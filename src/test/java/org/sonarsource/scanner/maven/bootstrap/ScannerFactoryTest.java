@@ -43,6 +43,7 @@ public class ScannerFactoryTest {
   private MavenSession mavenSession;
   private MavenProject rootProject;
   private PropertyDecryptor propertyDecryptor;
+  private Properties envProps;
 
   @Before
   public void setUp() {
@@ -50,12 +51,14 @@ public class ScannerFactoryTest {
     runtimeInformation = mock(RuntimeInformation.class, Mockito.RETURNS_DEEP_STUBS);
     mavenSession = mock(MavenSession.class);
     rootProject = mock(MavenProject.class);
+    envProps = new Properties();
 
     Properties system = new Properties();
     system.put("system", "value");
     system.put("user", "value");
     Properties root = new Properties();
     root.put("root", "value");
+    envProps.put("env", "value");
 
     when(runtimeInformation.getApplicationVersion().toString()).thenReturn("1.0");
     when(mavenSession.getExecutionProperties()).thenReturn(system);
@@ -67,19 +70,19 @@ public class ScannerFactoryTest {
   @Test
   public void testProperties() {
 
-    ScannerFactory factory = new ScannerFactory(logOutput, false, runtimeInformation, mavenSession, propertyDecryptor);
+    ScannerFactory factory = new ScannerFactory(logOutput, false, runtimeInformation, mavenSession, envProps, propertyDecryptor);
     EmbeddedScanner scanner = factory.create();
     verify(mavenSession).getExecutionProperties();
     verify(rootProject).getProperties();
 
-    assertThat(scanner.globalProperties()).contains(entry("system", "value"), entry("user", "value"), entry("root", "value"));
+    assertThat(scanner.globalProperties()).contains(entry("system", "value"), entry("user", "value"), entry("root", "value"), entry("env", "value"));
     assertThat(scanner.globalProperties()).contains(entry("sonar.mojoUseRunner", "true"));
   }
 
   @Test
   public void testDebug() {
-    ScannerFactory factoryDebug = new ScannerFactory(logOutput, true, runtimeInformation, mavenSession, propertyDecryptor);
-    ScannerFactory factory = new ScannerFactory(logOutput, false, runtimeInformation, mavenSession, propertyDecryptor);
+    ScannerFactory factoryDebug = new ScannerFactory(logOutput, true, runtimeInformation, mavenSession, envProps, propertyDecryptor);
+    ScannerFactory factory = new ScannerFactory(logOutput, false, runtimeInformation, mavenSession, envProps, propertyDecryptor);
 
     EmbeddedScanner scannerDebug = factoryDebug.create();
     EmbeddedScanner scanner = factory.create();

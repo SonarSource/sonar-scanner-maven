@@ -19,10 +19,6 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
-import com.eclipsesource.json.JsonObject.Member;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -34,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -101,8 +96,6 @@ public class MavenProjectConverter {
 
   private static final String SUREFIRE_REPORTS_PATH_PROPERTY = "sonar.junit.reportsPath";
 
-  private static final String SONARQUBE_SCANNER_PARAMS = "SONARQUBE_SCANNER_PARAMS";
-
   /**
    * Optional paths to binaries, for example to declare the directory of Java bytecode. Example : "binDir"
    */
@@ -115,22 +108,20 @@ public class MavenProjectConverter {
   private static final String PROJECT_LIBRARIES = "sonar.libraries";
 
   private Properties userProperties;
-  private Properties envProperties;
+  
+  private final Properties envProperties;
 
   private final DependencyCollector dependencyCollector;
 
-  private final Map<String, String> env;
-
-  public MavenProjectConverter(Log log, DependencyCollector dependencyCollector, Map<String, String> env) {
+  public MavenProjectConverter(Log log, DependencyCollector dependencyCollector, Properties envProperties) {
     this.log = log;
     this.dependencyCollector = dependencyCollector;
-    this.env = env;
+    this.envProperties = envProperties;
   }
 
   public Properties configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties)
     throws MojoExecutionException {
     this.userProperties = userProperties;
-    this.envProperties = loadEnvironmentProperties();
     Map<MavenProject, Properties> propsByModule = new HashMap<>();
 
     try {
@@ -329,30 +320,6 @@ public class MavenProjectConverter {
     } else {
       props.remove(ScanProperties.PROJECT_TEST_DIRS);
     }
-  }
-
-  private Properties loadEnvironmentProperties() throws MojoExecutionException {
-    Properties props = new Properties();
-
-    String scannerParams = env.get(SONARQUBE_SCANNER_PARAMS);
-    if (scannerParams != null) {
-      try {
-
-        JsonValue jsonValue = Json.parse(scannerParams);
-        JsonObject jsonObject = jsonValue.asObject();
-        Iterator<Member> it = jsonObject.iterator();
-
-        while (it.hasNext()) {
-          Member member = it.next();
-          String key = member.getName();
-          String value = member.getValue().asString();
-          props.put(key, value);
-        }
-      } catch (Exception e) {
-        throw new MojoExecutionException("Failed to parse JSON in SONARQUBE_SCANNER_PARAMS environment variable", e);
-      }
-    }
-    return props;
   }
 
   private static void populateSurefireReportsPath(MavenProject pom, Properties props) {

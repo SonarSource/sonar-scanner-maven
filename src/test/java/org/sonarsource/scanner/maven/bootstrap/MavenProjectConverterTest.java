@@ -27,8 +27,6 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -50,7 +48,7 @@ public class MavenProjectConverterTest {
 
   private Log log;
 
-  private Map<String, String> env;
+  private Properties env;
 
   private MavenProjectConverter projectConverter;
 
@@ -60,7 +58,7 @@ public class MavenProjectConverterTest {
   @Before
   public void prepare() {
     log = mock(Log.class);
-    env = new HashMap<>();
+    env = new Properties();
     when(dependencyCollector.toJson(any(MavenProject.class))).thenReturn("");
     projectConverter = new MavenProjectConverter(log, dependencyCollector, env);
   }
@@ -113,7 +111,7 @@ public class MavenProjectConverterTest {
 
   @Test
   public void shouldUseEnvironment() throws Exception {
-    env.put("SONARQUBE_SCANNER_PARAMS", "{ \"sonar.projectKey\" : \"com.foo:anotherProject\"}");
+    env.put("sonar.projectKey", "com.foo:anotherProject");
     File baseDir = temp.newFolder();
     File pom = new File(baseDir, "pom.xml");
     pom.createNewFile();
@@ -124,19 +122,6 @@ public class MavenProjectConverterTest {
     assertThat(props.getProperty("sonar.projectName")).isEqualTo("My Project");
     assertThat(props.getProperty("sonar.projectVersion")).isEqualTo("2.1");
     assertThat(props.getProperty("sonar.sources")).contains("pom.xml");
-  }
-
-  @Test
-  public void invalidJsonInEnvironment() throws Exception {
-    env.put("SONARQUBE_SCANNER_PARAMS", "{ sonar.projectKey : \"com.foo:anotherProject\"}");
-    File baseDir = temp.newFolder();
-    File pom = new File(baseDir, "pom.xml");
-    pom.createNewFile();
-    MavenProject project = createProject(pom, new Properties(), "jar");
-
-    exception.expect(MojoExecutionException.class);
-    exception.expectMessage("JSON");
-    projectConverter.configure(Arrays.asList(project), project, new Properties());
   }
 
   @Test

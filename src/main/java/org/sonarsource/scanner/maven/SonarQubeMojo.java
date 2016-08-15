@@ -40,7 +40,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
 import org.sonarsource.scanner.api.EmbeddedScanner;
-import org.sonarsource.scanner.maven.bootstrap.EnvSonarQubeScannerParams;
+import org.sonarsource.scanner.api.Utils;
 import org.sonarsource.scanner.maven.bootstrap.LogHandler;
 import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
 import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
@@ -100,7 +100,7 @@ public class SonarQubeMojo extends AbstractMojo {
       return;
     }
     try {
-      Properties envProps = new EnvSonarQubeScannerParams().loadEnvironmentProperties();
+      Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
       ExtensionsFactory extensionsFactory = new ExtensionsFactory(getLog(), session, lifecycleExecutor, artifactFactory, localRepository, artifactMetadataSource, artifactCollector,
         dependencyTreeBuilder, projectBuilder);
       DependencyCollector dependencyCollector = new DependencyCollector(dependencyTreeBuilder, localRepository);

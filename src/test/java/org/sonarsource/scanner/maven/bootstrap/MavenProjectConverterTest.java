@@ -26,6 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Properties;
 
@@ -457,6 +458,22 @@ public class MavenProjectConverterTest {
     Properties props = projectConverter.configure(Arrays.asList(project), project, new Properties());
 
     assertThat(props.getProperty("sonar.sources")).contains(srcDir.getAbsolutePath(), srcGenDir.getAbsolutePath());
+  }
+
+  // MSONAR-145
+  @Test
+  public void ignoreNonStringModelProperties() throws Exception {
+    File pom = temp.newFile("pom.xml");
+
+    Properties pomProps = new Properties();
+    pomProps.put("sonar.projectKey", "myProject");
+    pomProps.put("sonar.integer", new Integer(10));
+    pomProps.put("sonar.string", "myString");
+
+    MavenProject project = createProject(pom, pomProps, "jar");
+    Properties props = projectConverter.configure(Arrays.asList(project), project, new Properties());
+    assertThat(props.getProperty("sonar.string")).isEqualTo("myString");
+    assertThat(props).doesNotContainKey("sonar.integer");
   }
 
   private MavenProject createProject(File pom, Properties pomProps, String packaging)

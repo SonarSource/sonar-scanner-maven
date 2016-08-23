@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -108,7 +110,7 @@ public class MavenProjectConverter {
   private static final String PROJECT_LIBRARIES = "sonar.libraries";
 
   private Properties userProperties;
-  
+
   private final Properties envProperties;
 
   private final DependencyCollector dependencyCollector;
@@ -304,7 +306,9 @@ public class MavenProjectConverter {
 
     // IMPORTANT NOTE : reference on properties from POM model must not be saved,
     // instead they should be copied explicitly - see SONAR-2896
-    props.putAll(pom.getModel().getProperties());
+    for (String k : pom.getModel().getProperties().stringPropertyNames()) {
+      props.put(k, pom.getModel().getProperties().getProperty(k));
+    }
 
     props.putAll(envProperties);
 
@@ -459,7 +463,7 @@ public class MavenProjectConverter {
   }
 
   private static List<File> keepExistingPaths(List<File> files) {
-    return Lists.newArrayList(Collections2.filter(files, new FileExistsFilter()));
+    return files.stream().filter(f -> f != null && f.exists()).collect(Collectors.toList());
   }
 
   private static List<File> removeNested(List<File> originalPaths) {
@@ -483,21 +487,7 @@ public class MavenProjectConverter {
   }
 
   private static String[] toPaths(Collection<File> dirs) {
-    Collection<String> paths = Collections2.transform(dirs, new AbsolutePathTransform());
+    Collection<String> paths = dirs.stream().map(dir -> dir.getAbsolutePath()).collect(Collectors.toList());
     return paths.toArray(new String[paths.size()]);
-  }
-
-  private static class FileExistsFilter implements Predicate<File> {
-    @Override
-    public boolean apply(File fileOrDir) {
-      return fileOrDir != null && fileOrDir.exists();
-    }
-  }
-
-  private static class AbsolutePathTransform implements Function<File, String> {
-    @Override
-    public String apply(File dir) {
-      return dir.getAbsolutePath();
-    }
   }
 }

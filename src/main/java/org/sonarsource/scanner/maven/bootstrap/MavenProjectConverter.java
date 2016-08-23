@@ -19,11 +19,6 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -108,7 +105,7 @@ public class MavenProjectConverter {
   private static final String PROJECT_LIBRARIES = "sonar.libraries";
 
   private Properties userProperties;
-  
+
   private final Properties envProperties;
 
   private final DependencyCollector dependencyCollector;
@@ -193,7 +190,6 @@ public class MavenProjectConverter {
     return null;
   }
 
-  @VisibleForTesting
   void merge(MavenProject pom, Properties props)
     throws MojoExecutionException {
     defineProjectKey(pom, props);
@@ -304,7 +300,9 @@ public class MavenProjectConverter {
 
     // IMPORTANT NOTE : reference on properties from POM model must not be saved,
     // instead they should be copied explicitly - see SONAR-2896
-    props.putAll(pom.getModel().getProperties());
+    for (String k : pom.getModel().getProperties().stringPropertyNames()) {
+      props.put(k, pom.getModel().getProperties().getProperty(k));
+    }
 
     props.putAll(envProperties);
 
@@ -333,7 +331,7 @@ public class MavenProjectConverter {
 
   private static void populateLibraries(MavenProject pom, Properties props, boolean test)
     throws MojoExecutionException {
-    List<File> libraries = Lists.newArrayList();
+    List<File> libraries = new ArrayList<>();
     try {
       List<String> classpathElements = test ? pom.getTestClasspathElements() : pom.getCompileClasspathElements();
       if (classpathElements != null) {
@@ -396,7 +394,7 @@ public class MavenProjectConverter {
   }
 
   static List<File> resolvePaths(Collection<String> paths, File basedir) {
-    List<File> result = Lists.newArrayList();
+    List<File> result = new ArrayList<>();
     for (String path : paths) {
       File fileOrDir = resolvePath(path, basedir);
       if (fileOrDir != null) {
@@ -459,7 +457,7 @@ public class MavenProjectConverter {
   }
 
   private static List<File> keepExistingPaths(List<File> files) {
-    return Lists.newArrayList(Collections2.filter(files, new FileExistsFilter()));
+    return files.stream().filter(f -> f != null && f.exists()).collect(Collectors.toList());
   }
 
   private static List<File> removeNested(List<File> originalPaths) {
@@ -483,21 +481,7 @@ public class MavenProjectConverter {
   }
 
   private static String[] toPaths(Collection<File> dirs) {
-    Collection<String> paths = Collections2.transform(dirs, new AbsolutePathTransform());
+    Collection<String> paths = dirs.stream().map(dir -> dir.getAbsolutePath()).collect(Collectors.toList());
     return paths.toArray(new String[paths.size()]);
-  }
-
-  private static class FileExistsFilter implements Predicate<File> {
-    @Override
-    public boolean apply(File fileOrDir) {
-      return fileOrDir != null && fileOrDir.exists();
-    }
-  }
-
-  private static class AbsolutePathTransform implements Function<File, String> {
-    @Override
-    public String apply(File dir) {
-      return dir.getAbsolutePath();
-    }
   }
 }

@@ -19,7 +19,6 @@
  */
 package org.sonarsource.scanner.maven;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -119,12 +118,10 @@ public class SonarQubeMojo extends AbstractMojo {
     }
   }
 
-  @VisibleForTesting
   void setLocalRepository(ArtifactRepository localRepository) {
     this.localRepository = localRepository;
   }
 
-  @VisibleForTesting
   MavenSession getSession() {
     return session;
   }

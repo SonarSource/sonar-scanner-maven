@@ -49,12 +49,14 @@ public final class MavenUtils {
    */
   @CheckForNull
   public static String getJavaVersion(MavenProject pom) {
-    return getPluginSetting(pom, GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN, "target", null);
+    String defaultValue = pom.getProperties().getProperty("maven.compiler.target");
+    return getPluginSetting(pom, GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN, "target", defaultValue);
   }
 
   @CheckForNull
   public static String getJavaSourceVersion(MavenProject pom) {
-    return getPluginSetting(pom, GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN, "source", null);
+    String defaultValue = pom.getProperties().getProperty("maven.compiler.source");
+    return getPluginSetting(pom, GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN, "source", defaultValue);
   }
 
   /**

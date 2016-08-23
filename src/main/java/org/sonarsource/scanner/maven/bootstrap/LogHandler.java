@@ -33,19 +33,18 @@ public class LogHandler implements LogOutput {
   public void log(String log, Level level) {
     switch (level) {
       case TRACE:
-        mavenLog.debug(log);
-        break;
       case DEBUG:
         mavenLog.debug(log);
-        break;
-      case INFO:
-        mavenLog.info(log);
         break;
       case WARN:
         mavenLog.warn(log);
         break;
       case ERROR:
         mavenLog.error(log);
+        break;
+      case INFO:
+      default:
+        mavenLog.info(log);
         break;
     }
   }

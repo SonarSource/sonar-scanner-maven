@@ -31,30 +31,12 @@ import org.apache.maven.project.MavenProject;
  */
 public final class MavenUtils {
 
-  private static final String MAVEN_COMPILER_PLUGIN = "maven-compiler-plugin";
-
   public static final String GROUP_ID_APACHE_MAVEN = "org.apache.maven.plugins";
 
   public static final String GROUP_ID_CODEHAUS_MOJO = "org.codehaus.mojo";
 
   private MavenUtils() {
     // utility class with only static methods
-  }
-
-  /**
-   * Returns the version of Java used by the maven compiler plugin
-   *
-   * @param pom the project pom
-   * @return the java version
-   */
-  @CheckForNull
-  public static String getJavaVersion(MavenProject pom) {
-    return getPluginSetting(pom, GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN, "target", null);
-  }
-
-  @CheckForNull
-  public static String getJavaSourceVersion(MavenProject pom) {
-    return getPluginSetting(pom, GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN, "source", null);
   }
 
   /**
@@ -82,6 +64,15 @@ public final class MavenUtils {
       return StringUtils.defaultIfEmpty(plugin.getParameter(optionName), defaultValue);
     }
     return defaultValue;
+  }
+  
+  public static <T> T coalesce(T... objs) {
+    for (T o : objs) {
+      if (o != null) {
+        return o;
+      }
+    }
+    return null;
   }
 
 }

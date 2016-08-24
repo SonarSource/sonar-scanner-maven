@@ -19,7 +19,6 @@
  */
 package org.sonarsource.scanner.maven;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -43,6 +42,7 @@ import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.api.Utils;
 import org.sonarsource.scanner.maven.bootstrap.LogHandler;
 import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
+import org.sonarsource.scanner.maven.bootstrap.JavaVersionResolver;
 import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
 import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper;
 import org.sonarsource.scanner.maven.bootstrap.ScannerFactory;
@@ -104,7 +104,8 @@ public class SonarQubeMojo extends AbstractMojo {
       ExtensionsFactory extensionsFactory = new ExtensionsFactory(getLog(), session, lifecycleExecutor, artifactFactory, localRepository, artifactMetadataSource, artifactCollector,
         dependencyTreeBuilder, projectBuilder);
       DependencyCollector dependencyCollector = new DependencyCollector(dependencyTreeBuilder, localRepository);
-      MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), dependencyCollector, envProps);
+      JavaVersionResolver pluginParameterResolver = new JavaVersionResolver(session, lifecycleExecutor, getLog());
+      MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), dependencyCollector, pluginParameterResolver, envProps);
       LogHandler logHandler = new LogHandler(getLog());
 
       PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
@@ -119,12 +120,10 @@ public class SonarQubeMojo extends AbstractMojo {
     }
   }
 
-  @VisibleForTesting
   void setLocalRepository(ArtifactRepository localRepository) {
     this.localRepository = localRepository;
   }
 
-  @VisibleForTesting
   MavenSession getSession() {
     return session;
   }

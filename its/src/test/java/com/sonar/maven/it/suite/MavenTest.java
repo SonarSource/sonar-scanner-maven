@@ -402,6 +402,38 @@ public class MavenTest extends AbstractMavenTest {
     orchestrator.executeBuild(build);
   }
 
+  @Test
+  public void setJavaVersionCompilerConfiguration() throws FileNotFoundException, IOException {
+    File outputProps = temp.newFile();
+    
+    File pom = ItUtils.locateProjectPom("version/compilerPluginConfig");
+    MavenBuild build = MavenBuild.create(pom)
+      .setGoals(cleanPackageSonarGoal())
+      .setProperty("sonarRunner.dumpToFile", outputProps.getAbsolutePath());
+    orchestrator.executeBuild(build);
+
+    Properties props = getProps(outputProps);
+    assertThat(props).contains(
+      entry("sonar.java.source", "1.7"),
+      entry("sonar.java.target", "1.8"));
+  }
+  
+  @Test
+  public void setJavaVersionProperties() throws FileNotFoundException, IOException {
+    File outputProps = temp.newFile();
+    
+    File pom = ItUtils.locateProjectPom("version/properties");
+    MavenBuild build = MavenBuild.create(pom)
+      .setGoals(cleanPackageSonarGoal())
+      .setProperty("sonarRunner.dumpToFile", outputProps.getAbsolutePath());
+    orchestrator.executeBuild(build);
+
+    Properties props = getProps(outputProps);
+    assertThat(props).contains(
+      entry("sonar.java.source", "1.5"),
+      entry("sonar.java.target", "1.6"));
+  }
+
   private Properties getProps(File outputProps)
     throws FileNotFoundException, IOException {
     FileInputStream fis = null;

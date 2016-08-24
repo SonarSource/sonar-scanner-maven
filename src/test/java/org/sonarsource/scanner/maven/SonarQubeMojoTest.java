@@ -68,7 +68,7 @@ public class SonarQubeMojoTest {
 
   @Test
   public void executeMojo() throws Exception {
-    File baseDir = executeProject("sample-project");
+    executeProject("sample-project");
 
     // passed in the properties of the profile and project
     assertGlobalPropsContains(entry("sonar.host.url1", "http://myserver:9000"));
@@ -133,8 +133,7 @@ public class SonarQubeMojoTest {
   public void shouldExportSurefireReportsPath() throws Exception {
 
     File baseDir = executeProject("sample-project-with-surefire");
-    assertPropsContains(entry("sonar.junit.reportsPath",
-      new File(baseDir, "target/surefire-reports").getAbsolutePath()));
+    assertPropsContains(entry("sonar.junit.reportsPath", new File(baseDir, "target/surefire-reports").getAbsolutePath()));
   }
 
   // MSONAR-113
@@ -170,13 +169,13 @@ public class SonarQubeMojoTest {
     assertThat(readProps("target/dump.properties.global")).contains((entry("sonar.verbose", "true")));
   }
 
-  private File executeProject(String projectName)
-    throws Exception {
+  private File executeProject(String projectName) throws Exception {
     ArtifactRepository artifactRepo = new DefaultArtifactRepository("local", this.getClass().getResource("SonarQubeMojoTest/repository").toString(), new DefaultRepositoryLayout());
 
     File baseDir = new File("src/test/resources/org/sonarsource/scanner/maven/SonarQubeMojoTest/" + projectName);
     SonarQubeMojo mojo = getMojo(baseDir);
-    mojo.getSession().getSortedProjects().get(0).setExecutionRoot(true);
+    mojo.getSession().getProjects().get(0).setExecutionRoot(true);
+
     mojo.setLocalRepository(artifactRepo);
     mojo.setLog(mockedLogger);
 
@@ -185,11 +184,12 @@ public class SonarQubeMojoTest {
     return baseDir;
   }
 
-  private void assertPropsContains(MapEntry... entries) throws FileNotFoundException, IOException {
+  @SafeVarargs
+  private final void assertPropsContains(MapEntry<String, String>... entries) throws FileNotFoundException, IOException {
     assertThat(readProps("target/dump.properties")).contains(entries);
   }
 
-  private void assertGlobalPropsContains(MapEntry entries) throws FileNotFoundException, IOException {
+  private void assertGlobalPropsContains(MapEntry<String, String> entries) throws FileNotFoundException, IOException {
     assertThat(readProps("target/dump.properties.global")).contains(entries);
   }
 

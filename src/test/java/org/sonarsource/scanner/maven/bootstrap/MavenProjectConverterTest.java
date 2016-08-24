@@ -26,7 +26,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Properties;
 
@@ -52,6 +51,8 @@ public class MavenProjectConverterTest {
   private Properties env;
 
   private MavenProjectConverter projectConverter;
+  
+  private JavaVersionResolver javaVersionResolver;
 
   @Rule
   public ExpectedException exception = ExpectedException.none();
@@ -59,9 +60,10 @@ public class MavenProjectConverterTest {
   @Before
   public void prepare() {
     log = mock(Log.class);
+    javaVersionResolver = mock(JavaVersionResolver.class);
     env = new Properties();
     when(dependencyCollector.toJson(any(MavenProject.class))).thenReturn("");
-    projectConverter = new MavenProjectConverter(log, dependencyCollector, env);
+    projectConverter = new MavenProjectConverter(log, dependencyCollector, javaVersionResolver, env);
   }
 
   @Test

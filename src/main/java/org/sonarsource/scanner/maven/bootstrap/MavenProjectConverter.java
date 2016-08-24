@@ -19,11 +19,6 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -115,9 +110,12 @@ public class MavenProjectConverter {
 
   private final DependencyCollector dependencyCollector;
 
-  public MavenProjectConverter(Log log, DependencyCollector dependencyCollector, Properties envProperties) {
+  private final JavaVersionResolver javaVersionResolver;
+
+  public MavenProjectConverter(Log log, DependencyCollector dependencyCollector, JavaVersionResolver javaVersionResolver, Properties envProperties) {
     this.log = log;
     this.dependencyCollector = dependencyCollector;
+    this.javaVersionResolver = javaVersionResolver;
     this.envProperties = envProperties;
   }
 
@@ -195,7 +193,6 @@ public class MavenProjectConverter {
     return null;
   }
 
-  @VisibleForTesting
   void merge(MavenProject pom, Properties props)
     throws MojoExecutionException {
     defineProjectKey(pom, props);
@@ -236,14 +233,14 @@ public class MavenProjectConverter {
     }
   }
 
-  private static void guessJavaVersion(MavenProject pom, Properties props) {
+  private void guessJavaVersion(MavenProject pom, Properties props) {
     // See http://jira.codehaus.org/browse/SONAR-2148
     // Get Java source and target versions from maven-compiler-plugin.
-    String version = MavenUtils.getJavaSourceVersion(pom);
+    String version = javaVersionResolver.getSource(pom);
     if (version != null) {
       props.setProperty(JAVA_SOURCE_PROPERTY, version);
     }
-    version = MavenUtils.getJavaVersion(pom);
+    version = javaVersionResolver.getTarget(pom);
     if (version != null) {
       props.setProperty(JAVA_TARGET_PROPERTY, version);
     }
@@ -337,7 +334,7 @@ public class MavenProjectConverter {
 
   private static void populateLibraries(MavenProject pom, Properties props, boolean test)
     throws MojoExecutionException {
-    List<File> libraries = Lists.newArrayList();
+    List<File> libraries = new ArrayList<>();
     try {
       List<String> classpathElements = test ? pom.getTestClasspathElements() : pom.getCompileClasspathElements();
       if (classpathElements != null) {
@@ -400,7 +397,7 @@ public class MavenProjectConverter {
   }
 
   static List<File> resolvePaths(Collection<String> paths, File basedir) {
-    List<File> result = Lists.newArrayList();
+    List<File> result = new ArrayList<>();
     for (String path : paths) {
       File fileOrDir = resolvePath(path, basedir);
       if (fileOrDir != null) {

@@ -51,7 +51,7 @@ public class MavenProjectConverterTest {
   private Properties env;
 
   private MavenProjectConverter projectConverter;
-  
+
   private JavaVersionResolver javaVersionResolver;
 
   @Rule
@@ -362,6 +362,24 @@ public class MavenProjectConverterTest {
   }
 
   @Test
+  public void excludeSourcesInTarget() throws Exception {
+    File src2 = temp.newFolder("src2");
+    File pom = temp.newFile("pom.xml");
+
+    MavenProject project = createProject(pom, new Properties(), "jar");
+    project.addCompileSourceRoot(new File(temp.getRoot(), "target").getAbsolutePath());
+    project.addCompileSourceRoot(new File(temp.getRoot(), "src2").getAbsolutePath());
+
+    Properties props = projectConverter.configure(Arrays.asList(project), project, new Properties());
+
+    assertThat(props.getProperty("sonar.projectKey")).isEqualTo("com.foo:myProject");
+    assertThat(props.getProperty("sonar.projectName")).isEqualTo("My Project");
+    assertThat(props.getProperty("sonar.projectVersion")).isEqualTo("2.1");
+
+    assertThat(props.getProperty("sonar.sources").split(",")).containsAll(Arrays.asList(new String[] {src2.getAbsolutePath(), pom.getAbsolutePath()}));
+  }
+
+  @Test
   public void overrideSourcesMultiModuleProject() throws Exception {
     Properties pomProps = new Properties();
     pomProps.put("sonar.sources", "src/main");
@@ -490,6 +508,7 @@ public class MavenProjectConverterTest {
     project.getBuild().setOutputDirectory(temp.newFolder().getPath());
     project.getBuild().setTestOutputDirectory(temp.newFolder().getPath());
     project.getModel().setProperties(pomProps);
+    project.getBuild().setDirectory("target");
     project.setFile(pom);
     return project;
   }

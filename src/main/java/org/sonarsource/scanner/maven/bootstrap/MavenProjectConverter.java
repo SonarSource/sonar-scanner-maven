@@ -21,6 +21,8 @@ package org.sonarsource.scanner.maven.bootstrap;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -407,8 +409,24 @@ public class MavenProjectConverter {
     return result;
   }
 
-  private List<File> mainSources(MavenProject pom)
-    throws MojoExecutionException {
+  private static void removeTarget(MavenProject pom, Collection<String> paths) {
+    paths.removeIf(pathStr -> {
+      Path path = Paths.get(pathStr);
+      Path relativePath;
+
+      if (path.isAbsolute()) {
+        Path baseDir = pom.getBasedir().toPath().toAbsolutePath();
+        relativePath = baseDir.relativize(path);
+      } else {
+        relativePath = path;
+      }
+
+      String targetDir = pom.getBuild().getDirectory();
+      return relativePath.startsWith(targetDir);
+    });
+  }
+
+  private List<File> mainSources(MavenProject pom) throws MojoExecutionException {
     Set<String> sources = new LinkedHashSet<>();
     if (MAVEN_PACKAGING_WAR.equals(pom.getModel().getPackaging())) {
       sources.add(MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_APACHE_MAVEN, ARTIFACTID_MAVEN_WAR_PLUGIN, "warSourceDirectory", "src/main/webapp"));
@@ -416,6 +434,7 @@ public class MavenProjectConverter {
 
     sources.add(pom.getFile().getPath());
     sources.addAll(pom.getCompileSourceRoots());
+
     return sourcePaths(pom, ScanProperties.PROJECT_SOURCE_DIRS, sources);
   }
 
@@ -434,6 +453,7 @@ public class MavenProjectConverter {
       filesOrDirs = resolvePaths(paths, pom.getBasedir());
       userDefined = true;
     } else {
+      removeTarget(pom, mavenPaths);
       filesOrDirs = resolvePaths(mavenPaths, pom.getBasedir());
     }
 

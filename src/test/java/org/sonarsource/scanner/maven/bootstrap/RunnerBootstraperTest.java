@@ -78,7 +78,7 @@ public class RunnerBootstraperTest {
 
     MavenProject rootProject = mock(MavenProject.class);
     when(rootProject.isExecutionRoot()).thenReturn(true);
-    when(session.getProjects()).thenReturn(Arrays.asList(rootProject));
+    when(session.getSortedProjects()).thenReturn(Arrays.asList(rootProject));
 
     projectProperties = new Properties();
     when(

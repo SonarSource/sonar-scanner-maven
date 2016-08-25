@@ -104,7 +104,7 @@ public class ScannerBootstrapper {
 
   private Properties collectProperties()
     throws MojoExecutionException {
-    List<MavenProject> sortedProjects = session.getProjects();
+    List<MavenProject> sortedProjects = session.getSortedProjects();
     MavenProject topLevelProject = null;
     for (MavenProject project : sortedProjects) {
       if (project.isExecutionRoot()) {

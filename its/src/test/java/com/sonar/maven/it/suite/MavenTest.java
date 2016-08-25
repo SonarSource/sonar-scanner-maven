@@ -30,9 +30,13 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -404,8 +408,10 @@ public class MavenTest extends AbstractMavenTest {
 
   @Test
   public void setJavaVersionCompilerConfiguration() throws FileNotFoundException, IOException {
+    Assume.assumeTrue(3 == getMavenMajorVersion());
+
     File outputProps = temp.newFile();
-    
+
     File pom = ItUtils.locateProjectPom("version/compilerPluginConfig");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
@@ -417,11 +423,37 @@ public class MavenTest extends AbstractMavenTest {
       entry("sonar.java.source", "1.7"),
       entry("sonar.java.target", "1.8"));
   }
-  
+
+  Integer mavenVersion = null;
+
+  private int getMavenMajorVersion() {
+    String versionRegex = "Apache Maven\\s(\\d+)\\.\\d+(?:\\.\\d+)?\\s";
+
+    if (mavenVersion != null) {
+      return mavenVersion;
+    }
+
+    MavenBuild build = MavenBuild.create()
+      .setGoals("-version");
+    BuildResult result = orchestrator.executeBuild(build);
+
+    String logs = result.getLogs();
+    Pattern p = Pattern.compile(versionRegex);
+    Matcher matcher = p.matcher(logs);
+
+    if (matcher.find()) {
+      mavenVersion = Integer.parseInt(matcher.group(1));
+      return mavenVersion;
+    }
+    throw new IllegalStateException("Could not find maven version: " + logs);
+  }
+
   @Test
   public void setJavaVersionProperties() throws FileNotFoundException, IOException {
+    Assume.assumeTrue(3 == getMavenMajorVersion());
+
     File outputProps = temp.newFile();
-    
+
     File pom = ItUtils.locateProjectPom("version/properties");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())

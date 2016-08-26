@@ -88,6 +88,8 @@ public class MavenProjectConverter {
   private static final String JAVA_PROJECT_MAIN_BINARY_DIRS = "sonar.java.binaries";
 
   private static final String JAVA_PROJECT_MAIN_LIBRARIES = "sonar.java.libraries";
+  
+  private static final String GROOVY_PROJECT_MAIN_BINARY_DIRS = "sonar.groovy.binaries";
 
   private static final String JAVA_PROJECT_TEST_BINARY_DIRS = "sonar.java.test.binaries";
 
@@ -371,6 +373,7 @@ public class MavenProjectConverter {
       // Populate both deprecated and new property for backward compatibility
       props.setProperty(PROJECT_BINARY_DIRS, binPath);
       props.setProperty(JAVA_PROJECT_MAIN_BINARY_DIRS, binPath);
+      props.setProperty(GROOVY_PROJECT_MAIN_BINARY_DIRS, binPath);
     }
     File testBinaryDir = resolvePath(pom.getBuild().getTestOutputDirectory(), pom.getBasedir());
     if (testBinaryDir != null && testBinaryDir.exists()) {

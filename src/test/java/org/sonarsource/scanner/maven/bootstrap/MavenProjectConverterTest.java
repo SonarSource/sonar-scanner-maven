@@ -508,7 +508,7 @@ public class MavenProjectConverterTest {
     project.getBuild().setOutputDirectory(temp.newFolder().getPath());
     project.getBuild().setTestOutputDirectory(temp.newFolder().getPath());
     project.getModel().setProperties(pomProps);
-    project.getBuild().setDirectory("target");
+    project.getBuild().setDirectory(new File(pom.getParentFile(), "target").getAbsolutePath());
     project.setFile(pom);
     return project;
   }

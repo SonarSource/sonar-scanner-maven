@@ -409,20 +409,15 @@ public class MavenProjectConverter {
     return result;
   }
 
-  private static void removeTarget(MavenProject pom, Collection<String> paths) {
-    paths.removeIf(pathStr -> {
-      Path path = Paths.get(pathStr);
-      Path relativePath;
-
-      if (path.isAbsolute()) {
-        Path baseDir = pom.getBasedir().toPath().toAbsolutePath();
-        relativePath = baseDir.relativize(path);
-      } else {
-        relativePath = path;
-      }
-
-      String targetDir = pom.getBuild().getDirectory();
-      return relativePath.startsWith(targetDir);
+  private static void removeTarget(MavenProject pom, Collection<String> relativeOrAbsolutePaths) {
+    final Path baseDir = pom.getBasedir().toPath().toAbsolutePath().normalize();
+    final Path target = Paths.get(pom.getBuild().getDirectory()).toAbsolutePath().normalize();
+    final Path targetRelativePath = baseDir.relativize(target);
+    
+    relativeOrAbsolutePaths.removeIf(pathStr -> {
+      Path path = Paths.get(pathStr).toAbsolutePath().normalize();
+      Path relativePath = baseDir.relativize(path);
+      return relativePath.startsWith(targetRelativePath);
     });
   }
 

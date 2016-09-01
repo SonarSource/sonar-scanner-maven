@@ -21,7 +21,7 @@ package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.execution.RuntimeInformation;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.junit.Before;
@@ -60,8 +60,9 @@ public class ScannerFactoryTest {
     root.put("root", "value");
     envProps.put("env", "value");
 
-    when(runtimeInformation.getApplicationVersion().toString()).thenReturn("1.0");
-    when(mavenSession.getExecutionProperties()).thenReturn(system);
+    when(runtimeInformation.getMavenVersion()).thenReturn("1.0");
+    when(mavenSession.getSystemProperties()).thenReturn(system);
+    when(mavenSession.getUserProperties()).thenReturn(new Properties());
     when(rootProject.getProperties()).thenReturn(root);
     when(mavenSession.getCurrentProject()).thenReturn(rootProject);
     propertyDecryptor = new PropertyDecryptor(mock(Log.class), mock(SecDispatcher.class));
@@ -72,7 +73,7 @@ public class ScannerFactoryTest {
 
     ScannerFactory factory = new ScannerFactory(logOutput, false, runtimeInformation, mavenSession, envProps, propertyDecryptor);
     EmbeddedScanner scanner = factory.create();
-    verify(mavenSession).getExecutionProperties();
+    verify(mavenSession).getSystemProperties();
     verify(rootProject).getProperties();
 
     assertThat(scanner.globalProperties()).contains(entry("system", "value"), entry("user", "value"), entry("root", "value"), entry("env", "value"));

@@ -382,7 +382,7 @@ public class MavenProjectConverter {
     }
   }
 
-  public static File getSonarWorkDir(MavenProject pom) {
+  private static File getSonarWorkDir(MavenProject pom) {
     return new File(getBuildDir(pom), "sonar");
   }
 

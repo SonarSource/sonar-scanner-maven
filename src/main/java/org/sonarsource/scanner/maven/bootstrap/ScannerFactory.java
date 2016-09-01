@@ -21,7 +21,7 @@ package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.execution.RuntimeInformation;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.api.LogOutput;
 
@@ -46,7 +46,7 @@ public class ScannerFactory {
 
   public EmbeddedScanner create() {
     EmbeddedScanner scanner = EmbeddedScanner.create(logOutput);
-    scanner.setApp("Maven", runtimeInformation.getApplicationVersion().toString());
+    scanner.setApp("Maven", runtimeInformation.getMavenVersion());
 
     scanner.addGlobalProperties(createGlobalProperties());
 
@@ -63,7 +63,8 @@ public class ScannerFactory {
     Properties p = new Properties();
     p.putAll(session.getCurrentProject().getProperties());
     p.putAll(envProps);
-    p.putAll(session.getExecutionProperties());
+    p.putAll(session.getSystemProperties());
+    p.putAll(session.getUserProperties());
     p.putAll(propertyDecryptor.decryptProperties(p));
     return p;
   }

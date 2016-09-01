@@ -27,7 +27,7 @@ import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactCollector;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.execution.RuntimeInformation;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.lifecycle.LifecycleExecutor;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -95,6 +95,8 @@ public class SonarQubeMojo extends AbstractMojo {
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
+    verifyMavenVersion();
+
     if (skip) {
       getLog().info("sonar.skip = true: Skipping analysis");
       return;
@@ -104,7 +106,7 @@ public class SonarQubeMojo extends AbstractMojo {
       ExtensionsFactory extensionsFactory = new ExtensionsFactory(getLog(), session, lifecycleExecutor, artifactFactory, localRepository, artifactMetadataSource, artifactCollector,
         dependencyTreeBuilder, projectBuilder);
       DependencyCollector dependencyCollector = new DependencyCollector(dependencyTreeBuilder, localRepository);
-      JavaVersionResolver pluginParameterResolver = new JavaVersionResolver(session, lifecycleExecutor, runtimeInformation, getLog());
+      JavaVersionResolver pluginParameterResolver = new JavaVersionResolver(session, lifecycleExecutor, getLog());
       MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), dependencyCollector, pluginParameterResolver, envProps);
       LogHandler logHandler = new LogHandler(getLog());
 
@@ -117,6 +119,12 @@ public class SonarQubeMojo extends AbstractMojo {
       new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, extensionsFactory, propertyDecryptor).execute();
     } catch (IOException e) {
       throw new MojoExecutionException("Failed to execute SonarQube analysis", e);
+    }
+  }
+
+  private void verifyMavenVersion() throws MojoExecutionException {
+    if (!runtimeInformation.isMavenVersion("3.0")) {
+      throw new MojoExecutionException("Maven 2 is not supported anymore by sonar-maven-plugin. Please use Maven 3");
     }
   }
 

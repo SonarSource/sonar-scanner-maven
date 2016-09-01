@@ -25,7 +25,6 @@ import java.util.List;
 import javax.annotation.CheckForNull;
 
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.execution.RuntimeInformation;
 import org.apache.maven.lifecycle.LifecycleExecutor;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.PluginParameterExpressionEvaluator;
@@ -46,14 +45,12 @@ public class JavaVersionResolver {
   private final Log log;
   private List<MojoExecution> mojoExecutions;
 
-  public JavaVersionResolver(MavenSession session, LifecycleExecutor lifecycleExecutor, RuntimeInformation runtime, Log log) {
+  public JavaVersionResolver(MavenSession session, LifecycleExecutor lifecycleExecutor, Log log) {
     this.session = session;
     this.log = log;
     this.mojoExecutions = new LinkedList<>();
     try {
-      if (runtime.getApplicationVersion().getMajorVersion() >= 3) {
-        this.mojoExecutions = lifecycleExecutor.calculateExecutionPlan(session, true, COMPILE_GOAL).getMojoExecutions();
-      }
+      this.mojoExecutions = lifecycleExecutor.calculateExecutionPlan(session, true, COMPILE_GOAL).getMojoExecutions();
     } catch (Exception e) {
       log.warn(String.format("Failed to get mojo executions for goal '%s': %s", COMPILE_GOAL, e.getMessage()));
     }

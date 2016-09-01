@@ -23,19 +23,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Properties;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.DefaultArtifactRepository;
 import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.testing.MojoRule;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.assertj.core.data.MapEntry;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.rules.TemporaryFolder;
 import org.skyscreamer.jsonassert.JSONAssert;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,9 +50,6 @@ import static org.mockito.Mockito.when;
 public class SonarQubeMojoTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none();
-
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
 
   @Rule
   public MojoRule mojoRule = new MojoRule();
@@ -73,6 +72,20 @@ public class SonarQubeMojoTest {
     // passed in the properties of the profile and project
     assertGlobalPropsContains(entry("sonar.host.url1", "http://myserver:9000"));
     assertGlobalPropsContains(entry("sonar.host.url2", "http://myserver:9000"));
+  }
+
+  @Test
+  public void failMaven2() throws Exception {
+    RuntimeInformation runtime = mock(RuntimeInformation.class);
+    when(runtime.isMavenVersion("3.0")).thenReturn(false);
+    SonarQubeMojo mojo = new SonarQubeMojo();
+    Field field = SonarQubeMojo.class.getDeclaredField("runtimeInformation");
+    field.setAccessible(true);
+    field.set(mojo, runtime);
+
+    thrown.expect(MojoExecutionException.class);
+    thrown.expectMessage("Maven 2 is not supported anymore by sonar-scanner-maven. Please use Maven 3");
+    mojo.execute();
   }
 
   @Test

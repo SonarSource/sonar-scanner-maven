@@ -65,7 +65,13 @@ public final class MavenUtils {
     }
     return defaultValue;
   }
-  
+
+  /**
+   * Returns first non null object or null if all objects are null
+   * @param objs
+   * @return First null argument, or null if they are all null
+   */
+  @SafeVarargs
   public static <T> T coalesce(T... objs) {
     for (T o : objs) {
       if (o != null) {

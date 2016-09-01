@@ -62,9 +62,9 @@ public class ScannerBootstrapper {
 
       checkSQVersion();
 
-      if (this.isVersionPriorTo5Dot2()) {
+      if (isVersionPriorTo5Dot2()) {
         // for these versions, global properties and extensions are only applied when calling runAnalisys()
-        if (this.supportsNewDependencyProperty()) {
+        if (supportsNewDependencyProperty()) {
           scanner.addExtensions(extensionsFactory.createExtensionsWithDependencyProperty().toArray());
         } else {
           scanner.addExtensions(extensionsFactory.createExtensions().toArray());
@@ -104,7 +104,7 @@ public class ScannerBootstrapper {
 
   private Properties collectProperties()
     throws MojoExecutionException {
-    List<MavenProject> sortedProjects = session.getSortedProjects();
+    List<MavenProject> sortedProjects = session.getProjects();
     MavenProject topLevelProject = null;
     for (MavenProject project : sortedProjects) {
       if (project.isExecutionRoot()) {
@@ -121,7 +121,7 @@ public class ScannerBootstrapper {
     return props;
   }
 
-  public void checkSQVersion() {
+  private void checkSQVersion() {
     if (serverVersion != null) {
       log.info("SonarQube version: " + serverVersion);
     }
@@ -131,7 +131,7 @@ public class ScannerBootstrapper {
     }
   }
 
-  public boolean isVersionPriorTo4Dot5() {
+  boolean isVersionPriorTo4Dot5() {
     if (serverVersion == null) {
       return true;
     }
@@ -143,11 +143,11 @@ public class ScannerBootstrapper {
     return artifactVersion.getMajorVersion() == 4 && artifactVersion.getMinorVersion() < 5;
   }
 
-  public boolean supportsNewDependencyProperty() {
+  private boolean supportsNewDependencyProperty() {
     return !isVersionPriorTo5Dot0();
   }
 
-  public boolean isVersionPriorTo5Dot2() {
+  boolean isVersionPriorTo5Dot2() {
     if (serverVersion == null) {
       return true;
     }
@@ -159,7 +159,7 @@ public class ScannerBootstrapper {
     return artifactVersion.getMajorVersion() == 5 && artifactVersion.getMinorVersion() < 2;
   }
 
-  public boolean isVersionPriorTo5Dot0() {
+  boolean isVersionPriorTo5Dot0() {
     if (serverVersion == null) {
       return true;
     }

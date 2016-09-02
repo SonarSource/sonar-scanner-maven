@@ -95,8 +95,6 @@ public class SonarQubeMojo extends AbstractMojo {
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
-    verifyMavenVersion();
-
     if (skip) {
       getLog().info("sonar.skip = true: Skipping analysis");
       return;
@@ -119,12 +117,6 @@ public class SonarQubeMojo extends AbstractMojo {
       new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, extensionsFactory, propertyDecryptor).execute();
     } catch (IOException e) {
       throw new MojoExecutionException("Failed to execute SonarQube analysis", e);
-    }
-  }
-
-  private void verifyMavenVersion() throws MojoExecutionException {
-    if (!runtimeInformation.isMavenVersion("3.0")) {
-      throw new MojoExecutionException("Maven 2 is not supported anymore by sonar-maven-plugin. Please use Maven 3");
     }
   }
 

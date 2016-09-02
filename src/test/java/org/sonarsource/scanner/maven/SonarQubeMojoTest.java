@@ -84,7 +84,7 @@ public class SonarQubeMojoTest {
     field.set(mojo, runtime);
 
     thrown.expect(MojoExecutionException.class);
-    thrown.expectMessage("Maven 2 is not supported anymore by sonar-scanner-maven. Please use Maven 3");
+    thrown.expectMessage("Maven 2 is not supported anymore by sonar-maven-plugin. Please use Maven 3");
     mojo.execute();
   }
 

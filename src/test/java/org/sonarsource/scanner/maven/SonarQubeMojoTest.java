@@ -75,20 +75,6 @@ public class SonarQubeMojoTest {
   }
 
   @Test
-  public void failMaven2() throws Exception {
-    RuntimeInformation runtime = mock(RuntimeInformation.class);
-    when(runtime.isMavenVersion("3.0")).thenReturn(false);
-    SonarQubeMojo mojo = new SonarQubeMojo();
-    Field field = SonarQubeMojo.class.getDeclaredField("runtimeInformation");
-    field.setAccessible(true);
-    field.set(mojo, runtime);
-
-    thrown.expect(MojoExecutionException.class);
-    thrown.expectMessage("Maven 2 is not supported anymore by sonar-maven-plugin. Please use Maven 3");
-    mojo.execute();
-  }
-
-  @Test
   public void shouldExportBinaries() throws Exception {
     File baseDir = executeProject("sample-project");
 

@@ -9,7 +9,7 @@
 
   <groupId>org.sonarsource.scanner.maven</groupId>
   <artifactId>sonar-maven-plugin</artifactId>
-  <version>3.2-SNAPSHOT</version>
+  <version>3.1.1</version>
   <packaging>maven-plugin</packaging>
 
   <name>SonarQube Scanner for Maven</name>
@@ -59,7 +59,7 @@
     <connection>scm:git:https://github.com/SonarSource/sonar-scanner-maven.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/SonarSource/sonar-scanner-maven.git</developerConnection>
     <url>https://github.com/SonarSource/sonar-scanner-maven</url>
-    <tag>HEAD</tag>
+    <tag>3.1.1</tag>
   </scm>
 
   <issueManagement>

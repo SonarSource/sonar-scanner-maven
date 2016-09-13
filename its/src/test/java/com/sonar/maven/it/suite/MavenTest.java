@@ -366,6 +366,18 @@ public class MavenTest extends AbstractMavenTest {
 
   }
 
+  // MSONAR-150
+  @Test
+  public void shouldSkipWithEnvVar() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
+      .setGoals(cleanSonarGoal())
+      .setProperties("sonar.host.url", "invalid")
+      .setEnvironmentVariable("SONARQUBE_SCANNER_PARAMS", "{ \"sonar.scanner.skip\" : \"true\" }");
+    BuildResult result = orchestrator.executeBuild(build);
+    assertThat(result.getLogs()).contains("SonarQube Scanner analysis skipped");
+
+  }
+
   @Test
   public void read_default_from_plugins_config() throws Exception {
     File outputProps = temp.newFile();

@@ -39,6 +39,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
 import org.sonarsource.scanner.api.EmbeddedScanner;
+import org.sonarsource.scanner.api.ScanProperties;
 import org.sonarsource.scanner.api.Utils;
 import org.sonarsource.scanner.maven.bootstrap.LogHandler;
 import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
@@ -95,12 +96,10 @@ public class SonarQubeMojo extends AbstractMojo {
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
-    if (skip) {
-      getLog().info("sonar.skip = true: Skipping analysis");
-      return;
-    }
+
     try {
       Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
+
       ExtensionsFactory extensionsFactory = new ExtensionsFactory(getLog(), session, lifecycleExecutor, artifactFactory, localRepository, artifactMetadataSource, artifactCollector,
         dependencyTreeBuilder, projectBuilder);
       DependencyCollector dependencyCollector = new DependencyCollector(dependencyTreeBuilder, localRepository);
@@ -112,12 +111,29 @@ public class SonarQubeMojo extends AbstractMojo {
 
       ScannerFactory runnerFactory = new ScannerFactory(logHandler, getLog().isDebugEnabled(), runtimeInformation, session, envProps, propertyDecryptor);
 
+      if(isSkip(runnerFactory.createGlobalProperties())) {
+        return;
+      }
+      
       EmbeddedScanner runner = runnerFactory.create();
 
       new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, extensionsFactory, propertyDecryptor).execute();
     } catch (IOException e) {
       throw new MojoExecutionException("Failed to execute SonarQube analysis", e);
     }
+  }
+  
+  private boolean isSkip(Properties properties) {
+    if (skip) {
+      getLog().info("sonar.skip = true: Skipping analysis");
+      return true;
+    }
+    
+    if ("true".equalsIgnoreCase(properties.getProperty(ScanProperties.SKIP))) {
+      getLog().info("SonarQube Scanner analysis skipped");
+      return true;
+    }
+    return false;
   }
 
   void setLocalRepository(ArtifactRepository localRepository) {

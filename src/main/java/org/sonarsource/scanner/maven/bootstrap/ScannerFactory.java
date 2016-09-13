@@ -59,7 +59,7 @@ public class ScannerFactory {
     return scanner;
   }
 
-  private Properties createGlobalProperties() {
+  public Properties createGlobalProperties() {
     Properties p = new Properties();
     p.putAll(session.getCurrentProject().getProperties());
     p.putAll(envProps);

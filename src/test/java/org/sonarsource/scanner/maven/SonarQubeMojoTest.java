@@ -19,33 +19,32 @@
  */
 package org.sonarsource.scanner.maven;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.Properties;
-import org.apache.commons.io.IOUtils;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.repository.DefaultArtifactRepository;
-import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugin.testing.MojoRule;
-import org.apache.maven.rtinfo.RuntimeInformation;
-import org.assertj.core.data.MapEntry;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.skyscreamer.jsonassert.JSONAssert;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Properties;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.repository.DefaultArtifactRepository;
+import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugin.testing.MojoRule;
+import org.assertj.core.data.MapEntry;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.skyscreamer.jsonassert.JSONAssert;
 
 public class SonarQubeMojoTest {
   @Rule
@@ -72,6 +71,14 @@ public class SonarQubeMojoTest {
     // passed in the properties of the profile and project
     assertGlobalPropsContains(entry("sonar.host.url1", "http://myserver:9000"));
     assertGlobalPropsContains(entry("sonar.host.url2", "http://myserver:9000"));
+  }
+
+  @Test
+  public void should_skip() throws Exception {
+    File propsFile = new File("target/dump.properties");
+    propsFile.delete();
+    executeProject("sample-project", "sonar.scanner.skip", "true");
+    assertThat(propsFile).doesNotExist();
   }
 
   @Test
@@ -175,7 +182,7 @@ public class SonarQubeMojoTest {
     assertThat(readProps("target/dump.properties.global")).contains((entry("sonar.verbose", "true")));
   }
 
-  private File executeProject(String projectName) throws Exception {
+  private File executeProject(String projectName, String... properties) throws Exception {
     ArtifactRepository artifactRepo = new DefaultArtifactRepository("local", this.getClass().getResource("SonarQubeMojoTest/repository").toString(), new DefaultRepositoryLayout());
 
     File baseDir = new File("src/test/resources/org/sonarsource/scanner/maven/SonarQubeMojoTest/" + projectName);
@@ -184,6 +191,15 @@ public class SonarQubeMojoTest {
 
     mojo.setLocalRepository(artifactRepo);
     mojo.setLog(mockedLogger);
+
+    Properties userProperties = mojo.getSession().getUserProperties();
+    if ((properties.length % 2) != 0) {
+      throw new IllegalArgumentException("invalid number properties");
+    }
+
+    for (int i = 0; i < properties.length; i += 2) {
+      userProperties.put(properties[i], properties[i + 1]);
+    }
 
     mojo.execute();
 

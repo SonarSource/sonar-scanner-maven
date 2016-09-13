@@ -64,7 +64,7 @@ public class SonarQubeMojo extends AbstractMojo {
    *
    * @since 2.3
    */
-  @Parameter(property = "sonar.skip", defaultValue = "false", alias = "sonar.skip")
+  @Parameter(alias = "sonar.skip", property = "sonar.skip", defaultValue = "false")
   private boolean skip;
 
   @Component
@@ -73,7 +73,7 @@ public class SonarQubeMojo extends AbstractMojo {
   @Component
   private ArtifactFactory artifactFactory;
 
-  @Parameter(defaultValue = "${localRepository}", readonly = true, required = true)
+  @Parameter(defaultValue = "${localRepository}", required = true, readonly = true)
   private ArtifactRepository localRepository;
 
   @Component

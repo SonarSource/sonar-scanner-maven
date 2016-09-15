@@ -96,7 +96,9 @@ public class SonarQubeMojo extends AbstractMojo {
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
-
+    if (getLog().isDebugEnabled()) {
+      setLog(new TimestampLogger(getLog()));
+    }
     try {
       Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
 
@@ -111,10 +113,10 @@ public class SonarQubeMojo extends AbstractMojo {
 
       ScannerFactory runnerFactory = new ScannerFactory(logHandler, getLog().isDebugEnabled(), runtimeInformation, session, envProps, propertyDecryptor);
 
-      if(isSkip(runnerFactory.createGlobalProperties())) {
+      if (isSkip(runnerFactory.createGlobalProperties())) {
         return;
       }
-      
+
       EmbeddedScanner runner = runnerFactory.create();
 
       new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, extensionsFactory, propertyDecryptor).execute();
@@ -122,13 +124,13 @@ public class SonarQubeMojo extends AbstractMojo {
       throw new MojoExecutionException("Failed to execute SonarQube analysis", e);
     }
   }
-  
+
   private boolean isSkip(Properties properties) {
     if (skip) {
       getLog().info("sonar.skip = true: Skipping analysis");
       return true;
     }
-    
+
     if ("true".equalsIgnoreCase(properties.getProperty(ScanProperties.SKIP))) {
       getLog().info("SonarQube Scanner analysis skipped");
       return true;

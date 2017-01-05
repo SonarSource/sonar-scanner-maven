@@ -28,7 +28,6 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -37,6 +36,7 @@ import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.maven.ExtensionsFactory;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyObject;
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-public class RunnerBootstraperTest {
+public class ScannerBootstrapperTest {
   @Mock
   private Log log;
 
@@ -67,7 +67,7 @@ public class RunnerBootstraperTest {
   @Mock
   private ExtensionsFactory extensionsFactory;
 
-  private ScannerBootstrapper runnerBootstrapper;
+  private ScannerBootstrapper scannerBootstrapper;
 
   private Properties projectProperties;
 
@@ -91,16 +91,14 @@ public class RunnerBootstraperTest {
 
     when(scanner.mask(anyString())).thenReturn(scanner);
     when(scanner.unmask(anyString())).thenReturn(scanner);
-    runnerBootstrapper = new ScannerBootstrapper(log, session, scanner, mavenProjectConverter, extensionsFactory, new PropertyDecryptor(log, securityDispatcher));
+    scannerBootstrapper = new ScannerBootstrapper(log, session, scanner, mavenProjectConverter, extensionsFactory, new PropertyDecryptor(log, securityDispatcher));
   }
 
   @Test
   public void testSQ52()
     throws MojoExecutionException, IOException {
     when(scanner.serverVersion()).thenReturn("5.2");
-    runnerBootstrapper.execute();
-
-    Assertions.assertThat(runnerBootstrapper.isVersionPriorTo4Dot5()).isFalse();
+    scannerBootstrapper.execute();
 
     verifyCommonCalls();
 
@@ -112,9 +110,7 @@ public class RunnerBootstraperTest {
   public void testSQ51()
     throws MojoExecutionException, IOException {
     when(scanner.serverVersion()).thenReturn("5.1");
-    runnerBootstrapper.execute();
-
-    Assertions.assertThat(runnerBootstrapper.isVersionPriorTo4Dot5()).isFalse();
+    scannerBootstrapper.execute();
 
     verifyCommonCalls();
 
@@ -127,9 +123,7 @@ public class RunnerBootstraperTest {
   public void testSQ60()
     throws MojoExecutionException, IOException {
     when(scanner.serverVersion()).thenReturn("6.0");
-    runnerBootstrapper.execute();
-
-    Assertions.assertThat(runnerBootstrapper.isVersionPriorTo4Dot5()).isFalse();
+    scannerBootstrapper.execute();
 
     verifyCommonCalls();
 
@@ -138,12 +132,21 @@ public class RunnerBootstraperTest {
   }
 
   @Test
+  public void testVersionComparisonWithBuildNumber()
+    throws MojoExecutionException, IOException {
+    when(scanner.serverVersion()).thenReturn("6.3.0.12345");
+    scannerBootstrapper.execute();
+
+    assertThat(scannerBootstrapper.isVersionPriorTo("4.5")).isFalse();
+    assertThat(scannerBootstrapper.isVersionPriorTo("6.3")).isFalse();
+    assertThat(scannerBootstrapper.isVersionPriorTo("6.4")).isTrue();
+  }
+
+  @Test
   public void testSQ48()
     throws MojoExecutionException, IOException {
     when(scanner.serverVersion()).thenReturn("4.8");
-    runnerBootstrapper.execute();
-
-    Assertions.assertThat(runnerBootstrapper.isVersionPriorTo4Dot5()).isFalse();
+    scannerBootstrapper.execute();
 
     verifyCommonCalls();
 
@@ -156,9 +159,7 @@ public class RunnerBootstraperTest {
   public void testSQ44()
     throws MojoExecutionException, IOException {
     when(scanner.serverVersion()).thenReturn("4.4");
-    runnerBootstrapper.execute();
-
-    Assertions.assertThat(runnerBootstrapper.isVersionPriorTo4Dot5()).isTrue();
+    scannerBootstrapper.execute();
 
     verifyCommonCalls();
 
@@ -171,11 +172,8 @@ public class RunnerBootstraperTest {
   public void testNullServerVersion()
     throws MojoExecutionException, IOException {
     when(scanner.serverVersion()).thenReturn(null);
-    Assertions.assertThat(runnerBootstrapper.isVersionPriorTo5Dot0()).isTrue();
-    Assertions.assertThat(runnerBootstrapper.isVersionPriorTo5Dot2()).isTrue();
-    Assertions.assertThat(runnerBootstrapper.isVersionPriorTo4Dot5()).isTrue();
 
-    runnerBootstrapper.execute();
+    scannerBootstrapper.execute();
     verify(log).warn(contains("it is recommended to use maven-sonar-plugin 2.6"));
   }
 

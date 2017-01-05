@@ -22,8 +22,7 @@ package org.sonarsource.scanner.maven.bootstrap;
 import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
-import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -62,7 +61,7 @@ public class ScannerBootstrapper {
 
       checkSQVersion();
 
-      if (isVersionPriorTo5Dot2()) {
+      if (isVersionPriorTo("5.2")) {
         // for these versions, global properties and extensions are only applied when calling runAnalisys()
         if (supportsNewDependencyProperty()) {
           scanner.addExtensions(extensionsFactory.createExtensionsWithDependencyProperty().toArray());
@@ -126,44 +125,20 @@ public class ScannerBootstrapper {
       log.info("SonarQube version: " + serverVersion);
     }
 
-    if (isVersionPriorTo4Dot5()) {
+    if (isVersionPriorTo("4.5")) {
       log.warn("With SonarQube prior to 4.5, it is recommended to use maven-sonar-plugin 2.6");
     }
   }
 
-  boolean isVersionPriorTo4Dot5() {
+  boolean isVersionPriorTo(String version) {
     if (serverVersion == null) {
       return true;
     }
-    ArtifactVersion artifactVersion = new DefaultArtifactVersion(serverVersion);
-    if (artifactVersion.getMajorVersion() < 4) {
-      return true;
-    }
-
-    return artifactVersion.getMajorVersion() == 4 && artifactVersion.getMinorVersion() < 5;
+    return new ComparableVersion(serverVersion).compareTo(new ComparableVersion(version)) < 0;
   }
 
   private boolean supportsNewDependencyProperty() {
-    return !isVersionPriorTo5Dot0();
+    return !isVersionPriorTo("5.0");
   }
 
-  boolean isVersionPriorTo5Dot2() {
-    if (serverVersion == null) {
-      return true;
-    }
-    ArtifactVersion artifactVersion = new DefaultArtifactVersion(serverVersion);
-    if (artifactVersion.getMajorVersion() < 5) {
-      return true;
-    }
-
-    return artifactVersion.getMajorVersion() == 5 && artifactVersion.getMinorVersion() < 2;
-  }
-
-  boolean isVersionPriorTo5Dot0() {
-    if (serverVersion == null) {
-      return true;
-    }
-    ArtifactVersion artifactVersion = new DefaultArtifactVersion(serverVersion);
-    return artifactVersion.getMajorVersion() < 5;
-  }
 }

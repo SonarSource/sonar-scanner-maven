@@ -62,7 +62,7 @@ public class ScannerBootstrapper {
       checkSQVersion();
 
       if (isVersionPriorTo("5.2")) {
-        // for these versions, global properties and extensions are only applied when calling runAnalisys()
+        // for these versions, global properties and extensions are only applied when calling runAnalysis()
         if (supportsNewDependencyProperty()) {
           scanner.addExtensions(extensionsFactory.createExtensionsWithDependencyProperty().toArray());
         } else {
@@ -126,7 +126,7 @@ public class ScannerBootstrapper {
     }
 
     if (isVersionPriorTo("4.5")) {
-      log.warn("With SonarQube prior to 4.5, it is recommended to use maven-sonar-plugin 2.6");
+      log.warn("With SonarQube prior to 4.5, it is recommended to use sonar-maven-plugin 2.6");
     }
   }
 

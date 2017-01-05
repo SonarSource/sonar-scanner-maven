@@ -174,7 +174,7 @@ public class ScannerBootstrapperTest {
     when(scanner.serverVersion()).thenReturn(null);
 
     scannerBootstrapper.execute();
-    verify(log).warn(contains("it is recommended to use maven-sonar-plugin 2.6"));
+    verify(log).warn(contains("it is recommended to use sonar-maven-plugin 2.6"));
   }
 
   private void verifyCommonCalls() {

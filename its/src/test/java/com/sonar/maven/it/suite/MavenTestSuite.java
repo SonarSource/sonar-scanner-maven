@@ -26,7 +26,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-  LinksTest.class, MavenTest.class, Struts139Test.class, OldMultiLanguageTest.class, DependencyTest.class
+  LinksTest.class, MavenTest.class, OldMultiLanguageTest.class, DependencyTest.class
 })
 public class MavenTestSuite {
 

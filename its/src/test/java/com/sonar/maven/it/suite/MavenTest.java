@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
@@ -70,7 +69,7 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void useUserPropertiesGlobalConfig() throws Exception {
-    BuildRunner runner = new BuildRunner(orchestrator.getConfiguration(), orchestrator.getDatabase());
+    BuildRunner runner = new BuildRunner(orchestrator.getConfiguration());
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
       .setGoals(cleanSonarGoal());
 
@@ -92,7 +91,7 @@ public class MavenTest extends AbstractMavenTest {
    * See MSONAR-129
    */
   public void supportSonarHostURLParam() {
-    BuildRunner runner = new BuildRunner(orchestrator.getConfiguration(), orchestrator.getDatabase());
+    BuildRunner runner = new BuildRunner(orchestrator.getConfiguration());
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-global-properties"))
       .setGoals(cleanSonarGoal());
 

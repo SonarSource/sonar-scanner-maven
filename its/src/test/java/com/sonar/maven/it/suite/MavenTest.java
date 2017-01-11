@@ -41,10 +41,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.sonar.wsclient.Sonar;
-import org.sonar.wsclient.services.PropertyUpdateQuery;
+import org.sonar.wsclient.services.PropertyCreateQuery;
 import org.sonar.wsclient.services.Resource;
 import org.sonar.wsclient.services.ResourceQuery;
 import org.sonar.wsclient.user.UserParameters;
+import org.sonarqube.ws.client.setting.SetRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
@@ -61,7 +62,11 @@ public class MavenTest extends AbstractMavenTest {
 
   @After
   public void cleanup() {
-    orchestrator.getServer().getAdminWsClient().update(new PropertyUpdateQuery("sonar.forceAuthentication", "false"));
+    if (orchestrator.getServer().version().isGreaterThanOrEquals("6.3")) {
+      ItUtils.newAdminWsClient(orchestrator).settingsService().set(SetRequest.builder().setKey("sonar.forceAuthentication").setValue("false").build());
+    } else {
+      orchestrator.getServer().getAdminWsClient().create(new PropertyCreateQuery("sonar.forceAuthentication", "false"));
+    }
   }
 
   /**
@@ -400,7 +405,11 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void supportMavenEncryption() throws Exception {
-    orchestrator.getServer().getAdminWsClient().update(new PropertyUpdateQuery("sonar.forceAuthentication", "true"));
+    if (orchestrator.getServer().version().isGreaterThanOrEquals("6.3")) {
+      ItUtils.newAdminWsClient(orchestrator).settingsService().set(SetRequest.builder().setKey("sonar.forceAuthentication").setValue("true").build());
+    } else {
+      orchestrator.getServer().getAdminWsClient().create(new PropertyCreateQuery("sonar.forceAuthentication", "true"));
+    }
     orchestrator.getServer().adminWsClient().userClient().create(UserParameters.create().login("julien").name("Julien").password("123abc").passwordConfirmation("123abc"));
 
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))

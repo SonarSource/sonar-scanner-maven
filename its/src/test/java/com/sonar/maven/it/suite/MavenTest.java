@@ -40,11 +40,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.sonar.wsclient.Sonar;
 import org.sonar.wsclient.services.PropertyCreateQuery;
-import org.sonar.wsclient.services.Resource;
-import org.sonar.wsclient.services.ResourceQuery;
 import org.sonar.wsclient.user.UserParameters;
+import org.sonarqube.ws.WsComponents;
 import org.sonarqube.ws.client.setting.SetRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -122,12 +120,8 @@ public class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
 
-    Resource project = orchestrator.getServer().getWsClient()
-      .find(ResourceQuery.createForMetrics("com.sonarsource.it.samples.project-with-module-without-sources:parent", "files"));
-    assertThat(project.getMeasureIntValue("files")).isEqualTo(3);
-
-    Resource subProject = orchestrator.getServer().getWsClient().find(ResourceQuery.create("com.sonarsource.it.samples.project-with-module-without-sources:without-sources"));
-    assertThat(subProject).isNotNull();
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.project-with-module-without-sources:parent", "files")).isEqualTo(3);
+    assertThat(getComponent("com.sonarsource.it.samples.project-with-module-without-sources:without-sources")).isNotNull();
   }
 
   /**
@@ -140,12 +134,10 @@ public class MavenTest extends AbstractMavenTest {
       .setProperty("sonar.lang.patterns.web", "**/*.jsp");
     orchestrator.executeBuild(build);
 
-    Resource project = orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics("com.sonarsource.it.samples.jee:parent", "files"));
-
     // src/main/webapp is analyzed by web and xml plugin
-    assertThat(project.getMeasureIntValue("files")).isEqualTo(8);
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(8);
 
-    List<Resource> modules = orchestrator.getServer().getWsClient().findAll(ResourceQuery.create("com.sonarsource.it.samples.jee:parent").setDepth(-1).setQualifiers("BRC"));
+    List<WsComponents.Component> modules = getModules("com.sonarsource.it.samples.jee:parent");
     assertThat(modules).hasSize(4);
   }
 
@@ -158,8 +150,7 @@ public class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
 
-    Resource project = orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics("com.sonarsource.it.samples:maven-extensions", "files"));
-    assertThat(project.getMeasureIntValue("files")).isEqualTo(2);
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples:maven-extensions", "files")).isEqualTo(2);
   }
 
   /**
@@ -172,8 +163,7 @@ public class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
 
-    Resource project = orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics("com.sonarsource.it.samples.maven-bad-parameters:parent", "files"));
-    assertThat(project.getMeasureIntValue("files")).isGreaterThan(0);
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.maven-bad-parameters:parent", "files")).isGreaterThan(0);
   }
 
   @Test
@@ -183,17 +173,16 @@ public class MavenTest extends AbstractMavenTest {
       .setProperty("sonar.dynamicAnalysis", "false");
     orchestrator.executeBuild(build);
 
-    Sonar sonar = orchestrator.getServer().getWsClient();
-    assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-order:root")).getName()).isEqualTo("Sonar tests - modules order");
+    assertThat(getComponent("org.sonar.tests.modules-order:root").getName()).isEqualTo("Sonar tests - modules order");
 
-    assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-order:parent")).getName()).isEqualTo("Parent");
+    assertThat(getComponent("org.sonar.tests.modules-order:parent").getName()).isEqualTo("Parent");
 
-    assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-order:module_a")).getName()).isEqualTo("Module A");
-    assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-order:module_b")).getName()).isEqualTo("Module B");
+    assertThat(getComponent("org.sonar.tests.modules-order:module_a").getName()).isEqualTo("Module A");
+    assertThat(getComponent("org.sonar.tests.modules-order:module_b").getName()).isEqualTo("Module B");
 
     if (orchestrator.getServer().version().isGreaterThanOrEquals("4.2")) {
-      assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-order:module_a:src/main/java/HelloA.java")).getName()).isEqualTo("HelloA.java");
-      assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-order:module_b:src/main/java/HelloB.java")).getName()).isEqualTo("HelloB.java");
+      assertThat(getComponent("org.sonar.tests.modules-order:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
+      assertThat(getComponent("org.sonar.tests.modules-order:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
     }
   }
 
@@ -206,22 +195,21 @@ public class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal())
       .setProperty("sonar.dynamicAnalysis", "false");
     orchestrator.executeBuild(build);
-    Sonar sonar = orchestrator.getServer().getWsClient();
 
-    assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-declaration:root")).getName()).isEqualTo("Root");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:root").getName()).isEqualTo("Root");
 
-    assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-declaration:module_a")).getName()).isEqualTo("Module A");
-    assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-declaration:module_b")).getName()).isEqualTo("Module B");
-    assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-declaration:module_c")).getName()).isEqualTo("Module C");
-    assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-declaration:module_d")).getName()).isEqualTo("Module D");
-    assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-declaration:module_e")).getName()).isEqualTo("Module E");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:module_a").getName()).isEqualTo("Module A");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:module_b").getName()).isEqualTo("Module B");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:module_c").getName()).isEqualTo("Module C");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:module_d").getName()).isEqualTo("Module D");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:module_e").getName()).isEqualTo("Module E");
 
     if (orchestrator.getServer().version().isGreaterThanOrEquals("4.2")) {
-      assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-declaration:module_a:src/main/java/HelloA.java")).getName()).isEqualTo("HelloA.java");
-      assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-declaration:module_b:src/main/java/HelloB.java")).getName()).isEqualTo("HelloB.java");
-      assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-declaration:module_c:src/main/java/HelloC.java")).getName()).isEqualTo("HelloC.java");
-      assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-declaration:module_d:src/main/java/HelloD.java")).getName()).isEqualTo("HelloD.java");
-      assertThat(sonar.find(new ResourceQuery("org.sonar.tests.modules-declaration:module_e:src/main/java/HelloE.java")).getName()).isEqualTo("HelloE.java");
+      assertThat(getComponent("org.sonar.tests.modules-declaration:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
+      assertThat(getComponent("org.sonar.tests.modules-declaration:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
+      assertThat(getComponent("org.sonar.tests.modules-declaration:module_c:src/main/java/HelloC.java").getName()).isEqualTo("HelloC.java");
+      assertThat(getComponent("org.sonar.tests.modules-declaration:module_d:src/main/java/HelloD.java").getName()).isEqualTo("HelloD.java");
+      assertThat(getComponent("org.sonar.tests.modules-declaration:module_e:src/main/java/HelloE.java").getName()).isEqualTo("HelloE.java");
     }
   }
 
@@ -248,9 +236,8 @@ public class MavenTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir")).setGoals(cleanPackageSonarGoal());
     orchestrator.executeBuild(build);
 
-    Resource project = orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics("com.sonarsource.it.samples:maven-only-test-dir", "tests", "files"));
-    assertThat(project.getMeasureIntValue("tests")).isEqualTo(1);
-    assertThat(project.getMeasure("files").getIntValue()).isEqualTo(1);
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples:maven-only-test-dir", "tests")).isEqualTo(1);
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples:maven-only-test-dir", "files")).isEqualTo(1);
   }
 
   /**
@@ -261,11 +248,8 @@ public class MavenTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-override-sources")).setGoals(sonarGoal());
     orchestrator.executeBuild(build);
 
-    Resource project = orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics("com.sonarsource.it.samples:maven-override-sources", "files"));
-    assertThat(project.getMeasureIntValue("files")).isEqualTo(1);
-
-    Resource file = orchestrator.getServer().getWsClient().find(ResourceQuery.create("com.sonarsource.it.samples:maven-override-sources:src/main/java2/Hello2.java"));
-    assertThat(file).isNotNull();
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples:maven-override-sources", "files")).isEqualTo(1);
+    assertThat(getComponent("com.sonarsource.it.samples:maven-override-sources:src/main/java2/Hello2.java")).isNotNull();
   }
 
   /**
@@ -276,8 +260,7 @@ public class MavenTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/multi-modules-override-sources")).setGoals(sonarGoal());
     orchestrator.executeBuild(build);
 
-    Resource project = orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics("com.sonarsource.it.samples:module_a1", "files"));
-    assertThat(project.getMeasureIntValue("files")).isEqualTo(1);
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples:module_a1", "files")).isEqualTo(1);
   }
 
   /**
@@ -289,8 +272,7 @@ public class MavenTest extends AbstractMavenTest {
       .setProperty("sonar.lang.patterns.web", "**/*.jsp");
     orchestrator.executeBuild(build);
 
-    Resource project = orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics("edu.marcelo:module-web", "files"));
-    assertThat(project.getMeasureIntValue("files")).isEqualTo(2);
+    assertThat(getMeasureAsInteger("edu.marcelo:module-web", "files")).isEqualTo(2);
   }
 
   /**
@@ -301,11 +283,8 @@ public class MavenTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/inclusions_apply_to_source_dirs")).setGoals(sonarGoal());
     orchestrator.executeBuild(build);
 
-    Resource project = orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics("com.sonarsource.it.samples:inclusions_apply_to_source_dirs", "files"));
-    assertThat(project.getMeasureIntValue("files")).isEqualTo(1);
-
-    Resource file = orchestrator.getServer().getWsClient().find(ResourceQuery.create("com.sonarsource.it.samples:inclusions_apply_to_source_dirs:src/main/java/Hello2.java"));
-    assertThat(file).isNotNull();
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples:inclusions_apply_to_source_dirs", "files")).isEqualTo(1);
+    assertThat(getComponent("com.sonarsource.it.samples:inclusions_apply_to_source_dirs:src/main/java/Hello2.java")).isNotNull();
   }
 
   /**
@@ -362,11 +341,9 @@ public class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
 
-    Sonar sonar = orchestrator.getServer().getWsClient();
-
-    assertThat(sonar.find(new ResourceQuery("com.sonarsource.it.samples:module_a1"))).isNull();
-    assertThat(sonar.find(new ResourceQuery("com.sonarsource.it.samples:module_a2")).getName()).isEqualTo("Sub-module A2");
-    assertThat(sonar.find(new ResourceQuery("com.sonarsource.it.samples:module_b")).getName()).isEqualTo("Module B");
+    assertThat(getComponent("com.sonarsource.it.samples:module_a1")).isNull();
+    assertThat(getComponent("com.sonarsource.it.samples:module_a2").getName()).isEqualTo("Sub-module A2");
+    assertThat(getComponent("com.sonarsource.it.samples:module_b").getName()).isEqualTo("Module B");
 
   }
 

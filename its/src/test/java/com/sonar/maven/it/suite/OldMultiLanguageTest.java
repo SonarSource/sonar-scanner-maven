@@ -24,8 +24,6 @@ import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.MavenBuild;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonar.wsclient.services.Resource;
-import org.sonar.wsclient.services.ResourceQuery;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -58,32 +56,16 @@ public class OldMultiLanguageTest extends AbstractMavenTest {
     assertThat(result.getLogs()).contains("Java => \"java\"");
 
     // modules
-    Resource javaModule = getResource("com.sonarsource.it.projects.batch.multi-languages:java-module", "files");
-    Resource jsModule = getResource("com.sonarsource.it.projects.batch.multi-languages:javascript-module", "files");
-    Resource pyModule = getResource("com.sonarsource.it.projects.batch.multi-languages:python-module", "files");
-    verifyModule(javaModule, 1, "java");
-    verifyModule(jsModule, 1, "js");
-    verifyModule(pyModule, 2, "py");
+    assertThat(getMeasureAsInteger("com.sonarsource.it.projects.batch.multi-languages:java-module", "files")).isEqualTo(1);
+    assertThat(getComponent("com.sonarsource.it.projects.batch.multi-languages:java-module").getLanguage()).isNullOrEmpty();
 
-    // project
-    Resource project = getResource("com.sonarsource.it.projects.batch.multi-languages:multi-languages", "files");
-    verifyProject(project);
-  }
+    assertThat(getMeasureAsInteger("com.sonarsource.it.projects.batch.multi-languages:javascript-module", "files")).isEqualTo(1);
+    assertThat(getComponent("com.sonarsource.it.projects.batch.multi-languages:javascript-module").getLanguage()).isNullOrEmpty();
 
-  private void verifyModule(Resource module, int files, String lang) {
-    assertThat(module.getMeasureIntValue("files")).isEqualTo(files);
-    if (orchestrator.getServer().version().isGreaterThanOrEquals("4.2")) {
-      assertThat(module.getLanguage()).isNull();
-    } else {
-      assertThat(module.getLanguage()).isEqualTo(lang);
-    }
-  }
+    assertThat(getMeasureAsInteger("com.sonarsource.it.projects.batch.multi-languages:python-module", "files")).isEqualTo(2);
+    assertThat(getComponent("com.sonarsource.it.projects.batch.multi-languages:python-module").getLanguage()).isNullOrEmpty();
 
-  private void verifyProject(Resource project) {
-    verifyModule(project, 4, "java");
-  }
-
-  private Resource getResource(String resourceKey, String metricKey) {
-    return orchestrator.getServer().getWsClient().find(ResourceQuery.createForMetrics(resourceKey, metricKey));
+    assertThat(getMeasureAsInteger("com.sonarsource.it.projects.batch.multi-languages:multi-languages", "files")).isEqualTo(4);
+    assertThat(getComponent("com.sonarsource.it.projects.batch.multi-languages:multi-languages").getLanguage()).isNullOrEmpty();
   }
 }

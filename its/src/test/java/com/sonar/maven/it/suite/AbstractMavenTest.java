@@ -25,8 +25,23 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
+import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
 import org.junit.ClassRule;
+import org.sonarqube.ws.WsComponents.Component;
+import org.sonarqube.ws.WsMeasures;
+import org.sonarqube.ws.WsMeasures.Measure;
+import org.sonarqube.ws.client.HttpConnector;
+import org.sonarqube.ws.client.HttpException;
+import org.sonarqube.ws.client.WsClient;
+import org.sonarqube.ws.client.WsClientFactories;
+import org.sonarqube.ws.client.component.ShowWsRequest;
+import org.sonarqube.ws.client.component.TreeWsRequest;
+import org.sonarqube.ws.client.measure.ComponentWsRequest;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 
 public abstract class AbstractMavenTest {
 
@@ -72,6 +87,43 @@ public abstract class AbstractMavenTest {
       throw new IllegalStateException("Unable to find version of the Maven plugin to be used by ITs");
     }
     return mojoVersion;
+  }
+
+  @CheckForNull
+  static Measure getMeasure(String componentKey, String metricKey) {
+    WsMeasures.ComponentWsResponse response = newWsClient().measures().component(new ComponentWsRequest()
+      .setComponentKey(componentKey)
+      .setMetricKeys(singletonList(metricKey)));
+    List<Measure> measures = response.getComponent().getMeasuresList();
+    return measures.size() == 1 ? measures.get(0) : null;
+  }
+
+  @CheckForNull
+  static Integer getMeasureAsInteger(String componentKey, String metricKey) {
+    Measure measure = getMeasure(componentKey, metricKey);
+    return (measure == null) ? null : Integer.parseInt(measure.getValue());
+  }
+
+  @CheckForNull
+  static Component getComponent(String componentKey) {
+    try {
+      return newWsClient().components().show(new ShowWsRequest().setKey((componentKey))).getComponent();
+    } catch (HttpException e) {
+      if (e.code() == 404) {
+        return null;
+      }
+      throw new IllegalStateException(e);
+    }
+  }
+
+  static List<Component> getModules(String projectKey) {
+    return newWsClient().components().tree(new TreeWsRequest().setBaseComponentKey(projectKey).setQualifiers(asList("BRC"))).getComponentsList();
+  }
+
+  static WsClient newWsClient() {
+    return WsClientFactories.getDefault().newClient(HttpConnector.newBuilder()
+      .url(orchestrator.getServer().getUrl())
+      .build());
   }
 
 }

@@ -26,6 +26,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Properties;
 
@@ -483,6 +485,51 @@ public class MavenProjectConverterTest {
     Properties props = projectConverter.configure(Arrays.asList(project), project, new Properties());
     assertThat(props.getProperty("sonar.string")).isEqualTo("myString");
     assertThat(props).doesNotContainKey("sonar.integer");
+  }
+
+  @Test
+  public void includePomInNonLeaf() throws Exception {
+    File baseDir = temp.getRoot();
+    MavenProject root = createProject(new Properties(), "pom");
+
+    File module1BaseDir = new File(baseDir, "module1");
+    module1BaseDir.mkdir();
+    Files.createFile(module1BaseDir.toPath().resolve("pom.xml"));
+    MavenProject module1 = createProject(new File(module1BaseDir, "pom.xml"), new Properties(), "pom");
+    module1.getModel().setArtifactId("module1");
+    module1.setParent(root);
+    root.getModules().add("module1");
+
+    Properties props = projectConverter.configure(Arrays.asList(module1, root), root, new Properties());
+
+    assertThat(props.getProperty("sonar.sources")).isEqualTo(baseDir.toPath().resolve("pom.xml").toString());
+    assertThat(props.getProperty("com.foo:module1.sonar.sources")).isEqualTo(module1BaseDir.toPath().resolve("pom.xml").toString());
+  }
+
+  @Test
+  public void ignoreSourcesInNonLeaf() throws Exception {
+    File baseDir = temp.getRoot();
+    MavenProject root = createProject(new Properties(), "pom");
+    root.addCompileSourceRoot("src/main/java");
+    Files.createDirectories(baseDir.toPath().resolve("src").resolve("main").resolve("java"));
+
+    File module1BaseDir = new File(baseDir, "module1");
+    module1BaseDir.mkdir();
+    Path module1PomPath = module1BaseDir.toPath().resolve("pom.xml");
+    Files.createFile(module1PomPath);
+    MavenProject module1 = createProject(new File(module1BaseDir, "pom.xml"), new Properties(), "jar");
+    module1.getModel().setArtifactId("module1");
+    module1.setParent(root);
+    root.getModules().add("module1");
+    Path module1SrcPath = module1BaseDir.toPath().resolve("src").resolve("main").resolve("java");
+    module1.addCompileSourceRoot("src/main/java");
+    Files.createDirectories(module1SrcPath);
+
+    Properties props = projectConverter.configure(Arrays.asList(module1, root), root, new Properties());
+
+    assertThat(props.getProperty("sonar.sources")).isEqualTo(baseDir.toPath().resolve("pom.xml").toString());
+    String leafSources = module1PomPath + "," + module1SrcPath;
+    assertThat(props.getProperty("com.foo:module1.sonar.sources")).isEqualTo(leafSources);
   }
 
   private MavenProject createProject(Properties pomProps, String packaging)

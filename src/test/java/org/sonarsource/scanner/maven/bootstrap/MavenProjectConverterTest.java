@@ -532,6 +532,36 @@ public class MavenProjectConverterTest {
     assertThat(props.getProperty("com.foo:module1.sonar.sources")).isEqualTo(leafSources);
   }
 
+  @Test
+  public void includeSourcesInNonLeafWhenExplicitlyRequested() throws Exception {
+    Properties pomProps = new Properties();
+    pomProps.put("sonar.sources", "pom.xml,src/main/java");
+
+    File baseDir = temp.getRoot();
+    MavenProject root = createProject(pomProps, "pom");
+    root.addCompileSourceRoot("src/main/java");
+    Files.createDirectories(baseDir.toPath().resolve("src").resolve("main").resolve("java"));
+
+    File module1BaseDir = new File(baseDir, "module1");
+    module1BaseDir.mkdir();
+    Path module1PomPath = module1BaseDir.toPath().resolve("pom.xml");
+    Files.createFile(module1PomPath);
+    MavenProject module1 = createProject(new File(module1BaseDir, "pom.xml"), new Properties(), "jar");
+    module1.getModel().setArtifactId("module1");
+    module1.setParent(root);
+    root.getModules().add("module1");
+    Path module1SrcPath = module1BaseDir.toPath().resolve("src").resolve("main").resolve("java");
+    module1.addCompileSourceRoot("src/main/java");
+    Files.createDirectories(module1SrcPath);
+
+    Properties props = projectConverter.configure(Arrays.asList(module1, root), root, new Properties());
+
+    String rootSources = baseDir + "/pom.xml," + baseDir + "/src/main/java";
+    assertThat(props.getProperty("sonar.sources")).isEqualTo(rootSources);
+    String leafSources = module1PomPath + "," + module1SrcPath;
+    assertThat(props.getProperty("com.foo:module1.sonar.sources")).isEqualTo(leafSources);
+  }
+
   private MavenProject createProject(Properties pomProps, String packaging)
     throws Exception {
     File pom = temp.newFile("pom.xml");

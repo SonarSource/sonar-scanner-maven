@@ -65,7 +65,10 @@ public class OldMultiLanguageTest extends AbstractMavenTest {
     assertThat(getMeasureAsInteger("com.sonarsource.it.projects.batch.multi-languages:python-module", "files")).isEqualTo(2);
     assertThat(getComponent("com.sonarsource.it.projects.batch.multi-languages:python-module").getLanguage()).isNullOrEmpty();
 
-    assertThat(getMeasureAsInteger("com.sonarsource.it.projects.batch.multi-languages:multi-languages", "files")).isEqualTo(4);
+    // 1 + 1 + 2 for the languages, +1 for pom.xml at project root
+    // The pom.xml of leaf projects are excluded due to forced language
+    int expectedFileCount = orchestrator.getServer().version().isGreaterThanOrEquals("6.3") ? 5 : 4;
+    assertThat(getMeasureAsInteger("com.sonarsource.it.projects.batch.multi-languages:multi-languages", "files")).isEqualTo(expectedFileCount);
     assertThat(getComponent("com.sonarsource.it.projects.batch.multi-languages:multi-languages").getLanguage()).isNullOrEmpty();
   }
 }

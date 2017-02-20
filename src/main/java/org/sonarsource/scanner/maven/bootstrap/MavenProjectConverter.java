@@ -431,7 +431,9 @@ public class MavenProjectConverter {
     }
 
     sources.add(pom.getFile().getPath());
-    sources.addAll(pom.getCompileSourceRoots());
+    if (!MAVEN_PACKAGING_POM.equals(pom.getModel().getPackaging())) {
+      sources.addAll(pom.getCompileSourceRoots());
+    }
 
     return sourcePaths(pom, ScanProperties.PROJECT_SOURCE_DIRS, sources);
   }

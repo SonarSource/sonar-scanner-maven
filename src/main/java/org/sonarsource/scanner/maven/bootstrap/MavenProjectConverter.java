@@ -504,7 +504,7 @@ public class MavenProjectConverter {
   }
 
   private static String[] toPaths(Collection<File> dirs) {
-    Collection<String> paths = dirs.stream().map(dir -> dir.getAbsolutePath()).collect(Collectors.toList());
+    Collection<String> paths = dirs.stream().map(File::getAbsolutePath).collect(Collectors.toList());
     return paths.toArray(new String[paths.size()]);
   }
 }

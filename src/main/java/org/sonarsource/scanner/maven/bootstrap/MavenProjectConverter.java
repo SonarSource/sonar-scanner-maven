@@ -346,8 +346,9 @@ public class MavenProjectConverter {
       throw new MojoExecutionException("Unable to populate" + (test ? " test" : "") + " libraries", e);
     }
     if (classpathElements != null) {
+      String outputDirectory = test ? pom.getBuild().getTestOutputDirectory() : pom.getBuild().getOutputDirectory();
       for (String classPathString : classpathElements) {
-        if (!classPathString.equals(test ? pom.getBuild().getTestOutputDirectory() : pom.getBuild().getOutputDirectory())) {
+        if (!classPathString.equals(outputDirectory)) {
           File libPath = resolvePath(classPathString, pom.getBasedir());
           if (libPath != null && libPath.exists()) {
             libraries.add(libPath);

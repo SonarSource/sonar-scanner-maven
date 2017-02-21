@@ -339,20 +339,21 @@ public class MavenProjectConverter {
   private static void populateLibraries(MavenProject pom, Properties props, boolean test)
     throws MojoExecutionException {
     List<File> libraries = new ArrayList<>();
+    List<String> classpathElements;
     try {
-      List<String> classpathElements = test ? pom.getTestClasspathElements() : pom.getCompileClasspathElements();
-      if (classpathElements != null) {
-        for (String classPathString : classpathElements) {
-          if (!classPathString.equals(test ? pom.getBuild().getTestOutputDirectory() : pom.getBuild().getOutputDirectory())) {
-            File libPath = resolvePath(classPathString, pom.getBasedir());
-            if (libPath != null && libPath.exists()) {
-              libraries.add(libPath);
-            }
+      classpathElements = test ? pom.getTestClasspathElements() : pom.getCompileClasspathElements();
+    } catch (DependencyResolutionRequiredException e) {
+      throw new MojoExecutionException("Unable to populate" + (test ? " test" : "") + " libraries", e);
+    }
+    if (classpathElements != null) {
+      for (String classPathString : classpathElements) {
+        if (!classPathString.equals(test ? pom.getBuild().getTestOutputDirectory() : pom.getBuild().getOutputDirectory())) {
+          File libPath = resolvePath(classPathString, pom.getBasedir());
+          if (libPath != null && libPath.exists()) {
+            libraries.add(libPath);
           }
         }
       }
-    } catch (DependencyResolutionRequiredException e) {
-      throw new MojoExecutionException("Unable to populate" + (test ? " test" : "") + " libraries", e);
     }
     if (!libraries.isEmpty()) {
       String librariesValue = StringUtils.join(toPaths(libraries), SEPARATOR);

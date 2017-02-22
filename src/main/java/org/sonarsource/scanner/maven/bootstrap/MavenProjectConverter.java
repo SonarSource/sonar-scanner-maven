@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -336,23 +337,25 @@ public class MavenProjectConverter {
     }
   }
 
-  private static void populateLibraries(MavenProject pom, Properties props, boolean test)
-    throws MojoExecutionException {
-    List<File> libraries = new ArrayList<>();
+  private static void populateLibraries(MavenProject pom, Properties props, boolean test) throws MojoExecutionException {
+    List<String> classpathElements;
     try {
-      List<String> classpathElements = test ? pom.getTestClasspathElements() : pom.getCompileClasspathElements();
-      if (classpathElements != null) {
-        for (String classPathString : classpathElements) {
-          if (!classPathString.equals(test ? pom.getBuild().getTestOutputDirectory() : pom.getBuild().getOutputDirectory())) {
-            File libPath = resolvePath(classPathString, pom.getBasedir());
-            if (libPath != null && libPath.exists()) {
-              libraries.add(libPath);
-            }
-          }
-        }
-      }
+      classpathElements = test ? pom.getTestClasspathElements() : pom.getCompileClasspathElements();
     } catch (DependencyResolutionRequiredException e) {
       throw new MojoExecutionException("Unable to populate" + (test ? " test" : "") + " libraries", e);
+    }
+
+    List<File> libraries = new ArrayList<>();
+    if (classpathElements != null) {
+      String outputDirectory = test ? pom.getBuild().getTestOutputDirectory() : pom.getBuild().getOutputDirectory();
+      File basedir = pom.getBasedir();
+      classpathElements.stream()
+        .filter(cp -> !cp.equals(outputDirectory))
+        .map(cp -> Optional.ofNullable(resolvePath(cp, basedir)))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .filter(File::exists)
+        .forEach(libraries::add);
     }
     if (!libraries.isEmpty()) {
       String librariesValue = StringUtils.join(toPaths(libraries), SEPARATOR);

@@ -118,7 +118,6 @@ public class SonarQubeMojo extends AbstractMojo {
       }
 
       EmbeddedScanner runner = runnerFactory.create();
-
       new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, extensionsFactory, propertyDecryptor).execute();
     } catch (IOException e) {
       throw new MojoExecutionException("Failed to execute SonarQube analysis", e);

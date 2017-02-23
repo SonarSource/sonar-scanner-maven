@@ -23,6 +23,7 @@ import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.BuildRunner;
 import com.sonar.orchestrator.build.MavenBuild;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -135,7 +136,12 @@ public class MavenTest extends AbstractMavenTest {
     orchestrator.executeBuild(build);
 
     // src/main/webapp is analyzed by web and xml plugin
-    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(8);
+    if (orchestrator.getServer().version().isGreaterThanOrEquals("6.3")) {
+      // including resources, so one more file (ejb-module/src/main/resources/META-INF/ejb-jar.xml)
+      assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(9);
+    } else {
+      assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(8);
+    }
 
     List<WsComponents.Component> modules = getModules("com.sonarsource.it.samples.jee:parent");
     assertThat(modules).hasSize(4);

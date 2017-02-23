@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Properties;
 
+import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -91,8 +92,7 @@ public class MavenProjectConverterTest {
     assertThat(props.getProperty("sonar.projectKey")).isEqualTo("com.foo:myProject");
     assertThat(props.getProperty("sonar.projectName")).isEqualTo("My Project");
     assertThat(props.getProperty("sonar.projectVersion")).isEqualTo("2.1");
-    assertThat(props.getProperty("sonar.sources").split(",")).containsAll(
-      Arrays.asList(new String[] {webappDir.getAbsolutePath(), new File(baseDir, "pom.xml").getAbsolutePath()}));
+    assertThat(props.getProperty("sonar.sources").split(",")).containsOnly(webappDir.getAbsolutePath(), new File(baseDir, "pom.xml").getAbsolutePath());
 
     project.getModel().getProperties().setProperty("sonar.sources", "src");
     File srcDir = new File(baseDir, "src");
@@ -356,6 +356,26 @@ public class MavenProjectConverterTest {
   }
 
   @Test
+  public void analyzeResources() throws Exception {
+    File src = temp.newFolder("src");
+    File resources = temp.newFolder("resources");
+    File pom = temp.newFile("pom.xml");
+
+    Resource resource = new Resource();
+    resource.setDirectory("resources");
+
+    MavenProject project = createProject(pom, new Properties(), "jar");
+    project.addCompileSourceRoot(src.getPath());
+    project.addResource(resource);
+    
+    Properties props = projectConverter.configure(Arrays.asList(project), project, new Properties(), true);
+    assertThat(props.getProperty("sonar.sources").split(",")).containsOnly(src.getAbsolutePath(), resources.getAbsolutePath(), pom.getAbsolutePath());
+    
+    props = projectConverter.configure(Arrays.asList(project), project, new Properties(), false);
+    assertThat(props.getProperty("sonar.sources").split(",")).containsOnly(src.getAbsolutePath(), pom.getAbsolutePath());
+  }
+
+  @Test
   public void excludeSourcesInTarget() throws Exception {
     File src2 = temp.newFolder("src2");
     File pom = temp.newFile("pom.xml");
@@ -370,7 +390,7 @@ public class MavenProjectConverterTest {
     assertThat(props.getProperty("sonar.projectName")).isEqualTo("My Project");
     assertThat(props.getProperty("sonar.projectVersion")).isEqualTo("2.1");
 
-    assertThat(props.getProperty("sonar.sources").split(",")).containsAll(Arrays.asList(new String[] {src2.getAbsolutePath(), pom.getAbsolutePath()}));
+    assertThat(props.getProperty("sonar.sources").split(",")).containsOnly(src2.getAbsolutePath(), pom.getAbsolutePath());
   }
 
   @Test

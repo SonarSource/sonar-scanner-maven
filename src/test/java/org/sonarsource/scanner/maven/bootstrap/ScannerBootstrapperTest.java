@@ -83,7 +83,7 @@ public class ScannerBootstrapperTest {
     projectProperties = new Properties();
     when(
       mavenProjectConverter.configure(anyListOf(MavenProject.class), any(MavenProject.class),
-        any(Properties.class))).thenReturn(projectProperties);
+        any(Properties.class), any(Boolean.class))).thenReturn(projectProperties);
     List<Object> extensions = new LinkedList<Object>();
     extensions.add(new Object());
     when(extensionsFactory.createExtensions()).thenReturn(extensions);

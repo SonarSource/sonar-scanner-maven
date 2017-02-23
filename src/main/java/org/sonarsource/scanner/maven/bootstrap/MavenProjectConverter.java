@@ -89,7 +89,7 @@ public class MavenProjectConverter {
   private static final String JAVA_PROJECT_MAIN_BINARY_DIRS = "sonar.java.binaries";
 
   private static final String JAVA_PROJECT_MAIN_LIBRARIES = "sonar.java.libraries";
-  
+
   private static final String GROOVY_PROJECT_MAIN_BINARY_DIRS = "sonar.groovy.binaries";
 
   private static final String JAVA_PROJECT_TEST_BINARY_DIRS = "sonar.java.test.binaries";
@@ -117,6 +117,8 @@ public class MavenProjectConverter {
 
   private final JavaVersionResolver javaVersionResolver;
 
+  private boolean analyzeResources;
+
   public MavenProjectConverter(Log log, DependencyCollector dependencyCollector, JavaVersionResolver javaVersionResolver, Properties envProperties) {
     this.log = log;
     this.dependencyCollector = dependencyCollector;
@@ -124,9 +126,13 @@ public class MavenProjectConverter {
     this.envProperties = envProperties;
   }
 
-  public Properties configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties)
-    throws MojoExecutionException {
+  public Properties configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties) throws MojoExecutionException {
+    return configure(mavenProjects, root, userProperties, false);
+  }
+
+  public Properties configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties, boolean analyzeResources) throws MojoExecutionException {
     this.userProperties = userProperties;
+    this.analyzeResources = analyzeResources;
     Map<MavenProject, Properties> propsByModule = new HashMap<>();
 
     try {
@@ -419,7 +425,7 @@ public class MavenProjectConverter {
     final Path baseDir = pom.getBasedir().toPath().toAbsolutePath().normalize();
     final Path target = Paths.get(pom.getBuild().getDirectory()).toAbsolutePath().normalize();
     final Path targetRelativePath = baseDir.relativize(target);
-    
+
     relativeOrAbsolutePaths.removeIf(pathStr -> {
       Path path = Paths.get(pathStr).toAbsolutePath().normalize();
       Path relativePath = baseDir.relativize(path);
@@ -436,6 +442,9 @@ public class MavenProjectConverter {
     sources.add(pom.getFile().getPath());
     if (!MAVEN_PACKAGING_POM.equals(pom.getModel().getPackaging())) {
       sources.addAll(pom.getCompileSourceRoots());
+      if (analyzeResources) {
+        pom.getResources().forEach(r -> sources.add(r.getDirectory()));
+      }
     }
 
     return sourcePaths(pom, ScanProperties.PROJECT_SOURCE_DIRS, sources);

@@ -14,6 +14,10 @@
   <name>SonarSource :: IT :: SonarQube Maven</name>
   <inceptionYear>2009</inceptionYear>
 
+  <properties>
+    <jetty.version>9.3.11.v20160721</jetty.version>
+  </properties>
+  
   <dependencies>
     <dependency>
       <groupId>org.sonarsource.orchestrator</groupId>
@@ -55,6 +59,24 @@
       <groupId>org.skyscreamer</groupId>
       <artifactId>jsonassert</artifactId>
       <version>1.2.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+      <version>${jetty.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-servlet</artifactId>
+      <version>${jetty.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-proxy</artifactId>
+      <version>${jetty.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

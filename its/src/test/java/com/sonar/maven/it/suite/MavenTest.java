@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -67,28 +66,6 @@ public class MavenTest extends AbstractMavenTest {
     } else {
       orchestrator.getServer().getAdminWsClient().create(new PropertyCreateQuery("sonar.forceAuthentication", "false"));
     }
-  }
-
-  @Test
-  public void useActiveProxyInSettings() throws IOException, URISyntaxException {
-    File proxyXml = new File(this.getClass().getResource("/proxy-settings.xml").toURI());
-    assertThat(proxyXml).exists();
-
-    // build first to cache artifacts
-    BuildRunner runner = new BuildRunner(orchestrator.getConfiguration());
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-      .setGoals(new String[] {"clean package"});
-    BuildResult result = runner.runQuietly(null, build);
-
-    runner = new BuildRunner(orchestrator.getConfiguration());
-    build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-      .setGoals(cleanSonarGoal());
-    build.addArgument("--settings=" + proxyXml.getAbsolutePath());
-    build.addArgument("-Dsonar.host.url=http://host.aserverwithsonarqube.com");
-    build.addArgument("-X");
-    result = runner.runQuietly(null, build);
-    assertThat(result.getLogs()).contains("Setting proxy properties");
-    assertThat(result.getLogs()).contains("java.net.UnknownHostException: proxy.invalidtestproxy.com");
   }
 
   /**

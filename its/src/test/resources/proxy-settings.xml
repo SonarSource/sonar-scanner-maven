@@ -1,15 +1,58 @@
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+   <profiles>
+    <profile>
+      <id>sonar-default</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <repositories>
+        <repository>
+          <id>sonarsource</id>
+          <name>SonarSource Central Repository</name>
+          <url>https://repox.sonarsource.com/sonarsource</url>
+          <releases>
+            <enabled>true</enabled>
+            <updatePolicy>interval:60</updatePolicy>
+            <checksumPolicy>fail</checksumPolicy>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+            <updatePolicy>never</updatePolicy>
+          </snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>sonarsource</id>
+          <name>SonarSource Central Repository</name>
+          <url>https://repox.sonarsource.com/sonarsource</url>
+          <releases>
+            <enabled>true</enabled>
+            <!-- no need to always check if new versions are available when
+            executing a maven plugin without specifying the version -->
+            <updatePolicy>interval:60</updatePolicy>
+            <checksumPolicy>fail</checksumPolicy>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+            <updatePolicy>never</updatePolicy>
+          </snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+  
   <proxies>
     <proxy>
       <id>example-proxy</id>
       <active>true</active>
       <protocol>http</protocol>
-      <host>proxy.invalidtestproxy.com</host>
+      <host>localhost</host>
       <port>8080</port>
-      <username>proxyuser</username>
-      <password>somepassword</password>
-      <nonProxyHosts>asd.com</nonProxyHosts>
+      <username></username>
+      <password></password>
+      <nonProxyHosts></nonProxyHosts>
     </proxy>
   </proxies>
 </settings>

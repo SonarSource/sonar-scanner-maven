@@ -26,7 +26,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -133,7 +133,7 @@ public class MavenProjectConverter {
   public Properties configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties, boolean analyzeResources) throws MojoExecutionException {
     this.userProperties = userProperties;
     this.analyzeResources = analyzeResources;
-    Map<MavenProject, Properties> propsByModule = new HashMap<>();
+    Map<MavenProject, Properties> propsByModule = new LinkedHashMap<>();
 
     try {
       configureModules(mavenProjects, propsByModule);
@@ -195,9 +195,11 @@ public class MavenProjectConverter {
     throws IOException {
 
     File canonical = modulePath.getCanonicalFile();
+    if (canonical.isDirectory()) {
+      canonical = new File(canonical, "pom.xml");
+    }
     for (MavenProject module : modules) {
-      if (module.getBasedir().getCanonicalFile().equals(canonical)
-        || module.getFile().getCanonicalFile().equals(canonical)) {
+      if (module.getFile().getCanonicalFile().equals(canonical)) {
         return module;
       }
     }

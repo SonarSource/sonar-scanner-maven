@@ -111,7 +111,7 @@ public class SonarQubeMojo extends AbstractMojo {
 
       PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
 
-      ScannerFactory runnerFactory = new ScannerFactory(logHandler, getLog().isDebugEnabled(), runtimeInformation, session, envProps, propertyDecryptor);
+      ScannerFactory runnerFactory = new ScannerFactory(logHandler, getLog(), runtimeInformation, session, envProps, propertyDecryptor);
 
       if (isSkip(runnerFactory.createGlobalProperties())) {
         return;

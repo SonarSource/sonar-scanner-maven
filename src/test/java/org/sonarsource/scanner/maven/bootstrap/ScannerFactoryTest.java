@@ -22,6 +22,7 @@ package org.sonarsource.scanner.maven.bootstrap;
 import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.settings.Settings;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.junit.Before;
@@ -63,6 +64,7 @@ public class ScannerFactoryTest {
     when(runtimeInformation.getMavenVersion()).thenReturn("1.0");
     when(mavenSession.getSystemProperties()).thenReturn(system);
     when(mavenSession.getUserProperties()).thenReturn(new Properties());
+    when(mavenSession.getSettings()).thenReturn(new Settings());
     when(rootProject.getProperties()).thenReturn(root);
     when(mavenSession.getCurrentProject()).thenReturn(rootProject);
     propertyDecryptor = new PropertyDecryptor(mock(Log.class), mock(SecDispatcher.class));
@@ -70,8 +72,8 @@ public class ScannerFactoryTest {
 
   @Test
   public void testProperties() {
-
-    ScannerFactory factory = new ScannerFactory(logOutput, false, runtimeInformation, mavenSession, envProps, propertyDecryptor);
+    Log log = mock(Log.class);
+    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mavenSession, envProps, propertyDecryptor);
     EmbeddedScanner scanner = factory.create();
     verify(mavenSession).getSystemProperties();
     verify(rootProject).getProperties();
@@ -82,10 +84,13 @@ public class ScannerFactoryTest {
 
   @Test
   public void testDebug() {
-    ScannerFactory factoryDebug = new ScannerFactory(logOutput, true, runtimeInformation, mavenSession, envProps, propertyDecryptor);
-    ScannerFactory factory = new ScannerFactory(logOutput, false, runtimeInformation, mavenSession, envProps, propertyDecryptor);
-
+    Log log = mock(Log.class);
+    when(log.isDebugEnabled()).thenReturn(true);
+    ScannerFactory factoryDebug = new ScannerFactory(logOutput, log, runtimeInformation, mavenSession, envProps, propertyDecryptor);
     EmbeddedScanner scannerDebug = factoryDebug.create();
+
+    when(log.isDebugEnabled()).thenReturn(false);
+    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mavenSession, envProps, propertyDecryptor);
     EmbeddedScanner scanner = factory.create();
 
     assertThat(scannerDebug.globalProperties()).contains(entry("sonar.verbose", "true"));

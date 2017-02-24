@@ -20,8 +20,11 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.Properties;
+
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.settings.Proxy;
 import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.api.LogOutput;
 
@@ -33,18 +36,21 @@ public class ScannerFactory {
   private final boolean debugEnabled;
   private final PropertyDecryptor propertyDecryptor;
   private final Properties envProps;
+  private final Log log;
 
-  public ScannerFactory(LogOutput logOutput, boolean debugEnabled, RuntimeInformation runtimeInformation, MavenSession session, 
+  public ScannerFactory(LogOutput logOutput, Log log, RuntimeInformation runtimeInformation, MavenSession session,
     Properties envProps, PropertyDecryptor propertyDecryptor) {
     this.logOutput = logOutput;
+    this.log = log;
     this.runtimeInformation = runtimeInformation;
     this.session = session;
-    this.debugEnabled = debugEnabled;
+    this.debugEnabled = log.isDebugEnabled();
     this.envProps = envProps;
     this.propertyDecryptor = propertyDecryptor;
   }
 
   public EmbeddedScanner create() {
+    setProxySystemProperties();
     EmbeddedScanner scanner = EmbeddedScanner.create(logOutput);
     scanner.setApp("Maven", runtimeInformation.getMavenVersion());
 
@@ -67,5 +73,18 @@ public class ScannerFactory {
     p.putAll(session.getUserProperties());
     p.putAll(propertyDecryptor.decryptProperties(p));
     return p;
+  }
+
+  public void setProxySystemProperties() {
+    Proxy activeProxy = session.getSettings().getActiveProxy();
+
+    if (activeProxy != null && "http".equals(activeProxy.getProtocol())) {
+      log.debug("Setting proxy properties");
+      System.setProperty("http.proxyHost", activeProxy.getHost());
+      System.setProperty("http.proxyPort", String.valueOf(activeProxy.getPort()));
+      System.setProperty("http.proxyUser", activeProxy.getUsername() != null ? activeProxy.getUsername() : "");
+      System.setProperty("http.proxyPassword", activeProxy.getPassword() != null ? activeProxy.getPassword() : "");
+      System.setProperty("http.nonProxyHosts", activeProxy.getNonProxyHosts() != null ? activeProxy.getNonProxyHosts() : "");
+    }
   }
 }

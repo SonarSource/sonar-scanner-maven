@@ -50,8 +50,8 @@
       <protocol>http</protocol>
       <host>localhost</host>
       <port>8080</port>
-      <username></username>
-      <password></password>
+      <username>scott</username>
+      <password>tiger</password>
       <nonProxyHosts></nonProxyHosts>
     </proxy>
   </proxies>

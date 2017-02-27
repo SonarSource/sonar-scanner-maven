@@ -60,7 +60,8 @@ public class ProxyTest extends AbstractMavenTest {
   }
 
   @Test
-  public void useActiveProxyInSettings() throws IOException, URISyntaxException {
+  public void useActiveProxyInSettings() throws IOException, URISyntaxException, InterruptedException {
+    Thread.sleep(2000);
     Path proxyXml = Paths.get(this.getClass().getResource("/proxy-settings.xml").toURI());
     Path proxyXmlPatched = temp.newFile("settings.xml").toPath();
     assertThat(proxyXml).exists();
@@ -70,6 +71,7 @@ public class ProxyTest extends AbstractMavenTest {
       .setGoals(cleanPackageSonarGoal());
     build.addArgument("--settings=" + proxyXmlPatched.toAbsolutePath().toString());
     build.addArgument("-X");
+    build.addArgument("-U");
     BuildResult result = orchestrator.executeBuildQuietly(build);
 
     assertThat(result.getLogs()).contains("Setting proxy properties");

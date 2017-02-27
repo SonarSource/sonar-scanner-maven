@@ -19,12 +19,15 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
+import java.util.Collections;
 import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.settings.Proxy;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -68,6 +71,32 @@ public class ScannerFactoryTest {
     when(rootProject.getProperties()).thenReturn(root);
     when(mavenSession.getCurrentProject()).thenReturn(rootProject);
     propertyDecryptor = new PropertyDecryptor(mock(Log.class), mock(SecDispatcher.class));
+  }
+
+  @After
+  @Before
+  public void clearProxyProperties() {
+    System.clearProperty("http.proxyHost");
+    System.clearProperty("http.proxyPort");
+    System.clearProperty("http.proxyUser");
+    System.clearProperty("http.proxyPassword");
+    System.clearProperty("http.nonProxyHosts");
+  }
+
+  @Test
+  public void testProxy() {
+    Proxy proxy = new Proxy();
+    proxy.setActive(true);
+    proxy.setProtocol("http");
+    proxy.setHost("myhost");
+    Settings settings = new Settings();
+    settings.setProxies(Collections.singletonList(proxy));
+    when(mavenSession.getSettings()).thenReturn(settings);
+
+    Log log = mock(Log.class);
+    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mavenSession, envProps, propertyDecryptor);
+    factory.create();
+    assertThat(System.getProperty("http.proxyHost")).isEqualTo("myhost");
   }
 
   @Test

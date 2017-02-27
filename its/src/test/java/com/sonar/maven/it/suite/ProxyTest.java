@@ -67,7 +67,7 @@ public class ProxyTest extends AbstractMavenTest {
     assertThat(proxyXml).exists();
     replaceInFile(proxyXml, proxyXmlPatched, "8080", String.valueOf(proxy.port()));
 
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/many-source-dirs"))
       .setGoals(cleanPackageSonarGoal());
     build.addArgument("--settings=" + proxyXmlPatched.toAbsolutePath().toString());
     build.addArgument("-X");

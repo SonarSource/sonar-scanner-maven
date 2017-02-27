@@ -78,7 +78,7 @@ public class ScannerFactory {
   public void setProxySystemProperties() {
     Proxy activeProxy = session.getSettings().getActiveProxy();
 
-    if (activeProxy != null && "http".equals(activeProxy.getProtocol())) {
+    if (activeProxy != null && activeProxy.getProtocol() != null && activeProxy.getProtocol().contains("http")) {
       log.debug("Setting proxy properties");
       System.setProperty("http.proxyHost", activeProxy.getHost());
       System.setProperty("http.proxyPort", String.valueOf(activeProxy.getPort()));

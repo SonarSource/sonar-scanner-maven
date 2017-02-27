@@ -121,8 +121,7 @@ public class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
 
-    int expectedFileCount = orchestrator.getServer().version().isGreaterThanOrEquals("6.3") ? 4 : 3;
-    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.project-with-module-without-sources:parent", "files")).isEqualTo(expectedFileCount);
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.project-with-module-without-sources:parent", "files")).isEqualTo(3);
     assertThat(getComponent("com.sonarsource.it.samples.project-with-module-without-sources:without-sources")).isNotNull();
   }
 
@@ -137,9 +136,7 @@ public class MavenTest extends AbstractMavenTest {
     orchestrator.executeBuild(build);
 
     // src/main/webapp is analyzed by web and xml plugin
-    // including resources, so +1 file (ejb-module/src/main/resources/META-INF/ejb-jar.xml) and +1 pom.xml
-    int expectedFileCount = orchestrator.getServer().version().isGreaterThanOrEquals("6.3") ? 10 : 8;
-    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(expectedFileCount);
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(8);
 
     List<WsComponents.Component> modules = getModules("com.sonarsource.it.samples.jee:parent");
     assertThat(modules).hasSize(4);

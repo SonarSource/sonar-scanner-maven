@@ -114,7 +114,7 @@ public class ScannerBootstrapper {
     if (topLevelProject == null) {
       throw new IllegalStateException("Maven session does not declare a top level project");
     }
-    Properties props = mavenProjectConverter.configure(sortedProjects, topLevelProject, session.getUserProperties(), analyzeResources());
+    Properties props = mavenProjectConverter.configure(sortedProjects, topLevelProject, session.getUserProperties());
     props.putAll(propertyDecryptor.decryptProperties(props));
 
     return props;
@@ -140,9 +140,4 @@ public class ScannerBootstrapper {
   private boolean supportsNewDependencyProperty() {
     return !isVersionPriorTo("5.0");
   }
-  
-  private boolean analyzeResources() {
-    return !isVersionPriorTo("6.3");
-  }
-
 }

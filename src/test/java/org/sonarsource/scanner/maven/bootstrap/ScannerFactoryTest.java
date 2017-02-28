@@ -25,6 +25,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.settings.Proxy;
 import org.apache.maven.settings.Settings;
+import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.junit.After;
@@ -44,6 +45,7 @@ import static org.mockito.Mockito.when;
 public class ScannerFactoryTest {
   private LogOutput logOutput;
   private RuntimeInformation runtimeInformation;
+  private MojoExecution mojoExecution;
   private MavenSession mavenSession;
   private MavenProject rootProject;
   private PropertyDecryptor propertyDecryptor;
@@ -64,6 +66,7 @@ public class ScannerFactoryTest {
     root.put("root", "value");
     envProps.put("env", "value");
 
+    when(mojoExecution.getVersion()).thenReturn("2.0");
     when(runtimeInformation.getMavenVersion()).thenReturn("1.0");
     when(mavenSession.getSystemProperties()).thenReturn(system);
     when(mavenSession.getUserProperties()).thenReturn(new Properties());
@@ -94,7 +97,7 @@ public class ScannerFactoryTest {
     when(mavenSession.getSettings()).thenReturn(settings);
 
     Log log = mock(Log.class);
-    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mavenSession, envProps, propertyDecryptor);
+    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     factory.create();
     assertThat(System.getProperty("http.proxyHost")).isEqualTo("myhost");
   }
@@ -102,11 +105,13 @@ public class ScannerFactoryTest {
   @Test
   public void testProperties() {
     Log log = mock(Log.class);
-    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mavenSession, envProps, propertyDecryptor);
+    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     EmbeddedScanner scanner = factory.create();
     verify(mavenSession).getSystemProperties();
     verify(rootProject).getProperties();
 
+    assertThat(scanner.appVersion()).isEqualTo("2.0/1.0");
+    assertThat(scanner.app()).isEqualTo("ScannerMaven");
     assertThat(scanner.globalProperties()).contains(entry("system", "value"), entry("user", "value"), entry("root", "value"), entry("env", "value"));
     assertThat(scanner.globalProperties()).contains(entry("sonar.mojoUseRunner", "true"));
   }
@@ -115,11 +120,11 @@ public class ScannerFactoryTest {
   public void testDebug() {
     Log log = mock(Log.class);
     when(log.isDebugEnabled()).thenReturn(true);
-    ScannerFactory factoryDebug = new ScannerFactory(logOutput, log, runtimeInformation, mavenSession, envProps, propertyDecryptor);
+    ScannerFactory factoryDebug = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     EmbeddedScanner scannerDebug = factoryDebug.create();
 
     when(log.isDebugEnabled()).thenReturn(false);
-    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mavenSession, envProps, propertyDecryptor);
+    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     EmbeddedScanner scanner = factory.create();
 
     assertThat(scannerDebug.globalProperties()).contains(entry("sonar.verbose", "true"));

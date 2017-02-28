@@ -30,6 +30,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.lifecycle.LifecycleExecutor;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
@@ -93,6 +94,9 @@ public class SonarQubeMojo extends AbstractMojo {
 
   @Component
   private RuntimeInformation runtimeInformation;
+  
+  @Component
+  private MojoExecution mojoExecution;
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -111,7 +115,7 @@ public class SonarQubeMojo extends AbstractMojo {
 
       PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
 
-      ScannerFactory runnerFactory = new ScannerFactory(logHandler, getLog(), runtimeInformation, session, envProps, propertyDecryptor);
+      ScannerFactory runnerFactory = new ScannerFactory(logHandler, getLog(), runtimeInformation, mojoExecution, session, envProps, propertyDecryptor);
 
       if (isSkip(runnerFactory.createGlobalProperties())) {
         return;

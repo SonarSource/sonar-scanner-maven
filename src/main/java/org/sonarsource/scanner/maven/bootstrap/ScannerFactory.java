@@ -22,6 +22,7 @@ package org.sonarsource.scanner.maven.bootstrap;
 import java.util.Properties;
 
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.settings.Proxy;
@@ -37,12 +38,14 @@ public class ScannerFactory {
   private final PropertyDecryptor propertyDecryptor;
   private final Properties envProps;
   private final Log log;
+  private final MojoExecution mojoExecution;
 
-  public ScannerFactory(LogOutput logOutput, Log log, RuntimeInformation runtimeInformation, MavenSession session,
+  public ScannerFactory(LogOutput logOutput, Log log, RuntimeInformation runtimeInformation, MojoExecution mojoExecution, MavenSession session,
     Properties envProps, PropertyDecryptor propertyDecryptor) {
     this.logOutput = logOutput;
     this.log = log;
     this.runtimeInformation = runtimeInformation;
+    this.mojoExecution = mojoExecution;
     this.session = session;
     this.debugEnabled = log.isDebugEnabled();
     this.envProps = envProps;
@@ -52,7 +55,7 @@ public class ScannerFactory {
   public EmbeddedScanner create() {
     setProxySystemProperties();
     EmbeddedScanner scanner = EmbeddedScanner.create(logOutput);
-    scanner.setApp("Maven", runtimeInformation.getMavenVersion());
+    scanner.setApp("ScannerMaven", mojoExecution.getVersion() + "/" + runtimeInformation.getMavenVersion());
 
     scanner.addGlobalProperties(createGlobalProperties());
 

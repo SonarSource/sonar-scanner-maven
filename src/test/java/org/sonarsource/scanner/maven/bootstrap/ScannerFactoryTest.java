@@ -57,6 +57,7 @@ public class ScannerFactoryTest {
     runtimeInformation = mock(RuntimeInformation.class, Mockito.RETURNS_DEEP_STUBS);
     mavenSession = mock(MavenSession.class);
     rootProject = mock(MavenProject.class);
+    mojoExecution = mock(MojoExecution.class);
     envProps = new Properties();
 
     Properties system = new Properties();

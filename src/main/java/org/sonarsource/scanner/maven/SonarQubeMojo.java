@@ -149,6 +149,11 @@ public class SonarQubeMojo extends AbstractMojo {
 
   /**
    * Is this execution a 'detached' goal run from the cli.  e.g. mvn sonar:sonar
+   *
+   * See <a href="https://maven.apache.org/guides/mini/guide-default-execution-ids.html#Default_executionIds_for_Implied_Executions">
+      Default executionIds for Implied Executions</a>
+   * for explanation of command line execution id.
+   *
    * @return true if this execution is from the command line
    */
   private boolean isDetachedGoal() {
@@ -156,7 +161,11 @@ public class SonarQubeMojo extends AbstractMojo {
   }
 
   /**
-   * Is this project the last project in the reactor
+   * Is this project the last project in the reactor?
+   *
+   * See <a href="http://svn.apache.org/viewvc/maven/plugins/tags/maven-install-plugin-2.5.2/src/main/java/org/apache/maven/plugin/install/InstallMojo.java?view=markup">
+      install plugin</a> for another example of using this technique.
+   *
    * @return true if last project (including only project)
    */
   private boolean isLastProjectInReactor() {

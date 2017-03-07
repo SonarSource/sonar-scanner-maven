@@ -21,7 +21,7 @@ package org.sonarsource.scanner.maven;
 
 import java.io.IOException;
 import java.util.Properties;
-
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -98,11 +98,25 @@ public class SonarQubeMojo extends AbstractMojo {
   @Component
   private MojoExecution mojoExecution;
 
+  /**
+   * Wait until reaching the last project before executing sonar when attached to phase
+   */
+  static final AtomicInteger readyProjectsCounter = new AtomicInteger();
+
+  @Component
+  private org.apache.maven.plugin.MojoExecution execution;
+
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     if (getLog().isDebugEnabled()) {
       setLog(new TimestampLogger(getLog()));
     }
+
+    if (shouldDelayExecution()) {
+      getLog().info("delaying sonar scan to end of multi-module project");
+      return;
+    }
+
     try {
       Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
 
@@ -126,6 +140,39 @@ public class SonarQubeMojo extends AbstractMojo {
     } catch (IOException e) {
       throw new MojoExecutionException("Failed to execute SonarQube analysis", e);
     }
+  }
+
+  /**
+   * Should scanner be delayed?
+   * @return true if goal is attached to phase and not last in a multi-module project
+   */
+  private boolean shouldDelayExecution() {
+    return !isDetachedGoal() && isLastProjectInReactor();
+  }
+
+  /**
+   * Is this execution a 'detached' goal run from the cli.  e.g. mvn sonar:sonar
+   *
+   * See <a href="https://maven.apache.org/guides/mini/guide-default-execution-ids.html#Default_executionIds_for_Implied_Executions">
+      Default executionIds for Implied Executions</a>
+   * for explanation of command line execution id.
+   *
+   * @return true if this execution is from the command line
+   */
+  private boolean isDetachedGoal() {
+    return "default-cli".equals(execution.getExecutionId());
+  }
+
+  /**
+   * Is this project the last project in the reactor?
+   *
+   * See <a href="http://svn.apache.org/viewvc/maven/plugins/tags/maven-install-plugin-2.5.2/src/main/java/org/apache/maven/plugin/install/InstallMojo.java?view=markup">
+      install plugin</a> for another example of using this technique.
+   *
+   * @return true if last project (including only project)
+   */
+  private boolean isLastProjectInReactor() {
+    return readyProjectsCounter.incrementAndGet() != session.getProjects().size();
   }
 
   private boolean isSkip(Properties properties) {

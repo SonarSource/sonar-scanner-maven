@@ -55,6 +55,7 @@ public class SonarQubeMojoTest {
   private Log mockedLogger;
 
   private SonarQubeMojo getMojo(File baseDir) throws Exception {
+    SonarQubeMojo.readyProjectsCounter.getAndSet(0);
     return (SonarQubeMojo) mojoRule.lookupConfiguredMojo(baseDir, "sonar");
   }
 

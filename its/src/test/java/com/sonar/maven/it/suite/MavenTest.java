@@ -23,7 +23,6 @@ import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.BuildRunner;
 import com.sonar.orchestrator.build.MavenBuild;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -176,8 +175,7 @@ public class MavenTest extends AbstractMavenTest {
   @Test
   public void shouldAnalyzeMultiModules() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/modules-order"))
-      .setGoals(cleanSonarGoal())
-      .setProperty("sonar.dynamicAnalysis", "false");
+      .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
 
     assertThat(getComponent("org.sonar.tests.modules-order:root").getName()).isEqualTo("Sonar tests - modules order");
@@ -187,10 +185,22 @@ public class MavenTest extends AbstractMavenTest {
     assertThat(getComponent("org.sonar.tests.modules-order:module_a").getName()).isEqualTo("Module A");
     assertThat(getComponent("org.sonar.tests.modules-order:module_b").getName()).isEqualTo("Module B");
 
-    if (orchestrator.getServer().version().isGreaterThanOrEquals("4.2")) {
-      assertThat(getComponent("org.sonar.tests.modules-order:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
-      assertThat(getComponent("org.sonar.tests.modules-order:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
-    }
+    assertThat(getComponent("org.sonar.tests.modules-order:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
+    assertThat(getComponent("org.sonar.tests.modules-order:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
+  }
+
+  // MSONAR-158
+  @Test
+  public void shouldAnalyzeMultiModulesAttachedToPhase() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/attach-sonar-to-verify"))
+      .setGoals("clean verify")
+      .setProperty("sonar.maven.it.mojoVersion", mojoVersion().toString());
+    orchestrator.executeBuild(build);
+
+    assertThat(getComponent("com.sonarsource.it.samples:attach-sonar-to-verify")).isNotNull();
+
+    List<WsComponents.Component> modules = getModules("com.sonarsource.it.samples:attach-sonar-to-verify");
+    assertThat(modules).hasSize(6);
   }
 
   /**
@@ -199,8 +209,7 @@ public class MavenTest extends AbstractMavenTest {
   @Test
   public void shouldSupportDifferentDeclarationsForModules() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/modules-declaration"))
-      .setGoals(cleanSonarGoal())
-      .setProperty("sonar.dynamicAnalysis", "false");
+      .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
 
     assertThat(getComponent("org.sonar.tests.modules-declaration:root").getName()).isEqualTo("Root");
@@ -211,13 +220,11 @@ public class MavenTest extends AbstractMavenTest {
     assertThat(getComponent("org.sonar.tests.modules-declaration:module_d").getName()).isEqualTo("Module D");
     assertThat(getComponent("org.sonar.tests.modules-declaration:module_e").getName()).isEqualTo("Module E");
 
-    if (orchestrator.getServer().version().isGreaterThanOrEquals("4.2")) {
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_c:src/main/java/HelloC.java").getName()).isEqualTo("HelloC.java");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_d:src/main/java/HelloD.java").getName()).isEqualTo("HelloD.java");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_e:src/main/java/HelloE.java").getName()).isEqualTo("HelloE.java");
-    }
+    assertThat(getComponent("org.sonar.tests.modules-declaration:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:module_c:src/main/java/HelloC.java").getName()).isEqualTo("HelloC.java");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:module_d:src/main/java/HelloD.java").getName()).isEqualTo("HelloD.java");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:module_e:src/main/java/HelloE.java").getName()).isEqualTo("HelloE.java");
   }
 
   /**
@@ -226,10 +233,9 @@ public class MavenTest extends AbstractMavenTest {
   @Test
   public void should_support_shade_with_dependency_reduced_pom_with_clean_install_sonar_goals() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/shade-with-dependency-reduced-pom"))
-      .setProperty("sonar.dynamicAnalysis", "false")
       .setGoals(cleanInstallSonarGoal());
     BuildResult result = orchestrator.executeBuildQuietly(build);
-    assertThat(result.getStatus()).isEqualTo(0);
+    assertThat(result.getLastStatus()).isEqualTo(0);
     assertThat(result.getLogs()).doesNotContain(
       "Unable to determine structure of project. Probably you use Maven Advanced Reactor Options, which is not supported by Sonar and should not be used.");
   }
@@ -301,7 +307,7 @@ public class MavenTest extends AbstractMavenTest {
   public void fail_if_bad_value_of_sonar_sources_property() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-bad-sources-property")).setGoals(sonarGoal());
     BuildResult result = orchestrator.executeBuildQuietly(build);
-    assertThat(result.getStatus()).isNotEqualTo(0);
+    assertThat(result.getLastStatus()).isNotEqualTo(0);
     assertThat(result.getLogs()).contains(
       "java2' does not exist for Maven module com.sonarsource.it.samples:maven-bad-sources-property:jar:1.0-SNAPSHOT. Please check the property sonar.sources");
   }
@@ -313,7 +319,7 @@ public class MavenTest extends AbstractMavenTest {
   public void fail_if_bad_value_of_sonar_tests_property() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-bad-tests-property")).setGoals(sonarGoal());
     BuildResult result = orchestrator.executeBuildQuietly(build);
-    assertThat(result.getStatus()).isNotEqualTo(0);
+    assertThat(result.getLastStatus()).isNotEqualTo(0);
     assertThat(result.getLogs()).contains(
       "java2' does not exist for Maven module com.sonarsource.it.samples:maven-bad-tests-property:jar:1.0-SNAPSHOT. Please check the property sonar.tests");
   }

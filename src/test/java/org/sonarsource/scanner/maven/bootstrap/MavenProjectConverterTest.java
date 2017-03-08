@@ -19,19 +19,12 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Properties;
-
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -41,6 +34,12 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.sonarsource.scanner.maven.DependencyCollector;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class MavenProjectConverterTest {
 
@@ -572,6 +571,47 @@ public class MavenProjectConverterTest {
     assertThat(props.getProperty("sonar.sources")).isEqualTo(allBaseSources);
     String allLeafSources = leafPom + "," + leafSources;
     assertThat(props.getProperty("com.foo:module1.sonar.sources")).isEqualTo(allLeafSources);
+  }
+
+  // MSONAR-155
+  @Test
+  public void two_modules_in_same_folder() throws Exception {
+    File baseDir = temp.getRoot();
+    MavenProject root = createProject(new Properties(), "pom");
+
+    File modulesBaseDir = new File(baseDir, "modules");
+    modulesBaseDir.mkdir();
+    MavenProject module1 = createProject(new File(modulesBaseDir, "pom.xml"), new Properties(), "jar");
+    module1.getModel().setArtifactId("module1");
+    module1.getModel().setName("My Project - Module 1");
+    module1.getModel().setDescription("My sample project - Module 1");
+    module1.setParent(root);
+    root.getModules().add("modules");
+
+    MavenProject module2 = createProject(new File(modulesBaseDir, "pom-2.xml"), new Properties(), "jar");
+    module2.getModel().setArtifactId("module2");
+    module2.getModel().setName("My Project - Module 2");
+    module2.getModel().setDescription("My sample project - Module 2");
+    module2.setParent(root);
+    root.getModules().add("modules/pom-2.xml");
+
+    Properties props = projectConverter.configure(Arrays.asList(module1, module2, root),
+      root, new Properties());
+
+    assertThat(props.getProperty("sonar.projectKey")).isEqualTo("com.foo:myProject");
+    assertThat(props.getProperty("sonar.projectName")).isEqualTo("My Project");
+    assertThat(props.getProperty("sonar.projectVersion")).isEqualTo("2.1");
+
+    assertThat(props.getProperty("sonar.projectBaseDir")).isEqualTo(baseDir.getAbsolutePath());
+
+    String module1Key = "com.foo:module1";
+    String module2Key = "com.foo:module2";
+    assertThat(props.getProperty("sonar.modules").split(",")).containsOnly(module1Key, module2Key);
+
+    assertThat(props.getProperty(module1Key
+      + ".sonar.projectBaseDir")).isEqualTo(modulesBaseDir.getAbsolutePath());
+    assertThat(props.getProperty(module2Key
+      + ".sonar.projectBaseDir")).isEqualTo(modulesBaseDir.getAbsolutePath());
   }
 
   private MavenProject createProject(Properties pomProps, String packaging) throws Exception {

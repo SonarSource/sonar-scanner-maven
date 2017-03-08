@@ -27,7 +27,6 @@ import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactCollector;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.lifecycle.LifecycleExecutor;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
@@ -38,13 +37,14 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProjectBuilder;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
 import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.api.ScanProperties;
 import org.sonarsource.scanner.api.Utils;
+import org.sonarsource.scanner.maven.bootstrap.JavaVersionResolver;
 import org.sonarsource.scanner.maven.bootstrap.LogHandler;
 import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
-import org.sonarsource.scanner.maven.bootstrap.JavaVersionResolver;
 import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
 import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper;
 import org.sonarsource.scanner.maven.bootstrap.ScannerFactory;
@@ -94,7 +94,7 @@ public class SonarQubeMojo extends AbstractMojo {
 
   @Component
   private RuntimeInformation runtimeInformation;
-  
+
   @Component
   private MojoExecution mojoExecution;
 
@@ -104,7 +104,7 @@ public class SonarQubeMojo extends AbstractMojo {
   static final AtomicInteger readyProjectsCounter = new AtomicInteger();
 
   @Component
-  private org.apache.maven.plugin.MojoExecution execution;
+  private MojoExecution execution;
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -113,7 +113,7 @@ public class SonarQubeMojo extends AbstractMojo {
     }
 
     if (shouldDelayExecution()) {
-      getLog().info("delaying sonar scan to end of multi-module project");
+      getLog().info("Delaying SonarQube Scanner to the end of multi-module project");
       return;
     }
 

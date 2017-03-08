@@ -60,7 +60,6 @@ public class LinksTest extends AbstractMavenTest {
   public void shouldUseLinkPropertiesOverPomLinksInMaven() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("batch/links-project"))
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.dynamicAnalysis", "false")
       .setProperty("sonar.scm.disabled", "true");
     orchestrator.executeBuild(build);
 

@@ -20,7 +20,7 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.Properties;
-
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.logging.Log;
@@ -85,9 +85,9 @@ public class ScannerFactory {
       log.debug("Setting proxy properties");
       System.setProperty("http.proxyHost", activeProxy.getHost());
       System.setProperty("http.proxyPort", String.valueOf(activeProxy.getPort()));
-      System.setProperty("http.proxyUser", activeProxy.getUsername() != null ? activeProxy.getUsername() : "");
-      System.setProperty("http.proxyPassword", activeProxy.getPassword() != null ? activeProxy.getPassword() : "");
-      System.setProperty("http.nonProxyHosts", activeProxy.getNonProxyHosts() != null ? activeProxy.getNonProxyHosts() : "");
+      System.setProperty("http.proxyUser", StringUtils.defaultString(activeProxy.getUsername(), ""));
+      System.setProperty("http.proxyPassword", StringUtils.defaultString(activeProxy.getPassword(), ""));
+      System.setProperty("http.nonProxyHosts", StringUtils.defaultString(activeProxy.getNonProxyHosts(), ""));
     }
   }
 }

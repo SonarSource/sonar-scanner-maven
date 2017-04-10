@@ -250,6 +250,9 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <skipDeploy>true</skipDeploy>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

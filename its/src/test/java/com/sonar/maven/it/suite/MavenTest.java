@@ -50,6 +50,8 @@ import static org.assertj.core.data.MapEntry.entry;
 
 public class MavenTest extends AbstractMavenTest {
 
+  private static final String MODULE_START = "-------------  Scan ";
+
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
 
@@ -187,6 +189,26 @@ public class MavenTest extends AbstractMavenTest {
 
     assertThat(getComponent("org.sonar.tests.modules-order:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
     assertThat(getComponent("org.sonar.tests.modules-order:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
+  }
+
+  @Test
+  public void shouldEvaluateSourceVersionOnEachModule() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/modules-source-versions"))
+      .setGoals(cleanSonarGoal());
+    BuildResult buildResult = orchestrator.executeBuild(build);
+
+    assertThat(findScanSectionOfModule(buildResult, "higher-version")).contains("Configured Java source version (sonar.java.source): 8");
+    assertThat(findScanSectionOfModule(buildResult, "same-version")).contains("Configured Java source version (sonar.java.source): 6");
+  }
+
+  private String findScanSectionOfModule(BuildResult buildResult, String moduleName) {
+    int startSection = buildResult.getLogs().indexOf(MODULE_START + moduleName);
+    assertThat(startSection).isNotEqualTo(-1);
+    // This will match either a next section or the end of a maven plugin execution
+    int endSection = buildResult.getLogs().indexOf("-------------", startSection + MODULE_START.length());
+    assertThat(endSection).isNotEqualTo(-1);
+
+    return buildResult.getLogs().substring(startSection, endSection);
   }
 
   // MSONAR-158

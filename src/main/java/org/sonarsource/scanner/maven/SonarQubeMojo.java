@@ -57,7 +57,7 @@ import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 public class SonarQubeMojo extends AbstractMojo {
 
-  @Parameter(defaultValue = "${session}", readonly = true)
+  @Parameter(defaultValue = "${session}", readonly = true, required = true)
   private MavenSession session;
 
   /**
@@ -95,16 +95,13 @@ public class SonarQubeMojo extends AbstractMojo {
   @Component
   private RuntimeInformation runtimeInformation;
 
-  @Component
+  @Parameter(defaultValue = "${mojoExecution}", readonly = true, required = true)
   private MojoExecution mojoExecution;
 
   /**
    * Wait until reaching the last project before executing sonar when attached to phase
    */
   static final AtomicInteger readyProjectsCounter = new AtomicInteger();
-
-  @Component
-  private MojoExecution execution;
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -160,7 +157,7 @@ public class SonarQubeMojo extends AbstractMojo {
    * @return true if this execution is from the command line
    */
   private boolean isDetachedGoal() {
-    return "default-cli".equals(execution.getExecutionId());
+    return "default-cli".equals(mojoExecution.getExecutionId());
   }
 
   /**

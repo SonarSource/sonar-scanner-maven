@@ -410,6 +410,7 @@ public class MavenTest extends AbstractMavenTest {
     assertThat(props).contains(
       entry("sonar.findbugs.excludeFilters", new File(pom.getParentFile(), "findbugs-filter.xml").toString()),
       entry("sonar.junit.reportsPath", new File(pom.getParentFile(), "target/surefire-output").toString()),
+      entry("sonar.junit.reportPaths", new File(pom.getParentFile(), "target/surefire-output").toString()),
       entry("sonar.java.source", "1.7"));
   }
 

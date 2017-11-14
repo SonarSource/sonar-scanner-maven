@@ -19,6 +19,7 @@
  */
 package org.sonarsource.scanner.maven;
 
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.maven.execution.MavenSession;
@@ -140,13 +141,13 @@ public class SonarQubeMojo extends AbstractMojo {
     return readyProjectsCounter.incrementAndGet() != session.getProjects().size();
   }
 
-  private boolean isSkip(Properties properties) {
+  private boolean isSkip(Map<String, String> properties) {
     if (skip) {
       getLog().info("sonar.skip = true: Skipping analysis");
       return true;
     }
 
-    if ("true".equalsIgnoreCase(properties.getProperty(ScanProperties.SKIP))) {
+    if ("true".equalsIgnoreCase(properties.get(ScanProperties.SKIP))) {
       getLog().info("SonarQube Scanner analysis skipped");
       return true;
     }

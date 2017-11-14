@@ -64,8 +64,8 @@ public class SonarQubeMojoTest {
     executeProject("sample-project");
 
     // passed in the properties of the profile and project
-    assertGlobalPropsContains(entry("sonar.host.url1", "http://myserver:9000"));
-    assertGlobalPropsContains(entry("sonar.host.url2", "http://myserver:9000"));
+    assertPropsContains(entry("sonar.host.url1", "http://myserver:9000"));
+    assertPropsContains(entry("sonar.host.url2", "http://myserver:9000"));
   }
 
   @Test
@@ -146,7 +146,7 @@ public class SonarQubeMojoTest {
     when(mockedLogger.isDebugEnabled()).thenReturn(true);
     executeProject("project-with-findbugs-reporting");
     verify(mockedLogger, atLeastOnce()).isDebugEnabled();
-    assertThat(readProps("target/dump.properties.global")).contains((entry("sonar.verbose", "true")));
+    assertThat(readProps("target/dump.properties")).contains((entry("sonar.verbose", "true")));
   }
 
   private File executeProject(String projectName, String... properties) throws Exception {
@@ -174,10 +174,6 @@ public class SonarQubeMojoTest {
   @SafeVarargs
   private final void assertPropsContains(MapEntry<String, String>... entries) throws FileNotFoundException, IOException {
     assertThat(readProps("target/dump.properties")).contains(entries);
-  }
-
-  private void assertGlobalPropsContains(MapEntry<String, String> entries) throws FileNotFoundException, IOException {
-    assertThat(readProps("target/dump.properties.global")).contains(entries);
   }
 
   private Properties readProps(String filePath) throws FileNotFoundException, IOException {

@@ -107,6 +107,7 @@ public class SonarQubeMojoTest {
 
     File baseDir = executeProject("sample-project-with-surefire");
     assertPropsContains(entry("sonar.junit.reportsPath", new File(baseDir, "target/surefire-reports").getAbsolutePath()));
+    assertPropsContains(entry("sonar.junit.reportPaths", new File(baseDir, "target/surefire-reports").getAbsolutePath()));
   }
 
   // MSONAR-113
@@ -114,6 +115,7 @@ public class SonarQubeMojoTest {
   public void shouldExportSurefireCustomReportsPath() throws Exception {
     File baseDir = executeProject("sample-project-with-custom-surefire-path");
     assertPropsContains(entry("sonar.junit.reportsPath", new File(baseDir, "target/tests").getAbsolutePath()));
+    assertPropsContains(entry("sonar.junit.reportPaths", new File(baseDir, "target/tests").getAbsolutePath()));
   }
 
   @Test

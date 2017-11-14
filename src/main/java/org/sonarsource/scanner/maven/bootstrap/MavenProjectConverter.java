@@ -95,7 +95,9 @@ public class MavenProjectConverter {
 
   private static final String JAVA_PROJECT_TEST_LIBRARIES = "sonar.java.test.libraries";
 
-  private static final String SUREFIRE_REPORTS_PATH_PROPERTY = "sonar.junit.reportsPath";
+  private static final String SUREFIRE_REPORTS_PATH_DEPRECATED_PROPERTY = "sonar.junit.reportsPath";
+  // Since SonarJava 4.11
+  private static final String SUREFIRE_REPORTS_PATH_PROPERTY = "sonar.junit.reportPaths";
 
   /**
    * Optional paths to binaries, for example to declare the directory of Java bytecode. Example : "binDir"
@@ -341,6 +343,7 @@ public class MavenProjectConverter {
       pom.getBuild().getDirectory() + File.separator + "surefire-reports");
     File path = resolvePath(surefireReportsPath, pom.getBasedir());
     if (path != null && path.exists()) {
+      props.put(SUREFIRE_REPORTS_PATH_DEPRECATED_PROPERTY, path.getAbsolutePath());
       props.put(SUREFIRE_REPORTS_PATH_PROPERTY, path.getAbsolutePath());
     }
   }

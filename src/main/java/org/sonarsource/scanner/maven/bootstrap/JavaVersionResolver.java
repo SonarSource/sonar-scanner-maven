@@ -64,18 +64,21 @@ public class JavaVersionResolver {
    */
   @CheckForNull
   public String getTarget(MavenProject pom) {
-    return MavenUtils.coalesce(getString("target"), MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN, "target", null));
+    return MavenUtils.coalesce(getString(pom, "target"), MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN, "target", null));
   }
 
   @CheckForNull
   public String getSource(MavenProject pom) {
-    return MavenUtils.coalesce(getString("source"), MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN, "source", null));
+    return MavenUtils.coalesce(getString(pom, "source"), MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN, "source", null));
 
   }
 
   @CheckForNull
-  private String getString(String parameter) {
+  private String getString(MavenProject pom, String parameter) {
+    MavenProject oldProject = session.getCurrentProject();
     try {
+      // Switch to the project for which we try to resolve the property.
+      session.setCurrentProject(pom);
       for (MojoExecution exec : mojoExecutions) {
         Xpp3Dom configuration = exec.getConfiguration();
         PlexusConfiguration pomConfiguration = new XmlPlexusConfiguration(configuration);
@@ -91,6 +94,8 @@ public class JavaVersionResolver {
       }
     } catch (Exception e) {
       log.warn(String.format("Failed to get parameter '%s' for goal '%s': %s", parameter, COMPILE_GOAL, e.getMessage()));
+    } finally {
+      session.setCurrentProject(oldProject);
     }
 
     return null;

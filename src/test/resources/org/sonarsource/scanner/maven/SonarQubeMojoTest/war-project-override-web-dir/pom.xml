@@ -11,6 +11,7 @@
   
   <properties>
     <sonarRunner.dumpToFile>target/dump.properties</sonarRunner.dumpToFile>
+    <sonar.scanner.versionSimulation>5.6</sonar.scanner.versionSimulation>
   </properties>
   
 

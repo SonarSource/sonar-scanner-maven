@@ -331,20 +331,21 @@ public class MavenTest extends AbstractMavenTest {
     File projectPom = ItUtils.locateProjectPom("shared/struts-1.3.9-diet");
     MavenBuild build = MavenBuild.create(projectPom)
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonarRunner.dumpToFile", outputProps.getAbsolutePath());
+      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
     orchestrator.executeBuild(build);
 
-    String[] moduleIds = getProps(outputProps).getProperty("sonar.modules").split(",");
+    Properties generatedProps = getProps(outputProps);
+    String[] moduleIds = generatedProps.getProperty("sonar.modules").split(",");
     String strutsCoreModuleId = null;
     for (String moduleId : moduleIds) {
-      if (getProps(outputProps).getProperty(moduleId + ".sonar.moduleKey").equals("org.apache.struts:struts-core")) {
+      if (generatedProps.getProperty(moduleId + ".sonar.moduleKey").equals("org.apache.struts:struts-core")) {
         strutsCoreModuleId = moduleId;
         break;
       }
     }
     assertThat(strutsCoreModuleId).isNotNull();
-    assertThat(getProps(outputProps).getProperty(strutsCoreModuleId + ".sonar.java.libraries")).contains("antlr-2.7.2.jar");
-    assertThat(getProps(outputProps).getProperty(strutsCoreModuleId + ".sonar.libraries")).contains("antlr-2.7.2.jar");
+    assertThat(generatedProps.getProperty(strutsCoreModuleId + ".sonar.java.libraries")).contains("antlr-2.7.2.jar");
+    assertThat(generatedProps.getProperty(strutsCoreModuleId + ".sonar.libraries")).contains("antlr-2.7.2.jar");
   }
 
   // MSONAR-91
@@ -380,7 +381,7 @@ public class MavenTest extends AbstractMavenTest {
     File pom = ItUtils.locateProjectPom("project-default-config");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonarRunner.dumpToFile", outputProps.getAbsolutePath());
+      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
     orchestrator.executeBuild(build);
 
     Properties props = getProps(outputProps);
@@ -425,7 +426,7 @@ public class MavenTest extends AbstractMavenTest {
     File pom = ItUtils.locateProjectPom("version/compilerPluginConfig");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonarRunner.dumpToFile", outputProps.getAbsolutePath());
+      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
     orchestrator.executeBuild(build);
 
     Properties props = getProps(outputProps);
@@ -467,7 +468,7 @@ public class MavenTest extends AbstractMavenTest {
     File pom = ItUtils.locateProjectPom("version/properties");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonarRunner.dumpToFile", outputProps.getAbsolutePath());
+      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
     orchestrator.executeBuild(build);
 
     Properties props = getProps(outputProps);

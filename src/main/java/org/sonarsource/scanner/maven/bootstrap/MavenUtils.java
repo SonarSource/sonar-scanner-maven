@@ -19,6 +19,8 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
+import java.util.Map;
+import java.util.Properties;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
@@ -79,6 +81,12 @@ public final class MavenUtils {
       }
     }
     return null;
+  }
+
+  static void putAll(Properties src, Map<String, String> dest) {
+    for (final String name : src.stringPropertyNames()) {
+      dest.put(name, src.getProperty(name));
+    }
   }
 
 }

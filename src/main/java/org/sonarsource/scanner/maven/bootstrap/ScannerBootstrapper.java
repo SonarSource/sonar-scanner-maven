@@ -20,7 +20,7 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -60,8 +60,7 @@ public class ScannerBootstrapper {
         scanner.setGlobalProperty("sonar.verbose", "true");
       }
 
-      scanner.runAnalysis(collectProperties());
-      scanner.stop();
+      scanner.execute(collectProperties());
     } catch (Exception e) {
       throw new MojoExecutionException(e.getMessage(), e);
     }
@@ -87,7 +86,7 @@ public class ScannerBootstrapper {
     scanner.unmask("");
   }
 
-  private Properties collectProperties()
+  private Map<String, String> collectProperties()
     throws MojoExecutionException {
     List<MavenProject> sortedProjects = session.getProjects();
     MavenProject topLevelProject = null;
@@ -100,7 +99,7 @@ public class ScannerBootstrapper {
     if (topLevelProject == null) {
       throw new IllegalStateException("Maven session does not declare a top level project");
     }
-    Properties props = mavenProjectConverter.configure(sortedProjects, topLevelProject, session.getUserProperties());
+    Map<String, String> props = mavenProjectConverter.configure(sortedProjects, topLevelProject, session.getUserProperties());
     props.putAll(propertyDecryptor.decryptProperties(props));
 
     return props;

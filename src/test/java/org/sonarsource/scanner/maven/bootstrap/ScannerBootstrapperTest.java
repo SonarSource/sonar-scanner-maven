@@ -21,8 +21,10 @@ package org.sonarsource.scanner.maven.bootstrap;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -64,7 +66,7 @@ public class ScannerBootstrapperTest {
 
   private ScannerBootstrapper scannerBootstrapper;
 
-  private Properties projectProperties;
+  private Map<String, String> projectProperties;
 
   @Before
   public void setUp()
@@ -75,7 +77,7 @@ public class ScannerBootstrapperTest {
     when(rootProject.isExecutionRoot()).thenReturn(true);
     when(session.getProjects()).thenReturn(Arrays.asList(rootProject));
 
-    projectProperties = new Properties();
+    projectProperties = new HashMap<>();
     when(mavenProjectConverter.configure(anyListOf(MavenProject.class), any(MavenProject.class), any(Properties.class))).thenReturn(projectProperties);
     List<Object> extensions = new LinkedList<Object>();
     extensions.add(new Object());
@@ -139,9 +141,8 @@ public class ScannerBootstrapperTest {
     verify(scanner, atLeastOnce()).mask(anyString());
     verify(scanner, atLeastOnce()).unmask(anyString());
 
-    verify(scanner).serverVersion();
     verify(scanner).start();
-    verify(scanner).stop();
-    verify(scanner).runAnalysis(projectProperties);
+    verify(scanner).serverVersion();
+    verify(scanner).execute(projectProperties);
   }
 }

@@ -19,6 +19,8 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
@@ -54,13 +56,10 @@ public class ScannerFactory {
 
   public EmbeddedScanner create() {
     setProxySystemProperties();
-    EmbeddedScanner scanner = EmbeddedScanner.create(logOutput);
-    scanner.setApp("ScannerMaven", mojoExecution.getVersion() + "/" + runtimeInformation.getMavenVersion());
+    EmbeddedScanner scanner = EmbeddedScanner.create("ScannerMaven", mojoExecution.getVersion() + "/" + runtimeInformation.getMavenVersion(), logOutput);
 
     scanner.addGlobalProperties(createGlobalProperties());
 
-    // Secret property to manage backward compatibility on SQ side prior to 5.2 (see ProjectScanContainer)
-    scanner.setGlobalProperty("sonar.mojoUseRunner", "true");
     if (debugEnabled) {
       scanner.setGlobalProperty("sonar.verbose", "true");
     }
@@ -68,12 +67,12 @@ public class ScannerFactory {
     return scanner;
   }
 
-  public Properties createGlobalProperties() {
-    Properties p = new Properties();
-    p.putAll(session.getCurrentProject().getProperties());
-    p.putAll(envProps);
-    p.putAll(session.getSystemProperties());
-    p.putAll(session.getUserProperties());
+  public Map<String, String> createGlobalProperties() {
+    Map<String, String> p = new HashMap<>();
+    MavenUtils.putAll(session.getCurrentProject().getProperties(), p);
+    MavenUtils.putAll(envProps, p);
+    MavenUtils.putAll(session.getSystemProperties(), p);
+    MavenUtils.putAll(session.getUserProperties(), p);
     p.putAll(propertyDecryptor.decryptProperties(p));
     return p;
   }

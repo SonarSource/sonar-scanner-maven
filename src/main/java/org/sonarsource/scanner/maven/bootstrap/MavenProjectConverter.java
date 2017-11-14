@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -34,7 +35,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -46,7 +46,6 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.sonarsource.scanner.api.ScanProperties;
 import org.sonarsource.scanner.api.ScannerProperties;
-import org.sonarsource.scanner.maven.DependencyCollector;
 
 public class MavenProjectConverter {
   private final Log log;
@@ -96,7 +95,9 @@ public class MavenProjectConverter {
 
   private static final String JAVA_PROJECT_TEST_LIBRARIES = "sonar.java.test.libraries";
 
-  private static final String SUREFIRE_REPORTS_PATH_PROPERTY = "sonar.junit.reportsPath";
+  private static final String SUREFIRE_REPORTS_PATH_DEPRECATED_PROPERTY = "sonar.junit.reportsPath";
+  // Since SonarJava 4.11
+  private static final String SUREFIRE_REPORTS_PATH_PROPERTY = "sonar.junit.reportPaths";
 
   /**
    * Optional paths to binaries, for example to declare the directory of Java bytecode. Example : "binDir"
@@ -113,25 +114,22 @@ public class MavenProjectConverter {
 
   private final Properties envProperties;
 
-  private final DependencyCollector dependencyCollector;
-
   private final JavaVersionResolver javaVersionResolver;
 
-  public MavenProjectConverter(Log log, DependencyCollector dependencyCollector, JavaVersionResolver javaVersionResolver, Properties envProperties) {
+  public MavenProjectConverter(Log log, JavaVersionResolver javaVersionResolver, Properties envProperties) {
     this.log = log;
-    this.dependencyCollector = dependencyCollector;
     this.javaVersionResolver = javaVersionResolver;
     this.envProperties = envProperties;
   }
 
-  public Properties configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties) throws MojoExecutionException {
+  public Map<String, String> configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties) throws MojoExecutionException {
     this.userProperties = userProperties;
-    Map<MavenProject, Properties> propsByModule = new LinkedHashMap<>();
+    Map<MavenProject, Map<String, String>> propsByModule = new LinkedHashMap<>();
 
     try {
       configureModules(mavenProjects, propsByModule);
-      Properties props = new Properties();
-      props.setProperty(ScanProperties.PROJECT_KEY, getSonarKey(root));
+      Map<String, String> props = new HashMap<>();
+      props.put(ScanProperties.PROJECT_KEY, getSonarKey(root));
       rebuildModuleHierarchy(props, propsByModule, root, "");
       if (!propsByModule.isEmpty()) {
         throw new IllegalStateException(UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE + " \""
@@ -144,14 +142,14 @@ public class MavenProjectConverter {
 
   }
 
-  private static void rebuildModuleHierarchy(Properties properties, Map<MavenProject, Properties> propsByModule,
+  private static void rebuildModuleHierarchy(Map<String, String> properties, Map<MavenProject, Map<String, String>> propsByModule,
     MavenProject current, String prefix)
     throws IOException {
-    Properties currentProps = propsByModule.get(current);
+    Map<String, String> currentProps = propsByModule.get(current);
     if (currentProps == null) {
       throw new IllegalStateException(UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE);
     }
-    for (Map.Entry<Object, Object> prop : currentProps.entrySet()) {
+    for (Map.Entry<String, String> prop : currentProps.entrySet()) {
       properties.put(prefix + prop.getKey(), prop.getValue());
     }
     propsByModule.remove(current);
@@ -170,17 +168,15 @@ public class MavenProjectConverter {
     }
   }
 
-  private void configureModules(List<MavenProject> mavenProjects, Map<MavenProject, Properties> propsByModule)
-    throws IOException, MojoExecutionException {
+  private void configureModules(List<MavenProject> mavenProjects, Map<MavenProject, Map<String, String>> propsByModule)
+    throws MojoExecutionException {
     for (MavenProject pom : mavenProjects) {
       boolean skipped = "true".equals(pom.getModel().getProperties().getProperty("sonar.skip"));
       if (skipped) {
         log.info("Module " + pom + " skipped by property 'sonar.skip'");
         continue;
       }
-      Properties props = new Properties();
-      merge(pom, props);
-      propsByModule.put(pom, props);
+      propsByModule.put(pom, computeSonarQubeProperties(pom));
     }
   }
 
@@ -211,60 +207,61 @@ public class MavenProjectConverter {
     return null;
   }
 
-  void merge(MavenProject pom, Properties props)
+  Map<String, String> computeSonarQubeProperties(MavenProject pom)
     throws MojoExecutionException {
+    Map<String, String> props = new HashMap<>();
     defineProjectKey(pom, props);
-    props.setProperty(ScanProperties.PROJECT_VERSION, pom.getVersion());
-    props.setProperty(ScanProperties.PROJECT_NAME, pom.getName());
+    props.put(ScanProperties.PROJECT_VERSION, pom.getVersion());
+    props.put(ScanProperties.PROJECT_NAME, pom.getName());
     String description = pom.getDescription();
     if (description != null) {
-      props.setProperty(ScanProperties.PROJECT_DESCRIPTION, description);
+      props.put(ScanProperties.PROJECT_DESCRIPTION, description);
     }
 
     guessJavaVersion(pom, props);
     guessEncoding(pom, props);
     convertMavenLinksToProperties(props, pom);
-    props.setProperty("sonar.maven.projectDependencies", dependencyCollector.toJson(pom));
     synchronizeFileSystemAndOtherProps(pom, props);
     findBugsExcludeFileMaven(pom, props);
+    return props;
   }
 
-  private static void defineProjectKey(MavenProject pom, Properties props) {
+  private static void defineProjectKey(MavenProject pom, Map<String, String> props) {
     String key;
     if (pom.getModel().getProperties().containsKey(ScanProperties.PROJECT_KEY)) {
       key = pom.getModel().getProperties().getProperty(ScanProperties.PROJECT_KEY);
     } else {
       key = getSonarKey(pom);
     }
-    props.setProperty(MODULE_KEY, key);
+    props.put(MODULE_KEY, key);
   }
 
   private static String getSonarKey(MavenProject pom) {
     return new StringBuilder().append(pom.getGroupId()).append(":").append(pom.getArtifactId()).toString();
   }
 
-  private static void guessEncoding(MavenProject pom, Properties props) {
+  private static void guessEncoding(MavenProject pom, Map<String, String> props) {
     // See http://jira.codehaus.org/browse/SONAR-2151
     String encoding = MavenUtils.getSourceEncoding(pom);
     if (encoding != null) {
-      props.setProperty(ScanProperties.PROJECT_SOURCE_ENCODING, encoding);
+      props.put(ScanProperties.PROJECT_SOURCE_ENCODING, encoding);
     }
   }
 
-  private void guessJavaVersion(MavenProject pom, Properties props) {
+  private void guessJavaVersion(MavenProject pom, Map<String, String> props) {
     // See http://jira.codehaus.org/browse/SONAR-2148
     // Get Java source and target versions from maven-compiler-plugin.
     String version = javaVersionResolver.getSource(pom);
     if (version != null) {
-      props.setProperty(JAVA_SOURCE_PROPERTY, version);
+      props.put(JAVA_SOURCE_PROPERTY, version);
     }
     version = javaVersionResolver.getTarget(pom);
     if (version != null) {
-      props.setProperty(JAVA_TARGET_PROPERTY, version);
+      props.put(JAVA_TARGET_PROPERTY, version);
     }
   }
 
-  private static void findBugsExcludeFileMaven(MavenProject pom, Properties props) {
+  private static void findBugsExcludeFileMaven(MavenProject pom, Map<String, String> props) {
     String excludeFilterFile = MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_CODEHAUS_MOJO, ARTIFACTID_FINDBUGS_MAVEN_PLUGIN, "excludeFilterFile", null);
     File path = resolvePath(excludeFilterFile, pom.getBasedir());
     if (path != null && path.exists()) {
@@ -275,7 +272,7 @@ public class MavenProjectConverter {
   /**
    * For SONAR-3676
    */
-  private static void convertMavenLinksToProperties(Properties props, MavenProject pom) {
+  private static void convertMavenLinksToProperties(Map<String, String> props, MavenProject pom) {
     setPropertyIfNotAlreadyExists(props, LINKS_HOME_PAGE, pom.getUrl());
 
     Scm scm = pom.getScm();
@@ -298,19 +295,19 @@ public class MavenProjectConverter {
     setPropertyIfNotAlreadyExists(props, LINKS_ISSUE_TRACKER, issues.getUrl());
   }
 
-  private static void setPropertyIfNotAlreadyExists(Properties props, String propertyKey, String propertyValue) {
-    if (StringUtils.isBlank(props.getProperty(propertyKey))) {
-      props.setProperty(propertyKey, StringUtils.defaultString(propertyValue));
+  private static void setPropertyIfNotAlreadyExists(Map<String, String> props, String propertyKey, String propertyValue) {
+    if (StringUtils.isBlank(props.get(propertyKey))) {
+      props.put(propertyKey, StringUtils.defaultString(propertyValue));
     }
   }
 
-  private void synchronizeFileSystemAndOtherProps(MavenProject pom, Properties props)
+  private void synchronizeFileSystemAndOtherProps(MavenProject pom, Map<String, String> props)
     throws MojoExecutionException {
-    props.setProperty(ScanProperties.PROJECT_BASEDIR, pom.getBasedir().getAbsolutePath());
+    props.put(ScanProperties.PROJECT_BASEDIR, pom.getBasedir().getAbsolutePath());
     File buildDir = getBuildDir(pom);
     if (buildDir != null) {
-      props.setProperty(PROPERTY_PROJECT_BUILDDIR, buildDir.getAbsolutePath());
-      props.setProperty(ScannerProperties.WORK_DIR, getSonarWorkDir(pom).getAbsolutePath());
+      props.put(PROPERTY_PROJECT_BUILDDIR, buildDir.getAbsolutePath());
+      props.put(ScannerProperties.WORK_DIR, getSonarWorkDir(pom).getAbsolutePath());
     }
     populateBinaries(pom, props);
 
@@ -325,32 +322,33 @@ public class MavenProjectConverter {
       props.put(k, pom.getModel().getProperties().getProperty(k));
     }
 
-    props.putAll(envProperties);
+    MavenUtils.putAll(envProperties, props);
 
     // Add user properties (ie command line arguments -Dsonar.xxx=yyyy) in last position to
     // override all other
-    props.putAll(userProperties);
+    MavenUtils.putAll(userProperties, props);
 
     List<File> mainDirs = mainSources(pom);
-    props.setProperty(ScanProperties.PROJECT_SOURCE_DIRS, StringUtils.join(toPaths(mainDirs), SEPARATOR));
+    props.put(ScanProperties.PROJECT_SOURCE_DIRS, StringUtils.join(toPaths(mainDirs), SEPARATOR));
     List<File> testDirs = testSources(pom);
     if (!testDirs.isEmpty()) {
-      props.setProperty(ScanProperties.PROJECT_TEST_DIRS, StringUtils.join(toPaths(testDirs), SEPARATOR));
+      props.put(ScanProperties.PROJECT_TEST_DIRS, StringUtils.join(toPaths(testDirs), SEPARATOR));
     } else {
       props.remove(ScanProperties.PROJECT_TEST_DIRS);
     }
   }
 
-  private static void populateSurefireReportsPath(MavenProject pom, Properties props) {
+  private static void populateSurefireReportsPath(MavenProject pom, Map<String, String> props) {
     String surefireReportsPath = MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_APACHE_MAVEN, ARTIFACTID_MAVEN_SUREFIRE_PLUGIN, "reportsDirectory",
       pom.getBuild().getDirectory() + File.separator + "surefire-reports");
     File path = resolvePath(surefireReportsPath, pom.getBasedir());
     if (path != null && path.exists()) {
+      props.put(SUREFIRE_REPORTS_PATH_DEPRECATED_PROPERTY, path.getAbsolutePath());
       props.put(SUREFIRE_REPORTS_PATH_PROPERTY, path.getAbsolutePath());
     }
   }
 
-  private static void populateLibraries(MavenProject pom, Properties props, boolean test) throws MojoExecutionException {
+  private static void populateLibraries(MavenProject pom, Map<String, String> props, boolean test) throws MojoExecutionException {
     List<String> classpathElements;
     try {
       classpathElements = test ? pom.getTestClasspathElements() : pom.getCompileClasspathElements();
@@ -373,28 +371,28 @@ public class MavenProjectConverter {
     if (!libraries.isEmpty()) {
       String librariesValue = StringUtils.join(toPaths(libraries), SEPARATOR);
       if (test) {
-        props.setProperty(JAVA_PROJECT_TEST_LIBRARIES, librariesValue);
+        props.put(JAVA_PROJECT_TEST_LIBRARIES, librariesValue);
       } else {
         // Populate both deprecated and new property for backward compatibility
-        props.setProperty(PROJECT_LIBRARIES, librariesValue);
-        props.setProperty(JAVA_PROJECT_MAIN_LIBRARIES, librariesValue);
+        props.put(PROJECT_LIBRARIES, librariesValue);
+        props.put(JAVA_PROJECT_MAIN_LIBRARIES, librariesValue);
       }
     }
   }
 
-  private static void populateBinaries(MavenProject pom, Properties props) {
+  private static void populateBinaries(MavenProject pom, Map<String, String> props) {
     File mainBinaryDir = resolvePath(pom.getBuild().getOutputDirectory(), pom.getBasedir());
     if (mainBinaryDir != null && mainBinaryDir.exists()) {
       String binPath = mainBinaryDir.getAbsolutePath();
       // Populate both deprecated and new property for backward compatibility
-      props.setProperty(PROJECT_BINARY_DIRS, binPath);
-      props.setProperty(JAVA_PROJECT_MAIN_BINARY_DIRS, binPath);
-      props.setProperty(GROOVY_PROJECT_MAIN_BINARY_DIRS, binPath);
+      props.put(PROJECT_BINARY_DIRS, binPath);
+      props.put(JAVA_PROJECT_MAIN_BINARY_DIRS, binPath);
+      props.put(GROOVY_PROJECT_MAIN_BINARY_DIRS, binPath);
     }
     File testBinaryDir = resolvePath(pom.getBuild().getTestOutputDirectory(), pom.getBasedir());
     if (testBinaryDir != null && testBinaryDir.exists()) {
       String binPath = testBinaryDir.getAbsolutePath();
-      props.setProperty(JAVA_PROJECT_TEST_BINARY_DIRS, binPath);
+      props.put(JAVA_PROJECT_TEST_BINARY_DIRS, binPath);
     }
   }
 

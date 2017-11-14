@@ -9,7 +9,8 @@
   <name>Test project</name>
   
   <properties>
-    <sonarRunner.dumpToFile>target/dump.properties</sonarRunner.dumpToFile>
+    <sonar.scanner.dumpToFile>target/dump.properties</sonar.scanner.dumpToFile>
+    <sonar.scanner.versionSimulation>5.6</sonar.scanner.versionSimulation>
     <sonar.host.url2>http://myserver:9000</sonar.host.url2>
   </properties>
   

@@ -19,7 +19,9 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import org.apache.maven.plugin.logging.Log;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
@@ -35,12 +37,12 @@ public class PropertyDecryptor {
     this.securityDispatcher = securityDispatcher;
   }
 
-  public Properties decryptProperties(Properties properties) {
-    Properties newProperties = new Properties();
+  public Map<String, String> decryptProperties(Map<String, String> properties) {
+    Map<String, String> newProperties = new HashMap<>();
     try {
-      for (String key : properties.stringPropertyNames()) {
-        if (key.contains(".password") || key.contains(".login")) {
-          decrypt(properties, newProperties, key);
+      for (Entry<String, String> entry : properties.entrySet()) {
+        if (entry.getKey().contains(".password") || entry.getKey().contains(".login")) {
+          newProperties.put(entry.getKey(), decrypt(entry.getKey(), entry.getValue()));
         }
       }
     } catch (Exception e) {
@@ -49,12 +51,12 @@ public class PropertyDecryptor {
     return newProperties;
   }
 
-  private void decrypt(Properties properties, Properties newProperties, String key) {
+  private String decrypt(String key, String value) {
     try {
-      String decrypted = securityDispatcher.decrypt(properties.getProperty(key));
-      newProperties.setProperty(key, decrypted);
+      return securityDispatcher.decrypt(value);
     } catch (SecDispatcherException e) {
       log.debug("Unable to decrypt property " + key, e);
+      return value;
     }
   }
 }

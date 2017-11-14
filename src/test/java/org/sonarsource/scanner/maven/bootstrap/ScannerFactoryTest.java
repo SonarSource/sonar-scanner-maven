@@ -22,12 +22,12 @@ package org.sonarsource.scanner.maven.bootstrap;
 import java.util.Collections;
 import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.rtinfo.RuntimeInformation;
-import org.apache.maven.settings.Proxy;
-import org.apache.maven.settings.Settings;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.settings.Proxy;
+import org.apache.maven.settings.Settings;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -114,7 +114,6 @@ public class ScannerFactoryTest {
     assertThat(scanner.appVersion()).isEqualTo("2.0/1.0");
     assertThat(scanner.app()).isEqualTo("ScannerMaven");
     assertThat(scanner.globalProperties()).contains(entry("system", "value"), entry("user", "value"), entry("root", "value"), entry("env", "value"));
-    assertThat(scanner.globalProperties()).contains(entry("sonar.mojoUseRunner", "true"));
   }
 
   @Test

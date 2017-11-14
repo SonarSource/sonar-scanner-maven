@@ -34,7 +34,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -46,7 +45,6 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.sonarsource.scanner.api.ScanProperties;
 import org.sonarsource.scanner.api.ScannerProperties;
-import org.sonarsource.scanner.maven.DependencyCollector;
 
 public class MavenProjectConverter {
   private final Log log;
@@ -113,13 +111,10 @@ public class MavenProjectConverter {
 
   private final Properties envProperties;
 
-  private final DependencyCollector dependencyCollector;
-
   private final JavaVersionResolver javaVersionResolver;
 
-  public MavenProjectConverter(Log log, DependencyCollector dependencyCollector, JavaVersionResolver javaVersionResolver, Properties envProperties) {
+  public MavenProjectConverter(Log log, JavaVersionResolver javaVersionResolver, Properties envProperties) {
     this.log = log;
-    this.dependencyCollector = dependencyCollector;
     this.javaVersionResolver = javaVersionResolver;
     this.envProperties = envProperties;
   }
@@ -224,7 +219,6 @@ public class MavenProjectConverter {
     guessJavaVersion(pom, props);
     guessEncoding(pom, props);
     convertMavenLinksToProperties(props, pom);
-    props.setProperty("sonar.maven.projectDependencies", dependencyCollector.toJson(pom));
     synchronizeFileSystemAndOtherProps(pom, props);
     findBugsExcludeFileMaven(pom, props);
   }

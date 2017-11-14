@@ -19,13 +19,8 @@
  */
 package org.sonarsource.scanner.maven;
 
-import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactCollector;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.LifecycleExecutor;
 import org.apache.maven.plugin.AbstractMojo;
@@ -36,9 +31,7 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.rtinfo.RuntimeInformation;
-import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
 import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.api.ScanProperties;
 import org.sonarsource.scanner.api.Utils;
@@ -57,7 +50,7 @@ import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 public class SonarQubeMojo extends AbstractMojo {
 
-  @Parameter(defaultValue = "${session}", readonly = true, required = true)
+  @Parameter(defaultValue = "${session}", required = true, readonly = true)
   private MavenSession session;
 
   /**
@@ -71,31 +64,13 @@ public class SonarQubeMojo extends AbstractMojo {
   @Component
   private LifecycleExecutor lifecycleExecutor;
 
-  @Component
-  private ArtifactFactory artifactFactory;
-
-  @Parameter(defaultValue = "${localRepository}", required = true, readonly = true)
-  private ArtifactRepository localRepository;
-
-  @Component
-  private ArtifactMetadataSource artifactMetadataSource;
-
-  @Component
-  private ArtifactCollector artifactCollector;
-
-  @Component
-  private DependencyTreeBuilder dependencyTreeBuilder;
-
-  @Component
-  private MavenProjectBuilder projectBuilder;
-
   @Component(hint = "mng-4384")
   private SecDispatcher securityDispatcher;
 
   @Component
   private RuntimeInformation runtimeInformation;
 
-  @Parameter(defaultValue = "${mojoExecution}", readonly = true, required = true)
+  @Parameter(defaultValue = "${mojoExecution}", required = true, readonly = true)
   private MojoExecution mojoExecution;
 
   /**
@@ -114,29 +89,22 @@ public class SonarQubeMojo extends AbstractMojo {
       return;
     }
 
-    try {
-      Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
+    Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
 
-      ExtensionsFactory extensionsFactory = new ExtensionsFactory(getLog(), session, lifecycleExecutor, artifactFactory, localRepository, artifactMetadataSource, artifactCollector,
-        dependencyTreeBuilder, projectBuilder);
-      DependencyCollector dependencyCollector = new DependencyCollector(dependencyTreeBuilder, localRepository);
-      JavaVersionResolver pluginParameterResolver = new JavaVersionResolver(session, lifecycleExecutor, getLog());
-      MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), dependencyCollector, pluginParameterResolver, envProps);
-      LogHandler logHandler = new LogHandler(getLog());
+    JavaVersionResolver pluginParameterResolver = new JavaVersionResolver(session, lifecycleExecutor, getLog());
+    MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), pluginParameterResolver, envProps);
+    LogHandler logHandler = new LogHandler(getLog());
 
-      PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
+    PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
 
-      ScannerFactory runnerFactory = new ScannerFactory(logHandler, getLog(), runtimeInformation, mojoExecution, session, envProps, propertyDecryptor);
+    ScannerFactory runnerFactory = new ScannerFactory(logHandler, getLog(), runtimeInformation, mojoExecution, session, envProps, propertyDecryptor);
 
-      if (isSkip(runnerFactory.createGlobalProperties())) {
-        return;
-      }
-
-      EmbeddedScanner runner = runnerFactory.create();
-      new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, extensionsFactory, propertyDecryptor).execute();
-    } catch (IOException e) {
-      throw new MojoExecutionException("Failed to execute SonarQube analysis", e);
+    if (isSkip(runnerFactory.createGlobalProperties())) {
+      return;
     }
+
+    EmbeddedScanner runner = runnerFactory.create();
+    new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, propertyDecryptor).execute();
   }
 
   /**
@@ -183,10 +151,6 @@ public class SonarQubeMojo extends AbstractMojo {
       return true;
     }
     return false;
-  }
-
-  void setLocalRepository(ArtifactRepository localRepository) {
-    this.localRepository = localRepository;
   }
 
   MavenSession getSession() {

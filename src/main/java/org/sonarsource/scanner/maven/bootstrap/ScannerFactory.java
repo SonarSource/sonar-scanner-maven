@@ -59,8 +59,6 @@ public class ScannerFactory {
 
     scanner.addGlobalProperties(createGlobalProperties());
 
-    // Secret property to manage backward compatibility on SQ side prior to 5.2 (see ProjectScanContainer)
-    scanner.setGlobalProperty("sonar.mojoUseRunner", "true");
     if (debugEnabled) {
       scanner.setGlobalProperty("sonar.verbose", "true");
     }

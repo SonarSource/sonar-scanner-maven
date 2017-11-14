@@ -33,15 +33,13 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarsource.scanner.api.EmbeddedScanner;
-import org.sonarsource.scanner.maven.ExtensionsFactory;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -64,9 +62,6 @@ public class ScannerBootstrapperTest {
   @Mock
   private MavenProjectConverter mavenProjectConverter;
 
-  @Mock
-  private ExtensionsFactory extensionsFactory;
-
   private ScannerBootstrapper scannerBootstrapper;
 
   private Properties projectProperties;
@@ -84,43 +79,29 @@ public class ScannerBootstrapperTest {
     when(mavenProjectConverter.configure(anyListOf(MavenProject.class), any(MavenProject.class), any(Properties.class))).thenReturn(projectProperties);
     List<Object> extensions = new LinkedList<Object>();
     extensions.add(new Object());
-    when(extensionsFactory.createExtensions()).thenReturn(extensions);
-    when(extensionsFactory.createExtensionsWithDependencyProperty()).thenReturn(extensions);
 
     when(scanner.mask(anyString())).thenReturn(scanner);
     when(scanner.unmask(anyString())).thenReturn(scanner);
-    scannerBootstrapper = new ScannerBootstrapper(log, session, scanner, mavenProjectConverter, extensionsFactory, new PropertyDecryptor(log, securityDispatcher));
+    scannerBootstrapper = new ScannerBootstrapper(log, session, scanner, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher));
   }
 
   @Test
-  public void testSQ52()
-    throws MojoExecutionException, IOException {
-    when(scanner.serverVersion()).thenReturn("5.2");
-    scannerBootstrapper.execute();
-
-    verifyCommonCalls();
-
-    // no extensions, mask or unmask
-    verifyNoMoreInteractions(scanner);
-  }
-
-  @Test
-  public void testSQ51()
+  public void testSQBefore56()
     throws MojoExecutionException, IOException {
     when(scanner.serverVersion()).thenReturn("5.1");
-    scannerBootstrapper.execute();
-
-    verifyCommonCalls();
-
-    verify(extensionsFactory).createExtensionsWithDependencyProperty();
-    verify(scanner).addExtensions(anyObject());
-    verifyNoMoreInteractions(scanner);
+    try {
+      scannerBootstrapper.execute();
+      fail("Expected exception");
+    } catch (Exception e) {
+      assertThat(e).hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
+        .hasMessage("With SonarQube server prior to 5.6, it is recommended to use the sonar-maven-plugin 3.3");
+    }
   }
 
   @Test
-  public void testSQ60()
+  public void testSQ56()
     throws MojoExecutionException, IOException {
-    when(scanner.serverVersion()).thenReturn("6.0");
+    when(scanner.serverVersion()).thenReturn("5.6");
     scannerBootstrapper.execute();
 
     verifyCommonCalls();
@@ -141,38 +122,17 @@ public class ScannerBootstrapperTest {
   }
 
   @Test
-  public void testSQ48()
-    throws MojoExecutionException, IOException {
-    when(scanner.serverVersion()).thenReturn("4.8");
-    scannerBootstrapper.execute();
-
-    verifyCommonCalls();
-
-    verify(extensionsFactory).createExtensions();
-    verify(scanner).addExtensions(any(Object[].class));
-    verifyNoMoreInteractions(scanner);
-  }
-
-  @Test
-  public void testSQ44()
-    throws MojoExecutionException, IOException {
-    when(scanner.serverVersion()).thenReturn("4.4");
-    scannerBootstrapper.execute();
-
-    verifyCommonCalls();
-
-    verify(extensionsFactory).createExtensions();
-    verify(scanner).addExtensions(any(Object[].class));
-    verifyNoMoreInteractions(scanner);
-  }
-
-  @Test
   public void testNullServerVersion()
     throws MojoExecutionException, IOException {
     when(scanner.serverVersion()).thenReturn(null);
 
-    scannerBootstrapper.execute();
-    verify(log).warn(contains("it is recommended to use sonar-maven-plugin 2.6"));
+    try {
+      scannerBootstrapper.execute();
+      fail("Expected exception");
+    } catch (Exception e) {
+      assertThat(e).hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
+        .hasMessage("With SonarQube server prior to 5.6, it is recommended to use the sonar-maven-plugin 3.3");
+    }
   }
 
   private void verifyCommonCalls() {

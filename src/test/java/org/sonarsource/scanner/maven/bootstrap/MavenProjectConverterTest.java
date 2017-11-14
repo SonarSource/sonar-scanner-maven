@@ -33,20 +33,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
-import org.sonarsource.scanner.maven.DependencyCollector;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class MavenProjectConverterTest {
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
-
-  private DependencyCollector dependencyCollector = mock(DependencyCollector.class);
 
   private Log log;
 
@@ -64,8 +59,7 @@ public class MavenProjectConverterTest {
     log = mock(Log.class);
     javaVersionResolver = mock(JavaVersionResolver.class);
     env = new Properties();
-    when(dependencyCollector.toJson(any(MavenProject.class))).thenReturn("");
-    projectConverter = new MavenProjectConverter(log, dependencyCollector, javaVersionResolver, env);
+    projectConverter = new MavenProjectConverter(log, javaVersionResolver, env);
   }
 
   @Test

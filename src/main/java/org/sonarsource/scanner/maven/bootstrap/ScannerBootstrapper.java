@@ -19,7 +19,6 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 import org.apache.maven.artifact.versioning.ComparableVersion;
@@ -28,7 +27,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.sonarsource.scanner.api.EmbeddedScanner;
-import org.sonarsource.scanner.maven.ExtensionsFactory;
 
 /**
  * Configure properties and bootstrap using SonarQube scanner API
@@ -39,21 +37,18 @@ public class ScannerBootstrapper {
   private final MavenSession session;
   private final EmbeddedScanner scanner;
   private final MavenProjectConverter mavenProjectConverter;
-  private final ExtensionsFactory extensionsFactory;
   private String serverVersion;
   private PropertyDecryptor propertyDecryptor;
 
-  public ScannerBootstrapper(Log log, MavenSession session, EmbeddedScanner scanner, MavenProjectConverter mavenProjectConverter, ExtensionsFactory extensionsFactory,
-    PropertyDecryptor propertyDecryptor) {
+  public ScannerBootstrapper(Log log, MavenSession session, EmbeddedScanner scanner, MavenProjectConverter mavenProjectConverter, PropertyDecryptor propertyDecryptor) {
     this.log = log;
     this.session = session;
     this.scanner = scanner;
     this.mavenProjectConverter = mavenProjectConverter;
-    this.extensionsFactory = extensionsFactory;
     this.propertyDecryptor = propertyDecryptor;
   }
 
-  public void execute() throws IOException, MojoExecutionException {
+  public void execute() throws MojoExecutionException {
     try {
       applyMasks();
       scanner.start();
@@ -61,15 +56,6 @@ public class ScannerBootstrapper {
 
       checkSQVersion();
 
-      if (isVersionPriorTo("5.2")) {
-        // for these versions, global properties and extensions are only applied when calling runAnalysis()
-        if (supportsNewDependencyProperty()) {
-          scanner.addExtensions(extensionsFactory.createExtensionsWithDependencyProperty().toArray());
-        } else {
-          scanner.addExtensions(extensionsFactory.createExtensions().toArray());
-        }
-
-      }
       if (log.isDebugEnabled()) {
         scanner.setGlobalProperty("sonar.verbose", "true");
       }
@@ -77,7 +63,7 @@ public class ScannerBootstrapper {
       scanner.runAnalysis(collectProperties());
       scanner.stop();
     } catch (Exception e) {
-      throw ExceptionHandling.handle(e, log);
+      throw new MojoExecutionException(e.getMessage(), e);
     }
   }
 
@@ -125,8 +111,8 @@ public class ScannerBootstrapper {
       log.info("SonarQube version: " + serverVersion);
     }
 
-    if (isVersionPriorTo("4.5")) {
-      log.warn("With SonarQube prior to 4.5, it is recommended to use sonar-maven-plugin 2.6");
+    if (isVersionPriorTo("5.6")) {
+      throw new UnsupportedOperationException("With SonarQube server prior to 5.6, it is recommended to use the sonar-maven-plugin 3.3");
     }
   }
 
@@ -137,7 +123,4 @@ public class ScannerBootstrapper {
     return new ComparableVersion(serverVersion).compareTo(new ComparableVersion(version)) < 0;
   }
 
-  private boolean supportsNewDependencyProperty() {
-    return !isVersionPriorTo("5.0");
-  }
 }

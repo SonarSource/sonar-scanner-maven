@@ -13,7 +13,7 @@ echo "Running with SQ=$SQ_VERSION for $CI_BUILD_NUMBER"
   curl --user $ARTIFACTORY_QA_READER_USERNAME:$ARTIFACTORY_QA_READER_PASSWORD -sSLO https://repox.sonarsource.com/sonarsource-public-qa/org/sonarsource/scanner/maven/sonar-maven-plugin/$CURRENT_VERSION/sonar-maven-plugin-$CURRENT_VERSION.jar
   cd ..
  
-  mvn install:install-file -Dfile=target/sonar-maven-plugin-$CURRENT_VERSION.jar
+  mvn -B -e install:install-file -Dfile=target/sonar-maven-plugin-$CURRENT_VERSION.jar
 
 
 
@@ -22,7 +22,7 @@ echo "Running with SQ=$SQ_VERSION for $CI_BUILD_NUMBER"
   curl -sSL http://repo1.maven.org/maven2/org/apache/maven/apache-maven/$MAVEN_VERSION/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar zx --strip-components 1 -C $maven_home_for_its
 
   cd its 
-  mvn -Dsonar.runtimeVersion="$SQ_VERSION" -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$maven_home_for_its verify
+  mvn -B -e -Dsonar.runtimeVersion="$SQ_VERSION" -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$maven_home_for_its verify
 
 
 

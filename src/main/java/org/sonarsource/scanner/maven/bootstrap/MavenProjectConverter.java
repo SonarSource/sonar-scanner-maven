@@ -130,7 +130,8 @@ public class MavenProjectConverter {
       configureModules(mavenProjects, propsByModule);
       Map<String, String> props = new HashMap<>();
       props.put(ScanProperties.PROJECT_KEY, getSonarKey(root));
-      rebuildModuleHierarchy(props, propsByModule, root, "");
+      Path topLevelDir = rebuildModuleHierarchy(props, propsByModule, root, "");
+      props.put(ScanProperties.PROJECT_BASEDIR, topLevelDir.toString());
       if (!propsByModule.isEmpty()) {
         throw new IllegalStateException(UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE + " \""
           + propsByModule.keySet().iterator().next().getName() + "\" is orphan");
@@ -142,7 +143,7 @@ public class MavenProjectConverter {
 
   }
 
-  private static void rebuildModuleHierarchy(Map<String, String> properties, Map<MavenProject, Map<String, String>> propsByModule,
+  private static Path rebuildModuleHierarchy(Map<String, String> properties, Map<MavenProject, Map<String, String>> propsByModule,
     MavenProject current, String prefix)
     throws IOException {
     Map<String, String> currentProps = propsByModule.get(current);
@@ -153,19 +154,42 @@ public class MavenProjectConverter {
       properties.put(prefix + prop.getKey(), prop.getValue());
     }
     propsByModule.remove(current);
+    Path topLevelDir = current.getBasedir().toPath().toAbsolutePath();
     List<String> moduleIds = new ArrayList<>();
     for (String modulePathStr : current.getModules()) {
       File modulePath = new File(current.getBasedir(), modulePathStr);
       MavenProject module = findMavenProject(modulePath, propsByModule.keySet());
       if (module != null) {
         String moduleId = module.getGroupId() + ":" + module.getArtifactId();
-        rebuildModuleHierarchy(properties, propsByModule, module, prefix + moduleId + ".");
+        Path topLevelModuleDir = rebuildModuleHierarchy(properties, propsByModule, module, prefix + moduleId + ".");
         moduleIds.add(moduleId);
+        if (!topLevelModuleDir.startsWith(topLevelDir)) {
+          // Find common prefix
+          topLevelDir = findCommonParentDir(topLevelDir, topLevelModuleDir);
+        }
       }
     }
     if (!moduleIds.isEmpty()) {
       properties.put(prefix + "sonar.modules", StringUtils.join(moduleIds, SEPARATOR));
     }
+    return topLevelDir;
+  }
+
+  private static Path findCommonParentDir(Path dir1, Path dir2) {
+    if (dir1.startsWith(dir2)) {
+      return dir2;
+    }
+    if (dir2.startsWith(dir1)) {
+      return dir1;
+    }
+    Path candidate = dir1.getParent();
+    while (candidate != null) {
+      if (dir2.startsWith(candidate)) {
+        return candidate;
+      }
+      candidate = candidate.getParent();
+    }
+    throw new IllegalStateException("Unable to find a common parent between two modules baseDir: '" + dir1 + "' and '" + dir2 + "'");
   }
 
   private void configureModules(List<MavenProject> mavenProjects, Map<MavenProject, Map<String, String>> propsByModule)

@@ -36,6 +36,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -135,6 +136,21 @@ public class MavenProjectConverterTest {
     Map<String, String> props = projectConverter.configure(Arrays.asList(module1, root), root, new Properties());
     // MSONAR-164
     assertThat(props.get("sonar.projectBaseDir")).isEqualTo(temp.getRoot().getAbsolutePath());
+  }
+
+  @Test
+  public void findCommonParentDir() throws Exception {
+    assertThat(MavenProjectConverter.findCommonParentDir(temp.getRoot().toPath(), temp.getRoot().toPath().resolve("foo").resolve("bar"))).isEqualTo(temp.getRoot().toPath());
+    assertThat(MavenProjectConverter.findCommonParentDir(temp.getRoot().toPath().resolve("foo").resolve("bar"), temp.getRoot().toPath())).isEqualTo(temp.getRoot().toPath());
+    assertThat(MavenProjectConverter.findCommonParentDir(temp.getRoot().toPath().resolve("foo").resolve("bar"), temp.getRoot().toPath().resolve("foo2").resolve("bar2")))
+      .isEqualTo(temp.getRoot().toPath());
+
+    try {
+      MavenProjectConverter.findCommonParentDir(Paths.get("foo", "bar"), Paths.get("foo2", "bar2"));
+      fail("Expected exception");
+    } catch (Exception e) {
+      assertThat(e).isInstanceOf(IllegalStateException.class).hasMessage("Unable to find a common parent between two modules baseDir: 'foo/bar' and 'foo2/bar2'");
+    }
   }
 
   @Test

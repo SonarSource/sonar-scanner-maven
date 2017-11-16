@@ -11,9 +11,9 @@
   <artifactId>sonar-maven-plugin</artifactId>
   <version>3.4-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
-  <url>http://sonarsource.github.io/sonar-scanner-maven/</url>
 
   <name>SonarQube Scanner for Maven</name>
+  <url>http://sonarsource.github.io/sonar-scanner-maven/</url>
   <description>Trigger SonarQube analysis on Maven projects</description>
   <inceptionYear>2009</inceptionYear>
 

@@ -175,7 +175,7 @@ public class MavenProjectConverter {
     return topLevelDir;
   }
 
-  private static Path findCommonParentDir(Path dir1, Path dir2) {
+  static Path findCommonParentDir(Path dir1, Path dir2) {
     if (dir1.startsWith(dir2)) {
       return dir2;
     }

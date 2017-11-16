@@ -132,7 +132,9 @@ public class MavenProjectConverterTest {
 
     root.getModules().add("../module1");
 
-    projectConverter.configure(Arrays.asList(module1, root), root, new Properties());
+    Map<String, String> props = projectConverter.configure(Arrays.asList(module1, root), root, new Properties());
+    // MSONAR-164
+    assertThat(props.get("sonar.projectBaseDir")).isEqualTo(temp.getRoot().getAbsolutePath());
   }
 
   @Test

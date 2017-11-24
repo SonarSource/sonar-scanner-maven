@@ -19,11 +19,8 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
-import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
@@ -47,6 +44,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper.UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE;
 
 public class ScannerBootstrapperTest {
   @Mock
@@ -75,12 +73,10 @@ public class ScannerBootstrapperTest {
 
     MavenProject rootProject = mock(MavenProject.class);
     when(rootProject.isExecutionRoot()).thenReturn(true);
-    when(session.getProjects()).thenReturn(Arrays.asList(rootProject));
+    when(session.getProjects()).thenReturn(Collections.singletonList(rootProject));
 
     projectProperties = new HashMap<>();
     when(mavenProjectConverter.configure(anyListOf(MavenProject.class), any(MavenProject.class), any(Properties.class))).thenReturn(projectProperties);
-    List<Object> extensions = new LinkedList<Object>();
-    extensions.add(new Object());
 
     when(scanner.mask(anyString())).thenReturn(scanner);
     when(scanner.unmask(anyString())).thenReturn(scanner);
@@ -88,21 +84,19 @@ public class ScannerBootstrapperTest {
   }
 
   @Test
-  public void testSQBefore56()
-    throws MojoExecutionException, IOException {
+  public void testSQBefore56() {
     when(scanner.serverVersion()).thenReturn("5.1");
     try {
       scannerBootstrapper.execute();
       fail("Expected exception");
     } catch (Exception e) {
       assertThat(e).hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
-        .hasMessage("With SonarQube server prior to 5.6, it is recommended to use the sonar-maven-plugin 3.3");
+        .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
     }
   }
 
   @Test
-  public void testSQ56()
-    throws MojoExecutionException, IOException {
+  public void testSQ56() throws MojoExecutionException {
     when(scanner.serverVersion()).thenReturn("5.6");
     scannerBootstrapper.execute();
 
@@ -113,8 +107,7 @@ public class ScannerBootstrapperTest {
   }
 
   @Test
-  public void testVersionComparisonWithBuildNumber()
-    throws MojoExecutionException, IOException {
+  public void testVersionComparisonWithBuildNumber() throws MojoExecutionException {
     when(scanner.serverVersion()).thenReturn("6.3.0.12345");
     scannerBootstrapper.execute();
 
@@ -124,8 +117,7 @@ public class ScannerBootstrapperTest {
   }
 
   @Test
-  public void testNullServerVersion()
-    throws MojoExecutionException, IOException {
+  public void testNullServerVersion() {
     when(scanner.serverVersion()).thenReturn(null);
 
     try {
@@ -133,7 +125,7 @@ public class ScannerBootstrapperTest {
       fail("Expected exception");
     } catch (Exception e) {
       assertThat(e).hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
-        .hasMessage("With SonarQube server prior to 5.6, it is recommended to use the sonar-maven-plugin 3.3");
+        .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
     }
   }
 

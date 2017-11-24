@@ -33,6 +33,8 @@ import org.sonarsource.scanner.api.EmbeddedScanner;
  */
 public class ScannerBootstrapper {
 
+  static final String UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE = "With SonarQube server prior to 5.6, use sonar-maven-plugin <= 3.3";
+
   private final Log log;
   private final MavenSession session;
   private final EmbeddedScanner scanner;
@@ -111,7 +113,7 @@ public class ScannerBootstrapper {
     }
 
     if (isVersionPriorTo("5.6")) {
-      throw new UnsupportedOperationException("With SonarQube server prior to 5.6, it is recommended to use the sonar-maven-plugin 3.3");
+      throw new UnsupportedOperationException(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
     }
   }
 

@@ -3,7 +3,6 @@
 # Possible values for SLAVE: "performance" (for perf tests) and "linux" (for linux machines connected to DB services)
 
 SQ_VERSION:
-  - 5.6.6 
   - LTS
   - DEV
 

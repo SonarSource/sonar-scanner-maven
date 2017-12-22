@@ -22,7 +22,7 @@
     <dependency>
       <groupId>org.sonarsource.orchestrator</groupId>
       <artifactId>sonar-orchestrator</artifactId>
-      <version>3.14.0.887</version>
+      <version>3.15.2.1322</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -78,6 +78,12 @@
       <artifactId>jetty-proxy</artifactId>
       <version>${jetty.version}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>3.0.2</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   

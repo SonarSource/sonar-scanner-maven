@@ -22,6 +22,7 @@ package com.sonar.maven.it;
 import com.sonar.orchestrator.util.NetworkUtils;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -71,7 +72,8 @@ public class Proxy {
 
   public int startProxy() throws Exception {
     seenByProxy.clear();
-    httpProxyPort = NetworkUtils.getNextAvailablePort();
+    InetAddress address = InetAddress.getLoopbackAddress();
+    httpProxyPort = NetworkUtils.getNextAvailablePort(address);
 
     // Setup Threadpool
     QueuedThreadPool threadPool = new QueuedThreadPool();

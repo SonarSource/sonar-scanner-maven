@@ -63,7 +63,7 @@ public class MavenTest extends AbstractMavenTest {
   @After
   public void cleanup() {
     if (orchestrator.getServer().version().isGreaterThanOrEquals("6.3")) {
-      ItUtils.newAdminWsClient(orchestrator).settingsService().set(SetRequest.builder().setKey("sonar.forceAuthentication").setValue("false").build());
+      ItUtils.newAdminWsClient(orchestrator).settings().set(SetRequest.builder().setKey("sonar.forceAuthentication").setValue("false").build());
     } else {
       orchestrator.getServer().getAdminWsClient().create(new PropertyCreateQuery("sonar.forceAuthentication", "false"));
     }
@@ -430,7 +430,7 @@ public class MavenTest extends AbstractMavenTest {
   @Test
   public void supportMavenEncryption() throws Exception {
     if (orchestrator.getServer().version().isGreaterThanOrEquals("6.3")) {
-      ItUtils.newAdminWsClient(orchestrator).settingsService().set(SetRequest.builder().setKey("sonar.forceAuthentication").setValue("true").build());
+      ItUtils.newAdminWsClient(orchestrator).settings().set(SetRequest.builder().setKey("sonar.forceAuthentication").setValue("true").build());
     } else {
       orchestrator.getServer().getAdminWsClient().create(new PropertyCreateQuery("sonar.forceAuthentication", "true"));
     }

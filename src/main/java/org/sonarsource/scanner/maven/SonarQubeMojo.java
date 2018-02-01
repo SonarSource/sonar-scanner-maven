@@ -50,6 +50,7 @@ import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 @Mojo(name = "sonar", requiresDependencyResolution = ResolutionScope.TEST, aggregator = true)
 
 public class SonarQubeMojo extends AbstractMojo {
+    // TODO
 
   @Parameter(defaultValue = "${session}", required = true, readonly = true)
   private MavenSession session;
@@ -89,6 +90,7 @@ public class SonarQubeMojo extends AbstractMojo {
       getLog().info("Delaying SonarQube Scanner to the end of multi-module project");
       return;
     }
+    System.out.println("hello");
 
     Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
 

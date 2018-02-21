@@ -19,28 +19,23 @@
  */
 package com.sonar.maven.it.suite;
 
-import com.google.common.collect.Lists;
 import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.MavenBuild;
-import com.sonar.orchestrator.db.Database;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import com.sonar.orchestrator.container.Server;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarqube.ws.WsProjectLinks;
+import org.sonarqube.ws.WsProjectLinks.SearchWsResponse;
+import org.sonarqube.ws.client.HttpConnector;
+import org.sonarqube.ws.client.WsClient;
+import org.sonarqube.ws.client.WsClientFactories;
+import org.sonarqube.ws.client.projectlinks.SearchWsRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 
 public class LinksTest extends AbstractMavenTest {
-
-  private static String[] expectedLinks = new String[] {
-    "homepage=http://www.simplesample.org_OVERRIDDEN",
-    "ci=http://bamboo.ci.codehaus.org/browse/SIMPLESAMPLE",
-    "issue=http://jira.codehaus.org/browse/SIMPLESAMPLE",
-    "scm=https://github.com/SonarSource/simplesample",
-    "scm_dev=scm:git:git@github.com:SonarSource/simplesample.git"
-  };
 
   @Before
   public void deleteData() {
@@ -67,15 +62,29 @@ public class LinksTest extends AbstractMavenTest {
   }
 
   private void checkLinks() {
-    Database db = orchestrator.getDatabase();
-    List<Map<String, String>> links = db.executeSql("select * from project_links");
-
-    assertThat(links.size()).isEqualTo(5);
-    Collection<String> linksToCheck = Lists.newArrayList();
-    for (Map<String, String> linkRow : links) {
-      linksToCheck.add(linkRow.get("LINK_TYPE") + "=" + linkRow.get("HREF"));
+    Server server = orchestrator.getServer();
+    WsClient client = WsClientFactories.getDefault().newClient(HttpConnector.newBuilder()
+      .url(server.getUrl())
+      .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
+      .build());
+    SearchWsResponse response = client.projectLinks().search(new SearchWsRequest().setProjectKey("com.sonarsource.it.samples:simple-sample"));
+    if (server.version().isGreaterThanOrEquals("7.1")) {
+      // SONAR-10299
+      assertThat(response.getLinksList())
+        .extracting(WsProjectLinks.Link::getType, WsProjectLinks.Link::getUrl)
+        .containsExactlyInAnyOrder(tuple("homepage", "http://www.simplesample.org_OVERRIDDEN"),
+          tuple("ci", "http://bamboo.ci.codehaus.org/browse/SIMPLESAMPLE"),
+          tuple("issue", "http://jira.codehaus.org/browse/SIMPLESAMPLE"),
+          tuple("scm", "https://github.com/SonarSource/simplesample"));
+    } else {
+      assertThat(response.getLinksList())
+        .extracting(WsProjectLinks.Link::getType, WsProjectLinks.Link::getUrl)
+        .containsExactlyInAnyOrder(tuple("homepage", "http://www.simplesample.org_OVERRIDDEN"),
+          tuple("ci", "http://bamboo.ci.codehaus.org/browse/SIMPLESAMPLE"),
+          tuple("issue", "http://jira.codehaus.org/browse/SIMPLESAMPLE"),
+          tuple("scm", "https://github.com/SonarSource/simplesample"),
+          tuple("scm_dev", "scm:git:git@github.com:SonarSource/simplesample.git"));
     }
-    assertThat(linksToCheck).contains(expectedLinks);
   }
 
 }

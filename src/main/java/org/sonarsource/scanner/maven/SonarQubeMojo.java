@@ -113,7 +113,7 @@ public class SonarQubeMojo extends AbstractMojo {
    * @return true if goal is attached to phase and not last in a multi-module project
    */
   private boolean shouldDelayExecution() {
-    return !isDetachedGoal() && isLastProjectInReactor();
+    return !isDetachedGoal() && !isLastProjectInReactor();
   }
 
   /**
@@ -138,7 +138,7 @@ public class SonarQubeMojo extends AbstractMojo {
    * @return true if last project (including only project)
    */
   private boolean isLastProjectInReactor() {
-    return readyProjectsCounter.incrementAndGet() != session.getProjects().size();
+    return readyProjectsCounter.incrementAndGet() == session.getProjects().size();
   }
 
   private boolean isSkip(Map<String, String> properties) {

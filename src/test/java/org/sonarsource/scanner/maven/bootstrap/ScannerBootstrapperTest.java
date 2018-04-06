@@ -38,8 +38,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -80,7 +83,7 @@ public class ScannerBootstrapperTest {
 
     when(scanner.mask(anyString())).thenReturn(scanner);
     when(scanner.unmask(anyString())).thenReturn(scanner);
-    scannerBootstrapper = new ScannerBootstrapper(log, session, scanner, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher));
+    scannerBootstrapper = new ScannerBootstrapper(log, session, scanner, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher), true);
   }
 
   @Test
@@ -127,6 +130,61 @@ public class ScannerBootstrapperTest {
       assertThat(e).hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
         .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
     }
+  }
+
+  @Test
+  public void testThrowsWhenFailOnErrorIsTrue() {
+    boolean failOnError = true;
+    ScannerBootstrapper failsOnErrorScannerBootstrapper = new ScannerBootstrapper(log, session, scanner, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher), failOnError);
+
+    whenServerIsSupportedVersion();
+
+    doThrow(new RuntimeException()).when(scanner)
+            .execute(anyMapOf(String.class, String.class));
+
+    try {
+      failsOnErrorScannerBootstrapper.execute();
+      fail("Expected exception");
+    } catch (MojoExecutionException e) {
+      assertThat(e).hasCauseExactlyInstanceOf(RuntimeException.class);
+    }
+  }
+
+  @Test
+  public void testDoesNotThrowWhenFailOnErrorIsFalse() {
+    boolean failOnError = false;
+    ScannerBootstrapper doesNotFailOnErrorScannerBootstrapper = new ScannerBootstrapper(log, session, scanner, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher), failOnError);
+
+    whenServerIsSupportedVersion();
+
+    doThrow(new RuntimeException()).when(scanner)
+            .execute(anyMapOf(String.class, String.class));
+
+    try {
+      doesNotFailOnErrorScannerBootstrapper.execute();
+    } catch (MojoExecutionException e) {
+      fail("Not expecting an exception");
+    }
+  }
+
+  @Test
+  public void testLogsWarningWhenFailOnErrorIsFalse() throws Exception {
+    boolean failOnError = false;
+    ScannerBootstrapper doesNotFailOnErrorScannerBootstrapper = new ScannerBootstrapper(log, session, scanner, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher), failOnError);
+
+    whenServerIsSupportedVersion();
+
+    RuntimeException thrown = new RuntimeException();
+    doThrow(thrown).when(scanner)
+            .execute(anyMapOf(String.class, String.class));
+
+    doesNotFailOnErrorScannerBootstrapper.execute();
+
+    verify(log).warn(anyString(), same(thrown));
+  }
+
+  private void whenServerIsSupportedVersion() {
+    when(scanner.serverVersion()).thenReturn("5.6");
   }
 
   private void verifyCommonCalls() {

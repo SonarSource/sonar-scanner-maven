@@ -41,13 +41,15 @@ public class ScannerBootstrapper {
   private final MavenProjectConverter mavenProjectConverter;
   private String serverVersion;
   private PropertyDecryptor propertyDecryptor;
+  private final boolean failOnError;
 
-  public ScannerBootstrapper(Log log, MavenSession session, EmbeddedScanner scanner, MavenProjectConverter mavenProjectConverter, PropertyDecryptor propertyDecryptor) {
+  public ScannerBootstrapper(Log log, MavenSession session, EmbeddedScanner scanner, MavenProjectConverter mavenProjectConverter, PropertyDecryptor propertyDecryptor, boolean failOnError) {
     this.log = log;
     this.session = session;
     this.scanner = scanner;
     this.mavenProjectConverter = mavenProjectConverter;
     this.propertyDecryptor = propertyDecryptor;
+    this.failOnError = failOnError;
   }
 
   public void execute() throws MojoExecutionException {
@@ -64,7 +66,11 @@ public class ScannerBootstrapper {
 
       scanner.execute(collectProperties());
     } catch (Exception e) {
-      throw new MojoExecutionException(e.getMessage(), e);
+      if (failOnError) {
+        throw new MojoExecutionException(e.getMessage(), e);
+      } else {
+        log.warn("A problem was encountered whilst running Sonar analysis", e);
+      }
     }
   }
 

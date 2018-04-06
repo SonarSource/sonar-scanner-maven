@@ -62,6 +62,14 @@ public class SonarQubeMojo extends AbstractMojo {
   @Parameter(alias = "sonar.skip", property = "sonar.skip", defaultValue = "false")
   private boolean skip;
 
+  /**
+   * Set this to 'false' to ignore failures and errors encountered during analysis.
+   *
+   * @since 3.5
+   */
+  @Parameter(alias = "sonar.failOnError", property = "sonar.failOnError", defaultValue = "true")
+  private boolean failOnError;
+
   @Component
   private LifecycleExecutor lifecycleExecutor;
 
@@ -105,7 +113,7 @@ public class SonarQubeMojo extends AbstractMojo {
     }
 
     EmbeddedScanner runner = runnerFactory.create();
-    new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, propertyDecryptor).execute();
+    new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, propertyDecryptor, failOnError).execute();
   }
 
   /**

@@ -151,6 +151,12 @@ public class SonarQubeMojoTest {
     assertThat(readProps("target/dump.properties")).contains((entry("sonar.verbose", "true")));
   }
 
+  @Test
+  public void shouldFailOnWarning() throws Exception {
+    executeProject("sample-project", "sonar.failOnError", "false");
+    assertThat(readProps("target/dump.properties")).contains((entry("sonar.failOnError", "false")));
+  }
+
   private File executeProject(String projectName, String... properties) throws Exception {
 
     File baseDir = new File("src/test/resources/org/sonarsource/scanner/maven/SonarQubeMojoTest/" + projectName);

@@ -149,7 +149,7 @@ public class MavenProjectConverterTest {
       MavenProjectConverter.findCommonParentDir(Paths.get("foo", "bar"), Paths.get("foo2", "bar2"));
       fail("Expected exception");
     } catch (Exception e) {
-      assertThat(e).isInstanceOf(IllegalStateException.class).hasMessage("Unable to find a common parent between two modules baseDir: 'foo/bar' and 'foo2/bar2'");
+      assertThat(e).isInstanceOf(IllegalStateException.class).hasMessageMatching("Unable to find a common parent between two modules baseDir: 'foo.bar' and 'foo2.bar2'");
     }
   }
 

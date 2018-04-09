@@ -25,6 +25,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 import org.apache.commons.io.IOUtils;
+import org.apache.maven.execution.ProjectDependencyGraph;
+import org.apache.maven.graph.GraphBuilder;
+import org.apache.maven.model.building.Result;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.testing.MojoRule;
 import org.assertj.core.data.MapEntry;
@@ -50,7 +53,6 @@ public class SonarQubeMojoTest {
   private Log mockedLogger;
 
   private SonarQubeMojo getMojo(File baseDir) throws Exception {
-    SonarQubeMojo.readyProjectsCounter.getAndSet(0);
     return (SonarQubeMojo) mojoRule.lookupConfiguredMojo(baseDir, "sonar");
   }
 
@@ -156,6 +158,10 @@ public class SonarQubeMojoTest {
     File baseDir = new File("src/test/resources/org/sonarsource/scanner/maven/SonarQubeMojoTest/" + projectName);
     SonarQubeMojo mojo = getMojo(baseDir);
     mojo.getSession().getProjects().get(0).setExecutionRoot(true);
+    mojo.getSession().setAllProjects(mojo.getSession().getProjects());
+
+    Result<? extends ProjectDependencyGraph> result = mojoRule.lookup( GraphBuilder.class ).build( mojo.getSession() );
+    mojo.getSession().setProjectDependencyGraph( result.get() ); // done by maven in a normal execution
 
     mojo.setLog(mockedLogger);
 

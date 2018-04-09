@@ -465,12 +465,22 @@ public class MavenProjectConverter {
   private List<File> mainSources(MavenProject pom) throws MojoExecutionException {
     Set<String> sources = new LinkedHashSet<>();
     if (MAVEN_PACKAGING_WAR.equals(pom.getModel().getPackaging())) {
-      sources.add(MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_APACHE_MAVEN, ARTIFACTID_MAVEN_WAR_PLUGIN, "warSourceDirectory", "src/main/webapp"));
+      sources.add(MavenUtils.getPluginSetting(
+            pom,
+            MavenUtils.GROUP_ID_APACHE_MAVEN,
+            ARTIFACTID_MAVEN_WAR_PLUGIN,
+            "warSourceDirectory",
+            new File( pom.getBasedir().getAbsolutePath(), "src/main/webapp" ).getAbsolutePath())
+      );
     }
 
-    sources.add(pom.getFile().getPath());
+    sources.add(pom.getFile().getAbsolutePath());
     if (!MAVEN_PACKAGING_POM.equals(pom.getModel().getPackaging())) {
-      sources.addAll(pom.getCompileSourceRoots());
+      pom.getCompileSourceRoots().stream()
+        .map( Paths::get )
+        .map( path -> path.isAbsolute() ? path : pom.getBasedir().toPath().resolve( path ) )
+        .map( Path::toString )
+        .forEach( sources::add );
     }
 
     return sourcePaths(pom, ScanProperties.PROJECT_SOURCE_DIRS, sources);

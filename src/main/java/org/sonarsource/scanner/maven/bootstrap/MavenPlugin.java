@@ -37,6 +37,9 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 public class MavenPlugin {
 
   private Xpp3Dom configuration;
+  public int a;
+  //TODO remove
+  public int b;
 
   /**
    * Creates a MavenPlugin based on a Plugin

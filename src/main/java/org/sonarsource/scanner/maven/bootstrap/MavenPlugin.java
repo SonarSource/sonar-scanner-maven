@@ -37,6 +37,7 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 public class MavenPlugin {
 
   private Xpp3Dom configuration;
+  public int num;
 
   /**
    * Creates a MavenPlugin based on a Plugin
@@ -45,7 +46,7 @@ public class MavenPlugin {
    */
   private MavenPlugin(Object configuration) {
     this.configuration = (Xpp3Dom) configuration;
-  }
+      }
 
   /**
    * Gets a parameter of the plugin based on its key

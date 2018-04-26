@@ -116,12 +116,19 @@ public class MavenTest extends AbstractMavenTest {
     orchestrator.executeBuild(build);
   }
 
-  @Test
   /**
    * See MSONAR-164
    */
+  @Test
   public void flatStructure() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-flat-layout/parent"))
+      .setGoals(cleanSonarGoal());
+    orchestrator.executeBuild(build);
+  }
+
+  @Test
+  public void aggregatorInheritParent() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/aggregator-inherit-parent"))
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
   }

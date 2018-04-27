@@ -134,6 +134,14 @@ public class MavenTest extends AbstractMavenTest {
   }
 
   @Test
+  public void aggregatorInheritParentAndSonarAttachedToPhase() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/aggregator-inherit-parent-and-bind-to-verify"))
+      .setGoals("clean verify")
+      .setProperty("sonar.maven.it.mojoVersion", mojoVersion().toString());
+    orchestrator.executeBuild(build);
+  }
+
+  @Test
   public void shouldSupportJarWithoutSources() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/project-with-module-without-sources"))
       .setGoals(cleanSonarGoal());

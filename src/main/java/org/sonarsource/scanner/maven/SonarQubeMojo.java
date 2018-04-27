@@ -19,9 +19,9 @@
  */
 package org.sonarsource.scanner.maven;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.LifecycleExecutor;
 import org.apache.maven.plugin.AbstractMojo;
@@ -32,6 +32,7 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.api.ScanProperties;
@@ -62,6 +63,13 @@ public class SonarQubeMojo extends AbstractMojo {
   @Parameter(alias = "sonar.skip", property = "sonar.skip", defaultValue = "false")
   private boolean skip;
 
+   /**
+    * Should the plugin delay its execution until the last project in the build?
+    * When run from commandline or when setting this to false the plugin will run just as it is configured for any/every project
+    */
+  @Parameter(defaultValue = "true")
+  private boolean delayExecution = true;
+
   @Component
   private LifecycleExecutor lifecycleExecutor;
 
@@ -73,11 +81,6 @@ public class SonarQubeMojo extends AbstractMojo {
 
   @Parameter(defaultValue = "${mojoExecution}", required = true, readonly = true)
   private MojoExecution mojoExecution;
-
-  /**
-   * Wait until reaching the last project before executing sonar when attached to phase
-   */
-  static final AtomicInteger readyProjectsCounter = new AtomicInteger();
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -113,7 +116,7 @@ public class SonarQubeMojo extends AbstractMojo {
    * @return true if goal is attached to phase and not last in a multi-module project
    */
   private boolean shouldDelayExecution() {
-    return !isDetachedGoal() && isLastProjectInReactor();
+    return !isDetachedGoal() && delayExecution && !isLastProjectInReactor();
   }
 
   /**
@@ -132,13 +135,21 @@ public class SonarQubeMojo extends AbstractMojo {
   /**
    * Is this project the last project in the reactor?
    *
-   * See <a href="http://svn.apache.org/viewvc/maven/plugins/tags/maven-install-plugin-2.5.2/src/main/java/org/apache/maven/plugin/install/InstallMojo.java?view=markup">
-      install plugin</a> for another example of using this technique.
-   *
    * @return true if last project (including only project)
    */
   private boolean isLastProjectInReactor() {
-    return readyProjectsCounter.incrementAndGet() != session.getProjects().size();
+    List<MavenProject> sortedProjects = session.getProjectDependencyGraph().getSortedProjects();
+
+    MavenProject lastProject = sortedProjects.isEmpty()
+          ? session.getCurrentProject()
+          : sortedProjects.get( sortedProjects.size() - 1 );
+
+    if ( getLog().isDebugEnabled() ) {
+      getLog().debug( "Current project: '" + session.getCurrentProject().getName() +
+            "', Last project to execute based on dependency graph: '" + lastProject.getName() + "'" );
+    }
+
+    return session.getCurrentProject().equals( lastProject );
   }
 
   private boolean isSkip(Map<String, String> properties) {

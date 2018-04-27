@@ -63,6 +63,13 @@ public class SonarQubeMojo extends AbstractMojo {
   @Parameter(alias = "sonar.skip", property = "sonar.skip", defaultValue = "false")
   private boolean skip;
 
+   /**
+    * Should the plugin delay its execution until the last project in the build?
+    * When run from commandline or when setting this to false the plugin will run just as it is configured for any/every project
+    */
+  @Parameter(defaultValue = "true")
+  private boolean delayExecution = true;
+
   @Component
   private LifecycleExecutor lifecycleExecutor;
 
@@ -109,7 +116,7 @@ public class SonarQubeMojo extends AbstractMojo {
    * @return true if goal is attached to phase and not last in a multi-module project
    */
   private boolean shouldDelayExecution() {
-    return !isDetachedGoal() && !isLastProjectInReactor();
+    return !isDetachedGoal() && delayExecution && !isLastProjectInReactor();
   }
 
   /**

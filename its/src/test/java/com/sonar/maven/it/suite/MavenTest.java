@@ -131,6 +131,7 @@ public class MavenTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/aggregator-inherit-parent"))
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
+    assertThat(getMeasureAsInteger("org.sonarsource.maven.its:aggregator", "files")).isEqualTo(4); // 4 x pom.xml
   }
 
   @Test
@@ -139,6 +140,7 @@ public class MavenTest extends AbstractMavenTest {
       .setGoals("clean verify")
       .setProperty("sonar.maven.it.mojoVersion", mojoVersion().toString());
     orchestrator.executeBuild(build);
+    assertThat(getMeasureAsInteger("org.sonarsource.maven.its:aggregator", "files")).isEqualTo(4); // 4 x pom.xml
   }
 
   @Test

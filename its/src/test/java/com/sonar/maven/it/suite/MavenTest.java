@@ -116,14 +116,31 @@ public class MavenTest extends AbstractMavenTest {
     orchestrator.executeBuild(build);
   }
 
-  @Test
   /**
    * See MSONAR-164
    */
+  @Test
   public void flatStructure() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-flat-layout/parent"))
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
+  }
+
+  @Test
+  public void aggregatorInheritParent() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/aggregator-inherit-parent"))
+      .setGoals(cleanSonarGoal());
+    orchestrator.executeBuild(build);
+    assertThat(getMeasureAsInteger("org.sonarsource.maven.its:aggregator", "files")).isEqualTo(4); // 4 x pom.xml
+  }
+
+  @Test
+  public void aggregatorInheritParentAndSonarAttachedToPhase() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/aggregator-inherit-parent-and-bind-to-verify"))
+      .setGoals("clean verify")
+      .setProperty("sonar.maven.it.mojoVersion", mojoVersion().toString());
+    orchestrator.executeBuild(build);
+    assertThat(getMeasureAsInteger("org.sonarsource.maven.its:aggregator", "files")).isEqualTo(4); // 4 x pom.xml
   }
 
   @Test

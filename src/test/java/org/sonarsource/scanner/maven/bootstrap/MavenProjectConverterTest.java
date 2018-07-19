@@ -20,6 +20,7 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,6 +35,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
+import org.sonarsource.scanner.api.ScanProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -209,8 +211,9 @@ public class MavenProjectConverterTest {
 
     String module11Key = "com.foo:module11";
     String module12Key = "com.foo:module12";
-    assertThat(props.get(module1Key + ".sonar.modules").split(",")).containsOnly(module11Key,
-      module12Key);
+    assertThat(props.get(module1Key + ".sonar.modules").split(",")).containsOnly(module11Key, module12Key);
+    assertThat(props.get(module1Key + ".sonar.moduleKey")).isEqualTo(module1Key);
+    assertThat(props.get(module2Key + ".sonar.moduleKey")).isEqualTo(module2Key);
 
     assertThat(props.get(module1Key
       + ".sonar.projectBaseDir")).isEqualTo(module1BaseDir.getAbsolutePath());
@@ -220,6 +223,21 @@ public class MavenProjectConverterTest {
       + ".sonar.projectBaseDir")).isEqualTo(module12BaseDir.getAbsolutePath());
     assertThat(props.get(module2Key
       + ".sonar.projectBaseDir")).isEqualTo(module2BaseDir.getAbsolutePath());
+
+    Properties userProperties = new Properties();
+    String userProjectKey = "user-project-key";
+    userProperties.put(ScanProperties.PROJECT_KEY, userProjectKey);
+    Map<String, String> propsWithUserProjectKey = projectConverter.configure(Arrays.asList(module12, module11, module1, module2, root),
+      root, userProperties);
+
+    assertThat(propsWithUserProjectKey.get("sonar.projectKey")).isEqualTo(userProjectKey);
+
+    String customProjectKey = "custom-project-key";
+    root.getModel().getProperties().setProperty(ScanProperties.PROJECT_KEY, customProjectKey);
+    Map<String, String> propsWithCustomProjectKey = projectConverter.configure(Arrays.asList(module12, module11, module1, module2, root),
+      root, new Properties());
+
+    assertThat(propsWithCustomProjectKey.get("sonar.projectKey")).isEqualTo(customProjectKey);
   }
 
   // MSONAR-91
@@ -627,12 +645,12 @@ public class MavenProjectConverterTest {
       + ".sonar.projectBaseDir")).isEqualTo(modulesBaseDir.getAbsolutePath());
   }
 
-  private MavenProject createProject(Properties pomProps, String packaging) throws Exception {
+  private MavenProject createProject(Properties pomProps, String packaging) throws IOException {
     File pom = temp.newFile("pom.xml");
     return createProject(pom, pomProps, packaging);
   }
 
-  private MavenProject createProject(File pom, Properties pomProps, String packaging) throws Exception {
+  private MavenProject createProject(File pom, Properties pomProps, String packaging) {
     MavenProject project = new MavenProject();
     File target = new File(pom.getParentFile(), "target");
     File classes = new File(target, "classes");

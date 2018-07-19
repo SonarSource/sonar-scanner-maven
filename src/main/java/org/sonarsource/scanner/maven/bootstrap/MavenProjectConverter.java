@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -111,6 +112,8 @@ public class MavenProjectConverter {
   private static final String PROJECT_LIBRARIES = "sonar.libraries";
 
   private Properties userProperties;
+  @Nullable
+  private String specifiedProjectKey;
 
   private final Properties envProperties;
 
@@ -122,14 +125,15 @@ public class MavenProjectConverter {
     this.envProperties = envProperties;
   }
 
-  public Map<String, String> configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties) throws MojoExecutionException {
+  Map<String, String> configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties) throws MojoExecutionException {
     this.userProperties = userProperties;
+    this.specifiedProjectKey = specifiedProjectKey(userProperties, root);
     Map<MavenProject, Map<String, String>> propsByModule = new LinkedHashMap<>();
 
     try {
       configureModules(mavenProjects, propsByModule);
       Map<String, String> props = new HashMap<>();
-      props.put(ScanProperties.PROJECT_KEY, getSonarKey(root));
+      props.put(ScanProperties.PROJECT_KEY, getArtifactKey(root));
       Path topLevelDir = rebuildModuleHierarchy(props, propsByModule, root, "");
       props.put(ScanProperties.PROJECT_BASEDIR, topLevelDir.toString());
       if (!propsByModule.isEmpty()) {
@@ -140,7 +144,6 @@ public class MavenProjectConverter {
     } catch (IOException e) {
       throw new IllegalStateException("Cannot configure project", e);
     }
-
   }
 
   private static Path rebuildModuleHierarchy(Map<String, String> properties, Map<MavenProject, Map<String, String>> propsByModule,
@@ -231,10 +234,9 @@ public class MavenProjectConverter {
     return null;
   }
 
-  Map<String, String> computeSonarQubeProperties(MavenProject pom)
-    throws MojoExecutionException {
+  private Map<String, String> computeSonarQubeProperties(MavenProject pom) throws MojoExecutionException {
     Map<String, String> props = new HashMap<>();
-    defineProjectKey(pom, props);
+    defineModuleKey(pom, props, specifiedProjectKey);
     props.put(ScanProperties.PROJECT_VERSION, pom.getVersion());
     props.put(ScanProperties.PROJECT_NAME, pom.getName());
     String description = pom.getDescription();
@@ -250,18 +252,32 @@ public class MavenProjectConverter {
     return props;
   }
 
-  private static void defineProjectKey(MavenProject pom, Map<String, String> props) {
+  @CheckForNull
+  private static String specifiedProjectKey(Properties userProperties, MavenProject root) {
+    String projectKey = userProperties.getProperty(ScanProperties.PROJECT_KEY);
+    if (projectKey == null) {
+      projectKey = root.getModel().getProperties().getProperty(ScanProperties.PROJECT_KEY);
+    }
+    if (projectKey == null || projectKey.isEmpty()) {
+      return null;
+    }
+    return projectKey;
+  }
+
+  private static void defineModuleKey(MavenProject pom, Map<String, String> props, @Nullable String specifiedProjectKey) {
     String key;
     if (pom.getModel().getProperties().containsKey(ScanProperties.PROJECT_KEY)) {
       key = pom.getModel().getProperties().getProperty(ScanProperties.PROJECT_KEY);
+    } else if (specifiedProjectKey != null) {
+      key = specifiedProjectKey + ":" + getArtifactKey(pom);
     } else {
-      key = getSonarKey(pom);
+      key = getArtifactKey(pom);
     }
     props.put(MODULE_KEY, key);
   }
 
-  private static String getSonarKey(MavenProject pom) {
-    return new StringBuilder().append(pom.getGroupId()).append(":").append(pom.getArtifactId()).toString();
+  private static String getArtifactKey(MavenProject pom) {
+    return pom.getGroupId() + ":" + pom.getArtifactId();
   }
 
   private static void guessEncoding(MavenProject pom, Map<String, String> props) {
@@ -428,7 +444,7 @@ public class MavenProjectConverter {
     return resolvePath(pom.getBuild().getDirectory(), pom.getBasedir());
   }
 
-  static File resolvePath(@Nullable String path, File basedir) {
+  private static File resolvePath(@Nullable String path, File basedir) {
     if (path != null) {
       File file = new File(StringUtils.trim(path));
       if (!file.isAbsolute()) {
@@ -439,7 +455,7 @@ public class MavenProjectConverter {
     return null;
   }
 
-  static List<File> resolvePaths(Collection<String> paths, File basedir) {
+  private static List<File> resolvePaths(Collection<String> paths, File basedir) {
     List<File> result = new ArrayList<>();
     for (String path : paths) {
       File fileOrDir = resolvePath(path, basedir);
@@ -547,12 +563,11 @@ public class MavenProjectConverter {
     return result;
   }
 
-  static boolean isStrictChild(File maybeChild, File possibleParent) {
+  private static boolean isStrictChild(File maybeChild, File possibleParent) {
     return !maybeChild.equals(possibleParent) && maybeChild.toPath().startsWith(possibleParent.toPath());
   }
 
   private static String[] toPaths(Collection<File> dirs) {
-    Collection<String> paths = dirs.stream().map(File::getAbsolutePath).collect(Collectors.toList());
-    return paths.toArray(new String[paths.size()]);
+    return dirs.stream().map(File::getAbsolutePath).toArray(String[]::new);
   }
 }

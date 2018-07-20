@@ -32,6 +32,7 @@ public class MavenTestSuite {
 
   @ClassRule
   public static final Orchestrator ORCHESTRATOR = Orchestrator.builderEnv()
+    .setSonarVersion(getSonarVersion())
     .setOrchestratorProperty("javaVersion", "LATEST_RELEASE")
     .addPlugin("java")
     .setOrchestratorProperty("javascriptVersion", "LATEST_RELEASE")
@@ -44,4 +45,9 @@ public class MavenTestSuite {
     .addPlugin("xml")
 
     .build();
+
+  private static String getSonarVersion() {
+    String versionProperty = System.getProperty("sonar.runtimeVersion");
+    return versionProperty != null ? versionProperty : "LATEST_RELEASE";
+  }
 }

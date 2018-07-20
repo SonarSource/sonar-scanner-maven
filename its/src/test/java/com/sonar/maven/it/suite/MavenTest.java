@@ -43,6 +43,7 @@ import org.junit.rules.TemporaryFolder;
 import org.sonar.wsclient.services.PropertyCreateQuery;
 import org.sonar.wsclient.user.UserParameters;
 import org.sonarqube.ws.WsComponents;
+import org.sonarqube.ws.client.projectanalysis.SearchRequest;
 import org.sonarqube.ws.client.setting.SetRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -91,10 +92,10 @@ public class MavenTest extends AbstractMavenTest {
     assertThat(result.getLogs()).contains(orchestrator.getServer().getUrl());
   }
 
-  @Test
   /**
    * See MSONAR-129
    */
+  @Test
   public void supportSonarHostURLParam() {
     BuildRunner runner = new BuildRunner(orchestrator.getConfiguration());
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-global-properties"))
@@ -216,6 +217,44 @@ public class MavenTest extends AbstractMavenTest {
 
     assertThat(getComponent("org.sonar.tests.modules-order:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
     assertThat(getComponent("org.sonar.tests.modules-order:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
+  }
+
+  @Test
+  public void should_prefix_submodule_keys_with_project_key_when_specified() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/modules-order"))
+      .setGoals(cleanSonarGoal());
+    orchestrator.executeBuild(build);
+    assertThat(hasSuccessfulAnalysis("org.sonar.tests.modules-order:root")).isTrue();
+
+    assertThat(getComponent("org.sonar.tests.modules-order:root").getName()).isEqualTo("Sonar tests - modules order");
+
+    assertThat(getComponent("org.sonar.tests.modules-order:parent").getName()).isEqualTo("Parent");
+
+    assertThat(getComponent("org.sonar.tests.modules-order:module_a").getName()).isEqualTo("Module A");
+    assertThat(getComponent("org.sonar.tests.modules-order:module_b").getName()).isEqualTo("Module B");
+
+    assertThat(getComponent("org.sonar.tests.modules-order:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
+    assertThat(getComponent("org.sonar.tests.modules-order:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
+
+    String projectKey2 = "project2";
+    build.setProperty("sonar.projectKey", projectKey2);
+    orchestrator.executeBuild(build);
+    assertThat(hasSuccessfulAnalysis(projectKey2)).isTrue();
+
+    String prefix = projectKey2 + ":";
+    assertThat(getComponent(projectKey2).getName()).isEqualTo("Sonar tests - modules order");
+
+    assertThat(getComponent(prefix + "org.sonar.tests.modules-order:parent").getName()).isEqualTo("Parent");
+
+    assertThat(getComponent(prefix + "org.sonar.tests.modules-order:module_a").getName()).isEqualTo("Module A");
+    assertThat(getComponent(prefix + "org.sonar.tests.modules-order:module_b").getName()).isEqualTo("Module B");
+
+    assertThat(getComponent(prefix + "org.sonar.tests.modules-order:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
+    assertThat(getComponent(prefix + "org.sonar.tests.modules-order:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
+  }
+
+  private boolean hasSuccessfulAnalysis(String projectKey) {
+    return newWsClient().projectAnalysis().search(SearchRequest.builder().setProject(projectKey).build()).getAnalysesCount() > 0;
   }
 
   @Test

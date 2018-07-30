@@ -1,18 +1,13 @@
 #!/bin/bash
 
-#set -euo pipefail
+set -euo pipefail
 
-function configureTravis {
+configureTravis() {
   mkdir -p ~/.local
-  curl -sSL https://github.com/SonarSource/travis-utils/tarball/v45 | tar zx --strip-components 1 -C ~/.local
+  curl -sSL https://github.com/SonarSource/travis-utils/tarball/v50 | tar zx --strip-components 1 -C ~/.local
   source ~/.local/bin/install
 }
 configureTravis
-
-function strongEcho {
-  echo ""
-  echo "================ $1 ================="
-}
 
 export DEPLOY_PULL_REQUEST=true
 

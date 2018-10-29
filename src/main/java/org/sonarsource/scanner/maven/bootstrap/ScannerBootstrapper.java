@@ -41,13 +41,15 @@ public class ScannerBootstrapper {
   private final MavenProjectConverter mavenProjectConverter;
   private String serverVersion;
   private PropertyDecryptor propertyDecryptor;
+  private final boolean modulesAsProjects;
 
-  public ScannerBootstrapper(Log log, MavenSession session, EmbeddedScanner scanner, MavenProjectConverter mavenProjectConverter, PropertyDecryptor propertyDecryptor) {
+  public ScannerBootstrapper(Log log, MavenSession session, EmbeddedScanner scanner, MavenProjectConverter mavenProjectConverter, PropertyDecryptor propertyDecryptor, boolean modulesAsProjects) {
     this.log = log;
     this.session = session;
     this.scanner = scanner;
     this.mavenProjectConverter = mavenProjectConverter;
     this.propertyDecryptor = propertyDecryptor;
+    this.modulesAsProjects = modulesAsProjects;
   }
 
   public void execute() throws MojoExecutionException {
@@ -62,7 +64,7 @@ public class ScannerBootstrapper {
         scanner.setGlobalProperty("sonar.verbose", "true");
       }
 
-      scanner.execute(collectProperties());
+      scanner.execute(collectProperties(modulesAsProjects));
     } catch (Exception e) {
       throw new MojoExecutionException(e.getMessage(), e);
     }
@@ -88,20 +90,27 @@ public class ScannerBootstrapper {
     scanner.unmask("");
   }
 
-  private Map<String, String> collectProperties()
+  private Map<String, String> collectProperties(boolean modulesAsProjects)
     throws MojoExecutionException {
-    List<MavenProject> sortedProjects = session.getProjects();
-    MavenProject topLevelProject = null;
-    for (MavenProject project : sortedProjects) {
-      if (project.isExecutionRoot()) {
-        topLevelProject = project;
-        break;
+    Map<String, String> props;
+    if (!modulesAsProjects) {
+      List<MavenProject> sortedProjects = session.getProjects();
+      MavenProject topLevelProject = null;
+      for (MavenProject project : sortedProjects) {
+        if (project.isExecutionRoot()) {
+          topLevelProject = project;
+          break;
+        }
       }
+      if (topLevelProject == null) {
+        throw new IllegalStateException("Maven session does not declare a top level project");
+      }
+
+      props = mavenProjectConverter.configure(sortedProjects, topLevelProject, session.getUserProperties());
+    } else {
+      props = mavenProjectConverter.configure(session.getCurrentProject(), session.getUserProperties());
     }
-    if (topLevelProject == null) {
-      throw new IllegalStateException("Maven session does not declare a top level project");
-    }
-    Map<String, String> props = mavenProjectConverter.configure(sortedProjects, topLevelProject, session.getUserProperties());
+
     props.putAll(propertyDecryptor.decryptProperties(props));
 
     return props;

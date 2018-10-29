@@ -63,6 +63,14 @@ public class SonarQubeMojo extends AbstractMojo {
   @Parameter(alias = "sonar.skip", property = "sonar.skip", defaultValue = "false")
   private boolean skip;
 
+  /**
+   * Set this to 'true' to analyze modules as (toplevel) projects.
+   *
+   * @since 3.6
+   */
+  @Parameter(alias = "sonar.modulesAsProjects", property = "sonar.modulesAsProjects", defaultValue = "false")
+  private boolean modulesAsProjects;
+
   @Component
   private LifecycleExecutor lifecycleExecutor;
 
@@ -101,7 +109,7 @@ public class SonarQubeMojo extends AbstractMojo {
     }
 
     EmbeddedScanner runner = runnerFactory.create();
-    new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, propertyDecryptor).execute();
+    new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, propertyDecryptor, modulesAsProjects).execute();
   }
 
   /**
@@ -109,7 +117,7 @@ public class SonarQubeMojo extends AbstractMojo {
    * @return true if goal is attached to phase and not last in a multi-module project
    */
   private boolean shouldDelayExecution() {
-    return !isDetachedGoal() && !isLastProjectInReactor();
+    return !isDetachedGoal() && !isLastProjectInReactor() && !modulesAsProjects;
   }
 
   /**

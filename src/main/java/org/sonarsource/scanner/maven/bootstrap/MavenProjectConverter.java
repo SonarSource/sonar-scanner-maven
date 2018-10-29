@@ -125,6 +125,18 @@ public class MavenProjectConverter {
     this.envProperties = envProperties;
   }
 
+  Map<String, String> configure(MavenProject root, Properties userProperties) throws MojoExecutionException {
+    this.userProperties = userProperties;
+    this.specifiedProjectKey = specifiedProjectKey(userProperties, root);
+
+    Map<String, String> props = computeSonarQubeProperties(root);
+    String moduleKey = props.remove(ScanProperties.MODULE_KEY);
+    props.put(ScanProperties.PROJECT_KEY, moduleKey != null ? moduleKey : getArtifactKey(root));
+    props.put(ScanProperties.PROJECT_BASEDIR, root.getBasedir().toPath().toAbsolutePath().toString());
+
+    return props;
+  }
+
   Map<String, String> configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties) throws MojoExecutionException {
     this.userProperties = userProperties;
     this.specifiedProjectKey = specifiedProjectKey(userProperties, root);

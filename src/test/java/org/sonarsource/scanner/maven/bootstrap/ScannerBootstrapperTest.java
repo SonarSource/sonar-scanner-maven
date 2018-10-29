@@ -80,7 +80,7 @@ public class ScannerBootstrapperTest {
 
     when(scanner.mask(anyString())).thenReturn(scanner);
     when(scanner.unmask(anyString())).thenReturn(scanner);
-    scannerBootstrapper = new ScannerBootstrapper(log, session, scanner, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher));
+    scannerBootstrapper = new ScannerBootstrapper(log, session, scanner, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher), false);
   }
 
   @Test

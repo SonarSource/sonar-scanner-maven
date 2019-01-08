@@ -1,6 +1,6 @@
 /*
  * SonarSource :: IT :: SonarQube Maven
- * Copyright (C) 2009-2017 SonarSource SA
+ * Copyright (C) 2009-2019 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or

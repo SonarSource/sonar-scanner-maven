@@ -42,7 +42,7 @@ public class DependencyTest extends AbstractMavenTest {
   @Before
   public void deleteData() {
     // Design features have been dropped in 5.2
-    assumeTrue(!orchestrator.getServer().version().isGreaterThanOrEquals("5.2"));
+    assumeTrue(!orchestrator.getServer().version().isGreaterThanOrEquals(5, 2));
     orchestrator.resetData();
   }
 

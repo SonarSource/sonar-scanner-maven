@@ -68,7 +68,7 @@ public class LinksTest extends AbstractMavenTest {
       .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
       .build());
     SearchWsResponse response = client.projectLinks().search(new SearchWsRequest().setProjectKey("com.sonarsource.it.samples:simple-sample"));
-    if (server.version().isGreaterThanOrEquals("7.1")) {
+    if (server.version().isGreaterThanOrEquals(7, 1)) {
       // SONAR-10299
       assertThat(response.getLinksList())
         .extracting(WsProjectLinks.Link::getType, WsProjectLinks.Link::getUrl)

@@ -20,6 +20,7 @@
 package com.sonar.maven.it.suite;
 
 import com.sonar.orchestrator.Orchestrator;
+import com.sonar.orchestrator.locator.MavenLocation;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -33,17 +34,11 @@ public class MavenTestSuite {
   @ClassRule
   public static final Orchestrator ORCHESTRATOR = Orchestrator.builderEnv()
     .setSonarVersion(getSonarVersion())
-    .setOrchestratorProperty("javaVersion", "LATEST_RELEASE")
-    .addPlugin("java")
-    .setOrchestratorProperty("javascriptVersion", "LATEST_RELEASE")
-    .addPlugin("javascript")
-    .setOrchestratorProperty("pythonVersion", "LATEST_RELEASE")
-    .addPlugin("python")
-    .setOrchestratorProperty("webVersion", "LATEST_RELEASE")
-    .addPlugin("web")
-    .setOrchestratorProperty("xmlVersion", "LATEST_RELEASE")
-    .addPlugin("xml")
-
+    .addPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", "LATEST_RELEASE"))
+    .addPlugin(MavenLocation.of("org.sonarsource.javascript", "sonar-javascript-plugin", "LATEST_RELEASE"))
+    .addPlugin(MavenLocation.of("org.sonarsource.python", "sonar-python-plugin", "LATEST_RELEASE"))
+    .addPlugin(MavenLocation.of("org.sonarsource.web", "sonar-web-plugin", "LATEST_RELEASE"))
+    .addPlugin(MavenLocation.of("org.sonarsource.xml", "sonar-xml-plugin", "LATEST_RELEASE"))
     .build();
 
   private static String getSonarVersion() {

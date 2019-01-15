@@ -3,7 +3,7 @@
 # Possible values for SLAVE: "performance" (for perf tests) and "linux" (for linux machines connected to DB services)
 
 SQ_VERSION:
-  - LTS
+  - LATEST_RELEASE[6.7]
   - DEV
 
 MAVEN_VERSION:
@@ -17,7 +17,7 @@ SLAVE:
   - linux
 
 exclude:
-  - SQ_VERSION: LTS
+  - SQ_VERSION: LATEST_RELEASE[6.7]
     MAVEN_VERSION: 3.5.2
 
   - SQ_VERSION: DEV

@@ -40,7 +40,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.sonar.wsclient.services.PropertyCreateQuery;
 import org.sonar.wsclient.user.UserParameters;
 import org.sonarqube.ws.WsComponents;
 import org.sonarqube.ws.client.projectanalysis.SearchRequest;
@@ -63,11 +62,7 @@ public class MavenTest extends AbstractMavenTest {
 
   @After
   public void cleanup() {
-    if (orchestrator.getServer().version().isGreaterThanOrEquals(6, 3)) {
-      ItUtils.newAdminWsClient(orchestrator).settings().set(SetRequest.builder().setKey("sonar.forceAuthentication").setValue("false").build());
-    } else {
-      orchestrator.getServer().getAdminWsClient().create(new PropertyCreateQuery("sonar.forceAuthentication", "false"));
-    }
+    ItUtils.newAdminWsClient(orchestrator).settings().set(SetRequest.builder().setKey("sonar.forceAuthentication").setValue("false").build());
   }
 
   /**
@@ -150,8 +145,7 @@ public class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
 
-    int expectedFileCount = orchestrator.getServer().version().isGreaterThanOrEquals(6, 3) ? 4 : 3;
-    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.project-with-module-without-sources:parent", "files")).isEqualTo(expectedFileCount);
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.project-with-module-without-sources:parent", "files")).isEqualTo(4);
     assertThat(getComponent("com.sonarsource.it.samples.project-with-module-without-sources:without-sources")).isNotNull();
   }
 
@@ -166,12 +160,8 @@ public class MavenTest extends AbstractMavenTest {
     orchestrator.executeBuild(build);
 
     // src/main/webapp is analyzed by web and xml plugin
-    if (orchestrator.getServer().version().isGreaterThanOrEquals(6, 3)) {
-      // including resources, so one more file (ejb-module/src/main/resources/META-INF/ejb-jar.xml)
-      assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(9);
-    } else {
-      assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(8);
-    }
+    // including resources, so one more file (ejb-module/src/main/resources/META-INF/ejb-jar.xml)
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(9);
 
     List<WsComponents.Component> modules = getModules("com.sonarsource.it.samples.jee:parent");
     assertThat(modules).hasSize(4);
@@ -511,11 +501,7 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void supportMavenEncryption() throws Exception {
-    if (orchestrator.getServer().version().isGreaterThanOrEquals(6, 3)) {
-      ItUtils.newAdminWsClient(orchestrator).settings().set(SetRequest.builder().setKey("sonar.forceAuthentication").setValue("true").build());
-    } else {
-      orchestrator.getServer().getAdminWsClient().create(new PropertyCreateQuery("sonar.forceAuthentication", "true"));
-    }
+    ItUtils.newAdminWsClient(orchestrator).settings().set(SetRequest.builder().setKey("sonar.forceAuthentication").setValue("true").build());
     orchestrator.getServer().adminWsClient().userClient().create(UserParameters.create().login("julien").name("Julien").password("123abc").passwordConfirmation("123abc"));
 
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
@@ -575,7 +561,7 @@ public class MavenTest extends AbstractMavenTest {
   }
 
   @Test
-  public void setJavaVersionProperties() throws FileNotFoundException, IOException {
+  public void setJavaVersionProperties() throws IOException {
     Assume.assumeTrue(3 == getMavenMajorVersion());
 
     File outputProps = temp.newFile();

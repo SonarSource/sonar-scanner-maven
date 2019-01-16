@@ -42,7 +42,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.sonar.wsclient.user.UserParameters;
 import org.sonarqube.ws.WsComponents;
-import org.sonarqube.ws.client.projectanalysis.SearchRequest;
 import org.sonarqube.ws.client.setting.SetRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +49,7 @@ import static org.assertj.core.data.MapEntry.entry;
 
 public class MavenTest extends AbstractMavenTest {
 
+  private static final String MODULE_START_7_6 = "------------- Run sensors on module ";
   private static final String MODULE_START = "-------------  Scan ";
 
   @Rule
@@ -146,7 +146,7 @@ public class MavenTest extends AbstractMavenTest {
     orchestrator.executeBuild(build);
 
     assertThat(getMeasureAsInteger("com.sonarsource.it.samples.project-with-module-without-sources:parent", "files")).isEqualTo(4);
-    assertThat(getComponent("com.sonarsource.it.samples.project-with-module-without-sources:without-sources")).isNotNull();
+    assertThat(getComponent("com.sonarsource.it.samples.project-with-module-without-sources:parent:without-sources")).isNotNull();
   }
 
   /**
@@ -163,8 +163,10 @@ public class MavenTest extends AbstractMavenTest {
     // including resources, so one more file (ejb-module/src/main/resources/META-INF/ejb-jar.xml)
     assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(9);
 
-    List<WsComponents.Component> modules = getModules("com.sonarsource.it.samples.jee:parent");
-    assertThat(modules).hasSize(4);
+    if (hasModules()) {
+      List<WsComponents.Component> modules = getModules("com.sonarsource.it.samples.jee:parent");
+      assertThat(modules).hasSize(4);
+    }
   }
 
   /**
@@ -221,61 +223,24 @@ public class MavenTest extends AbstractMavenTest {
   }
 
   @Test
-  public void should_prefix_submodule_keys_with_project_key_when_specified() {
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/modules-order"))
-      .setGoals(cleanSonarGoal());
-    orchestrator.executeBuild(build);
-    assertThat(hasSuccessfulAnalysis("org.sonar.tests.modules-order:root")).isTrue();
-
-    assertThat(getComponent("org.sonar.tests.modules-order:root").getName()).isEqualTo("Sonar tests - modules order");
-
-    assertThat(getComponent("org.sonar.tests.modules-order:parent").getName()).isEqualTo("Parent");
-
-    assertThat(getComponent("org.sonar.tests.modules-order:module_a").getName()).isEqualTo("Module A");
-    assertThat(getComponent("org.sonar.tests.modules-order:module_b").getName()).isEqualTo("Module B");
-
-    assertThat(getComponent("org.sonar.tests.modules-order:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
-    assertThat(getComponent("org.sonar.tests.modules-order:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
-
-    String projectKey2 = "project2";
-    build.setProperty("sonar.projectKey", projectKey2);
-    orchestrator.executeBuild(build);
-    assertThat(hasSuccessfulAnalysis(projectKey2)).isTrue();
-
-    String prefix = projectKey2 + ":";
-    assertThat(getComponent(projectKey2).getName()).isEqualTo("Sonar tests - modules order");
-
-    assertThat(getComponent(prefix + "org.sonar.tests.modules-order:parent").getName()).isEqualTo("Parent");
-
-    assertThat(getComponent(prefix + "org.sonar.tests.modules-order:module_a").getName()).isEqualTo("Module A");
-    assertThat(getComponent(prefix + "org.sonar.tests.modules-order:module_b").getName()).isEqualTo("Module B");
-
-    assertThat(getComponent(prefix + "org.sonar.tests.modules-order:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
-    assertThat(getComponent(prefix + "org.sonar.tests.modules-order:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
-  }
-
-  private boolean hasSuccessfulAnalysis(String projectKey) {
-    return newWsClient().projectAnalysis().search(SearchRequest.builder().setProject(projectKey).build()).getAnalysesCount() > 0;
-  }
-
-  @Test
   public void shouldEvaluateSourceVersionOnEachModule() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/modules-source-versions"))
       .setGoals(cleanSonarGoal());
     BuildResult buildResult = orchestrator.executeBuild(build);
 
-    assertThat(findScanSectionOfModule(buildResult, "higher-version")).contains("Configured Java source version (sonar.java.source): 8");
-    assertThat(findScanSectionOfModule(buildResult, "same-version")).contains("Configured Java source version (sonar.java.source): 6");
+    assertThat(findScanSectionOfModule(buildResult.getLogs(), "higher-version")).contains("Configured Java source version (sonar.java.source): 8");
+    assertThat(findScanSectionOfModule(buildResult.getLogs(), "same-version")).contains("Configured Java source version (sonar.java.source): 6");
   }
 
-  private String findScanSectionOfModule(BuildResult buildResult, String moduleName) {
-    int startSection = buildResult.getLogs().indexOf(MODULE_START + moduleName);
+  private String findScanSectionOfModule(String logs, String moduleName) {
+    String start = hasModules() ? MODULE_START : MODULE_START_7_6;
+    int startSection = logs.indexOf(start + moduleName);
     assertThat(startSection).isNotEqualTo(-1);
     // This will match either a next section or the end of a maven plugin execution
-    int endSection = buildResult.getLogs().indexOf("-------------", startSection + MODULE_START.length());
+    int endSection = logs.indexOf("-------------", startSection + start.length());
     assertThat(endSection).isNotEqualTo(-1);
 
-    return buildResult.getLogs().substring(startSection, endSection);
+    return logs.substring(startSection, endSection);
   }
 
   // MSONAR-158
@@ -287,9 +252,12 @@ public class MavenTest extends AbstractMavenTest {
     orchestrator.executeBuild(build);
 
     assertThat(getComponent("com.sonarsource.it.samples:attach-sonar-to-verify")).isNotNull();
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples:attach-sonar-to-verify", "files")).isEqualTo(11);
 
-    List<WsComponents.Component> modules = getModules("com.sonarsource.it.samples:attach-sonar-to-verify");
-    assertThat(modules).hasSize(6);
+    if (hasModules()) {
+      List<WsComponents.Component> modules = getModules("com.sonarsource.it.samples:attach-sonar-to-verify");
+      assertThat(modules).hasSize(6);
+    }
   }
 
   /**
@@ -377,7 +345,11 @@ public class MavenTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/multi-modules-override-sources")).setGoals(sonarGoal());
     orchestrator.executeBuild(build);
 
-    assertThat(getMeasureAsInteger("com.sonarsource.it.samples:module_a1", "files")).isEqualTo(1);
+    if (hasModules()) {
+      assertThat(getMeasureAsInteger("com.sonarsource.it.samples:module_a1", "files")).isEqualTo(1);
+    } else {
+      assertThat(getMeasureAsInteger("com.sonarsource.it.samples:multi-modules-sample:module_a", "files")).isEqualTo(2);
+    }
   }
 
   /**
@@ -389,7 +361,11 @@ public class MavenTest extends AbstractMavenTest {
       .setProperty("sonar.lang.patterns.web", "**/*.jsp");
     orchestrator.executeBuild(build);
 
-    assertThat(getMeasureAsInteger("edu.marcelo:module-web", "files")).isEqualTo(2);
+    if (hasModules()) {
+      assertThat(getMeasureAsInteger("edu.marcelo:module-web", "files")).isEqualTo(2);
+    } else {
+      assertThat(getMeasureAsInteger("edu.marcelo:multi-module-aggregator:module-web/src/main/webapp", "files")).isEqualTo(2);
+    }
   }
 
   /**
@@ -459,10 +435,15 @@ public class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
 
-    assertThat(getComponent("com.sonarsource.it.samples:module_a1")).isNull();
-    assertThat(getComponent("com.sonarsource.it.samples:module_a2").getName()).isEqualTo("Sub-module A2");
-    assertThat(getComponent("com.sonarsource.it.samples:module_b").getName()).isEqualTo("Module B");
-
+    if (hasModules()) {
+      assertThat(getComponent("com.sonarsource.it.samples:module_a1")).isNull();
+      assertThat(getComponent("com.sonarsource.it.samples:module_a2").getName()).isEqualTo("Sub-module A2");
+      assertThat(getComponent("com.sonarsource.it.samples:module_b").getName()).isEqualTo("Module B");
+    } else {
+      assertThat(getComponent("com.sonarsource.it.samples:multi-modules-sample:module_a/module_a1")).isNull();
+      assertThat(getComponent("com.sonarsource.it.samples:multi-modules-sample:module_a/module_a2").getName()).isEqualTo("module_a2");
+      assertThat(getComponent("com.sonarsource.it.samples:multi-modules-sample:module_b").getName()).isEqualTo("module_b");
+    }
   }
 
   // MSONAR-150
@@ -474,7 +455,6 @@ public class MavenTest extends AbstractMavenTest {
       .setEnvironmentVariable("SONARQUBE_SCANNER_PARAMS", "{ \"sonar.scanner.skip\" : \"true\" }");
     BuildResult result = orchestrator.executeBuild(build);
     assertThat(result.getLogs()).contains("SonarQube Scanner analysis skipped");
-
   }
 
   @Test

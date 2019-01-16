@@ -27,7 +27,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-  LinksTest.class, MavenTest.class, OldMultiLanguageTest.class, DependencyTest.class, ProxyTest.class
+  LinksTest.class, MavenTest.class, DependencyTest.class, ProxyTest.class
 })
 public class MavenTestSuite {
 
@@ -37,7 +37,7 @@ public class MavenTestSuite {
     .addPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", "LATEST_RELEASE"))
     .addPlugin(MavenLocation.of("org.sonarsource.javascript", "sonar-javascript-plugin", "LATEST_RELEASE"))
     .addPlugin(MavenLocation.of("org.sonarsource.python", "sonar-python-plugin", "LATEST_RELEASE"))
-    .addPlugin(MavenLocation.of("org.sonarsource.web", "sonar-web-plugin", "LATEST_RELEASE"))
+    .addPlugin(MavenLocation.of("org.sonarsource.html", "sonar-html-plugin", "LATEST_RELEASE"))
     .addPlugin(MavenLocation.of("org.sonarsource.xml", "sonar-xml-plugin", "LATEST_RELEASE"))
     .build();
 

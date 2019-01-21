@@ -155,8 +155,7 @@ public class MavenTest extends AbstractMavenTest {
   @Test
   public void shouldSupportJeeProjects() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/jee"))
-      .setGoals(cleanInstallSonarGoal())
-      .setProperty("sonar.lang.patterns.web", "**/*.jsp");
+      .setGoals(cleanInstallSonarGoal());
     orchestrator.executeBuild(build);
 
     // src/main/webapp is analyzed by web and xml plugin
@@ -357,8 +356,8 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void override_sources_in_multi_module_aggregator() {
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/multi-module-aggregator")).setGoals(sonarGoal())
-      .setProperty("sonar.lang.patterns.web", "**/*.jsp");
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/multi-module-aggregator"))
+      .setGoals(sonarGoal());
     orchestrator.executeBuild(build);
 
     if (hasModules()) {

@@ -146,7 +146,11 @@ public class MavenTest extends AbstractMavenTest {
     orchestrator.executeBuild(build);
 
     assertThat(getMeasureAsInteger("com.sonarsource.it.samples.project-with-module-without-sources:parent", "files")).isEqualTo(4);
-    assertThat(getComponent("com.sonarsource.it.samples.project-with-module-without-sources:parent:without-sources")).isNotNull();
+    if (hasModules()) {
+      assertThat(getComponent("com.sonarsource.it.samples.project-with-module-without-sources:without-sources")).isNotNull();
+    } else {
+      assertThat(getComponent("com.sonarsource.it.samples.project-with-module-without-sources:parent:without-sources")).isNotNull();
+    }
   }
 
   /**

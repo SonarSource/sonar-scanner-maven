@@ -13,8 +13,8 @@
   <packaging>maven-plugin</packaging>
 
   <name>SonarQube Scanner for Maven</name>
-  <url>http://sonarsource.github.io/sonar-scanner-maven/</url>
   <description>Trigger SonarQube analysis on Maven projects</description>
+  <url>http://sonarsource.github.io/sonar-scanner-maven/</url>
   <inceptionYear>2009</inceptionYear>
 
   <licenses>

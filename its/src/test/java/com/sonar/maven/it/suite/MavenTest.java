@@ -557,8 +557,8 @@ public class MavenTest extends AbstractMavenTest {
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
-      entry("sonar.java.source", "1.5"),
-      entry("sonar.java.target", "1.6"));
+      entry("sonar.java.source", "1.7"),
+      entry("sonar.java.target", "1.8"));
   }
 
   private Properties getProps(File outputProps)

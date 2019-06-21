@@ -9,6 +9,11 @@
 
   <name>Sonar tests - modules order</name>
 
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
+  
   <modules>
     <module>parent</module>
     <module>module_a</module>

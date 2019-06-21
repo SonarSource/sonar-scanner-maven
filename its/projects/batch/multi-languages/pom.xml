@@ -8,6 +8,11 @@
   <name>Multi Languages</name>
   <description>One language per module</description>
 
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
+  
   <modules>
     <module>java-module</module>
     <module>javascript-module</module>

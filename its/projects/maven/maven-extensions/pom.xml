@@ -7,6 +7,10 @@
   <packaging>jar</packaging>
   <name>Sonar tests - maven extensions</name>
   <description>http://jira.codehaus.org/browse/SONAR-222</description>
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
   <build>
     <extensions>
       <extension>

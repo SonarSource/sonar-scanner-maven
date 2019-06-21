@@ -8,6 +8,8 @@
 
   <properties>
     <sonar.sources>src/main/java2</sonar.sources>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
 
   <dependencies>

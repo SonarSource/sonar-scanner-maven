@@ -12,6 +12,7 @@ MAVEN_VERSION:
   - 3.2.5
   - 3.3.9
   - 3.5.2
+  - 3.6.1
 
 SLAVE:
   - linux
@@ -28,3 +29,5 @@ exclude:
     MAVEN_VERSION: 3.2.5
   - SQ_VERSION: DEV
     MAVEN_VERSION: 3.3.9
+  - SQ_VERSION: DEV
+    MAVEN_VERSION: 3.5.2

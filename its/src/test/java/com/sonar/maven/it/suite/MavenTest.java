@@ -94,12 +94,30 @@ public class MavenTest extends AbstractMavenTest {
   public void supportSonarHostURLParam() {
     BuildRunner runner = new BuildRunner(orchestrator.getConfiguration());
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-global-properties"))
+      //global property should take precedence
+      .setEnvironmentVariable("SONAR_HOST_URL", "http://from-env.org:9000")
       .setGoals(cleanSonarGoal());
 
     BuildResult result = runner.runQuietly(null, build);
 
     assertThat(result.isSuccess()).isFalse();
     assertThat(result.getLogs()).contains("http://dummy-url.org");
+  }
+
+  /**
+   * See MSONAR-172
+   */
+  @Test
+  public void supportSonarHostURLParamFromEnvironmentVariable() {
+    BuildRunner runner = new BuildRunner(orchestrator.getConfiguration());
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
+      .setEnvironmentVariable("SONAR_HOST_URL", "http://from-env.org:9000")
+      .setGoals(cleanSonarGoal());
+
+    BuildResult result = runner.runQuietly(null, build);
+
+    assertThat(result.isSuccess()).isFalse();
+    assertThat(result.getLogs()).contains("http://from-env.org:9000");
   }
 
   /**

@@ -3,13 +3,13 @@
   <parent>
     <groupId>org.sonarsource.parent</groupId>
     <artifactId>parent</artifactId>
-    <version>49</version>
+    <version>52</version>
     <relativePath />
   </parent>
 
   <groupId>org.sonarsource.scanner.maven</groupId>
   <artifactId>sonar-maven-plugin</artifactId>
-  <version>3.8-SNAPSHOT</version>
+  <version>3.7-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>SonarQube Scanner for Maven</name>

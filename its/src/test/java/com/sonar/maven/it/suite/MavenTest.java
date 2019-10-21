@@ -41,8 +41,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.sonar.wsclient.user.UserParameters;
-import org.sonarqube.ws.WsComponents;
-import org.sonarqube.ws.client.setting.SetRequest;
+import org.sonarqube.ws.Components.Component;
+import org.sonarqube.ws.client.settings.SetRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
@@ -62,7 +62,7 @@ public class MavenTest extends AbstractMavenTest {
 
   @After
   public void cleanup() {
-    ItUtils.newAdminWsClient(orchestrator).settings().set(SetRequest.builder().setKey("sonar.forceAuthentication").setValue("false").build());
+    ItUtils.newAdminWsClient(orchestrator).settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("false"));
   }
 
   /**
@@ -185,7 +185,7 @@ public class MavenTest extends AbstractMavenTest {
     assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(9);
 
     if (hasModules()) {
-      List<WsComponents.Component> modules = getModules("com.sonarsource.it.samples.jee:parent");
+      List<Component> modules = getModules("com.sonarsource.it.samples.jee:parent");
       assertThat(modules).hasSize(4);
     }
   }
@@ -221,7 +221,7 @@ public class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
 
-    assertThat(getComponent("org.sonar.tests.modules-order:root").getName()).isEqualTo("Sonar tests - modules order");
+    assertThat(getComponent("org.sonar.tests.modules-order:root")).isEqualTo("Sonar tests - modules order");
 
     if (hasModules()) {
       assertThat(getComponent("org.sonar.tests.modules-order:parent").getName()).isEqualTo("Parent");
@@ -276,7 +276,7 @@ public class MavenTest extends AbstractMavenTest {
     assertThat(getMeasureAsInteger("com.sonarsource.it.samples:attach-sonar-to-verify", "files")).isEqualTo(11);
 
     if (hasModules()) {
-      List<WsComponents.Component> modules = getModules("com.sonarsource.it.samples:attach-sonar-to-verify");
+      List<Component> modules = getModules("com.sonarsource.it.samples:attach-sonar-to-verify");
       assertThat(modules).hasSize(6);
     }
   }
@@ -502,7 +502,7 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void supportMavenEncryption() throws Exception {
-    ItUtils.newAdminWsClient(orchestrator).settings().set(SetRequest.builder().setKey("sonar.forceAuthentication").setValue("true").build());
+    ItUtils.newAdminWsClient(orchestrator).settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("true"));
     orchestrator.getServer().adminWsClient().userClient().create(UserParameters.create().login("julien").name("Julien").password("123abc").passwordConfirmation("123abc"));
 
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))

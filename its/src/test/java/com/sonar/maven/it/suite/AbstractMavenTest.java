@@ -29,16 +29,16 @@ import java.util.List;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
 import org.junit.ClassRule;
-import org.sonarqube.ws.WsComponents.Component;
-import org.sonarqube.ws.WsMeasures;
-import org.sonarqube.ws.WsMeasures.Measure;
+import org.sonarqube.ws.Components.Component;
+import org.sonarqube.ws.Measures;
+import org.sonarqube.ws.Measures.Measure;
 import org.sonarqube.ws.client.HttpConnector;
 import org.sonarqube.ws.client.HttpException;
 import org.sonarqube.ws.client.WsClient;
 import org.sonarqube.ws.client.WsClientFactories;
-import org.sonarqube.ws.client.component.ShowWsRequest;
-import org.sonarqube.ws.client.component.TreeWsRequest;
-import org.sonarqube.ws.client.measure.ComponentWsRequest;
+import org.sonarqube.ws.client.components.ShowRequest;
+import org.sonarqube.ws.client.components.TreeRequest;
+import org.sonarqube.ws.client.measures.ComponentRequest;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -91,8 +91,8 @@ public abstract class AbstractMavenTest {
 
   @CheckForNull
   static Measure getMeasure(String componentKey, String metricKey) {
-    WsMeasures.ComponentWsResponse response = newWsClient().measures().component(new ComponentWsRequest()
-      .setComponentKey(componentKey)
+    Measures.ComponentWsResponse response = newWsClient().measures().component(new ComponentRequest()
+      .setComponent(componentKey)
       .setMetricKeys(singletonList(metricKey)));
     List<Measure> measures = response.getComponent().getMeasuresList();
     return measures.size() == 1 ? measures.get(0) : null;
@@ -107,7 +107,7 @@ public abstract class AbstractMavenTest {
   @CheckForNull
   static Component getComponent(String componentKey) {
     try {
-      return newWsClient().components().show(new ShowWsRequest().setKey((componentKey))).getComponent();
+      return newWsClient().components().show(new ShowRequest().setComponent(componentKey)).getComponent();
     } catch (HttpException e) {
       if (e.code() == 404) {
         return null;
@@ -117,7 +117,7 @@ public abstract class AbstractMavenTest {
   }
 
   static List<Component> getModules(String projectKey) {
-    return newWsClient().components().tree(new TreeWsRequest().setBaseComponentKey(projectKey).setQualifiers(asList("BRC"))).getComponentsList();
+    return newWsClient().components().tree(new TreeRequest().setComponent(projectKey).setQualifiers(asList("BRC"))).getComponentsList();
   }
 
   static WsClient newWsClient() {

@@ -25,12 +25,12 @@ import com.sonar.orchestrator.container.Server;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarqube.ws.WsProjectLinks;
-import org.sonarqube.ws.WsProjectLinks.SearchWsResponse;
+import org.sonarqube.ws.ProjectLinks;
+import org.sonarqube.ws.ProjectLinks.SearchWsResponse;
 import org.sonarqube.ws.client.HttpConnector;
 import org.sonarqube.ws.client.WsClient;
 import org.sonarqube.ws.client.WsClientFactories;
-import org.sonarqube.ws.client.projectlinks.SearchWsRequest;
+import org.sonarqube.ws.client.projectlinks.SearchRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -67,18 +67,18 @@ public class LinksTest extends AbstractMavenTest {
       .url(server.getUrl())
       .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
       .build());
-    SearchWsResponse response = client.projectLinks().search(new SearchWsRequest().setProjectKey("com.sonarsource.it.samples:simple-sample"));
+    SearchWsResponse response = client.projectLinks().search(new SearchRequest().setProjectKey("com.sonarsource.it.samples:simple-sample"));
     if (server.version().isGreaterThanOrEquals(7, 1)) {
       // SONAR-10299
       assertThat(response.getLinksList())
-        .extracting(WsProjectLinks.Link::getType, WsProjectLinks.Link::getUrl)
+        .extracting(ProjectLinks.Link::getType, ProjectLinks.Link::getUrl)
         .containsExactlyInAnyOrder(tuple("homepage", "http://www.simplesample.org_OVERRIDDEN"),
           tuple("ci", "http://bamboo.ci.codehaus.org/browse/SIMPLESAMPLE"),
           tuple("issue", "http://jira.codehaus.org/browse/SIMPLESAMPLE"),
           tuple("scm", "https://github.com/SonarSource/simplesample"));
     } else {
       assertThat(response.getLinksList())
-        .extracting(WsProjectLinks.Link::getType, WsProjectLinks.Link::getUrl)
+        .extracting(ProjectLinks.Link::getType, ProjectLinks.Link::getUrl)
         .containsExactlyInAnyOrder(tuple("homepage", "http://www.simplesample.org_OVERRIDDEN"),
           tuple("ci", "http://bamboo.ci.codehaus.org/browse/SIMPLESAMPLE"),
           tuple("issue", "http://jira.codehaus.org/browse/SIMPLESAMPLE"),

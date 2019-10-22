@@ -221,7 +221,7 @@ public class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
     orchestrator.executeBuild(build);
 
-    assertThat(getComponent("org.sonar.tests.modules-order:root")).isEqualTo("Sonar tests - modules order");
+    assertThat(getComponent("org.sonar.tests.modules-order:root").getName()).isEqualTo("Sonar tests - modules order");
 
     if (hasModules()) {
       assertThat(getComponent("org.sonar.tests.modules-order:parent").getName()).isEqualTo("Parent");

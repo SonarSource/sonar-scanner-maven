@@ -43,6 +43,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.security.UserStore;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.security.Credential;
@@ -65,7 +66,7 @@ public class Proxy {
   public int port() {
     return httpProxyPort;
   }
-  
+
   public Collection<String> seen() {
     return new ArrayList<>(seenByProxy);
   }
@@ -112,11 +113,13 @@ public class Proxy {
     handler.addServletWithMapping(MyProxyServlet.class, "/*");
     return handler;
   }
-  
+
   private static final SecurityHandler basicAuth(String username, String password, String realm) {
 
     HashLoginService l = new HashLoginService();
-    l.putUser(username, Credential.getCredential(password), new String[] {"user"});
+    UserStore userStore = new UserStore();
+    userStore.addUser(username, Credential.getCredential(password), new String[] {"user"});
+    l.setUserStore(userStore);
     l.setName(realm);
 
     Constraint constraint = new Constraint();

@@ -18,7 +18,7 @@ mvn -B -e install:install-file -Dfile=target/sonar-maven-plugin-$CURRENT_VERSION
 
 maven_home_for_its=${WORKSPACE}/maven-for-its
 mkdir -p $maven_home_for_its
-curl -sSL http://repo1.maven.org/maven2/org/apache/maven/apache-maven/$MAVEN_VERSION/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar zx --strip-components 1 -C $maven_home_for_its
+curl -sSL https://repo1.maven.org/maven2/org/apache/maven/apache-maven/$MAVEN_VERSION/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar zx --strip-components 1 -C $maven_home_for_its
 
 cd its
 mvn -B -e -Dsonar.runtimeVersion="$SQ_VERSION" -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$maven_home_for_its verify

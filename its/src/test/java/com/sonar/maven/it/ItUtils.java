@@ -110,7 +110,7 @@ public final class ItUtils {
     Element url = doc.createElement("url");
 
     id.setTextContent("sonarsource");
-    url.setTextContent("https://repox.sonarsource.com/sonarsource");
+    url.setTextContent("https://repox.jfrog.io/repox/sonarsource");
 
     repositories.appendChild(repository);
     repository.appendChild(id);
@@ -126,7 +126,7 @@ public final class ItUtils {
     Element url = doc.createElement("url");
 
     id.setTextContent("sonarsource");
-    url.setTextContent("https://repox.sonarsource.com/sonarsource");
+    url.setTextContent("https://repox.jfrog.io/repox/sonarsource");
 
     repositories.appendChild(repository);
     repository.appendChild(id);

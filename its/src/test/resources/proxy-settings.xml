@@ -10,7 +10,7 @@
         <repository>
           <id>sonarsource</id>
           <name>SonarSource Central Repository</name>
-          <url>https://repox.sonarsource.com/sonarsource</url>
+          <url>https://repox.jfrog.io/repox/sonarsource</url>
           <releases>
             <enabled>true</enabled>
             <updatePolicy>interval:60</updatePolicy>
@@ -26,7 +26,7 @@
         <pluginRepository>
           <id>sonarsource</id>
           <name>SonarSource Central Repository</name>
-          <url>https://repox.sonarsource.com/sonarsource</url>
+          <url>https://repox.jfrog.io/repox/sonarsource</url>
           <releases>
             <enabled>true</enabled>
             <!-- no need to always check if new versions are available when

@@ -1,7 +1,7 @@
 SonarQube Scanner for Maven
 ===========================
 
-[![Build Status](https://travis-ci.org/SonarSource/sonar-scanner-maven.svg?branch=master)](https://travis-ci.org/SonarSource/sonar-scanner-maven) [![Quality Gate Status](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.scanner.maven%3Asonar-maven-plugin&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.scanner.maven%3Asonar-maven-plugin)
+[![Build Status](https://api.cirrus-ci.com/github/SonarSource/sonar-scanner-maven.svg)](https://cirrus-ci.com/github/SonarSource/sonar-scanner-maven) [![Quality Gate Status](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.scanner.maven%3Asonar-maven-plugin&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.scanner.maven%3Asonar-maven-plugin)
 
 
 Have Question or Feedback?

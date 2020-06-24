@@ -63,6 +63,17 @@ public class JavaVersionResolver {
    * @return the java version
    */
   @CheckForNull
+  public String getRelease(MavenProject pom) {
+    return MavenUtils.coalesce(getString(pom, "release"), MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN, "release", null));
+  }
+
+  /**
+   * Returns the version of Java used by the maven compiler plugin
+   *
+   * @param pom the project pom
+   * @return the java version
+   */
+  @CheckForNull
   public String getTarget(MavenProject pom) {
     return MavenUtils.coalesce(getString(pom, "target"), MavenUtils.getPluginSetting(pom, MavenUtils.GROUP_ID_APACHE_MAVEN, MAVEN_COMPILER_PLUGIN, "target", null));
   }

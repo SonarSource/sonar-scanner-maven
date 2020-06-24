@@ -289,9 +289,18 @@ public class MavenProjectConverter {
   }
 
   private void guessJavaVersion(MavenProject pom, Map<String, String> props) {
+
+    // Get Java release version from maven-compiler-plugin.
+    String version = javaVersionResolver.getRelease(pom);
+    if (version != null) {
+      props.put(JAVA_SOURCE_PROPERTY, version);
+      props.put(JAVA_TARGET_PROPERTY, version);
+      return;
+    }
+
     // See http://jira.codehaus.org/browse/SONAR-2148
     // Get Java source and target versions from maven-compiler-plugin.
-    String version = javaVersionResolver.getSource(pom);
+    version = javaVersionResolver.getSource(pom);
     if (version != null) {
       props.put(JAVA_SOURCE_PROPERTY, version);
     }

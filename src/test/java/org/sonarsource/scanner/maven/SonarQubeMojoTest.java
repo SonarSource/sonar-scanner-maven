@@ -146,6 +146,13 @@ public class SonarQubeMojoTest {
   }
 
   @Test
+  public void should_get_java_release() throws IOException, Exception {
+    executeProject("sample-project-with-compiler-release");
+    assertPropsContains(entry("sonar.java.target", "8"));
+    assertPropsContains(entry("sonar.java.source", "8"));
+  }
+
+  @Test
   public void verbose() throws Exception {
     when(mockedLogger.isDebugEnabled()).thenReturn(true);
     executeProject("project-with-findbugs-reporting");

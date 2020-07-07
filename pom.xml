@@ -4,7 +4,7 @@
     <groupId>org.sonarsource.parent</groupId>
     <artifactId>parent</artifactId>
     <version>52</version>
-    <relativePath />
+    <relativePath/>
   </parent>
 
   <groupId>org.sonarsource.scanner.maven</groupId>
@@ -136,7 +136,7 @@
     <dependency>
       <groupId>org.sonarsource.scanner.api</groupId>
       <artifactId>sonar-scanner-api</artifactId>
-      <version>2.14.0.2002</version>
+      <version>2.15.0.2182</version>
     </dependency>
 
     <dependency>

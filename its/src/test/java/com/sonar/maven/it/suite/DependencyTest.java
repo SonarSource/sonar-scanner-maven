@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.skyscreamer.jsonassert.JSONAssert;
+import org.sonarqube.ws.client.PostRequest;
 
 import static org.junit.Assume.assumeTrue;
 
@@ -43,7 +44,7 @@ public class DependencyTest extends AbstractMavenTest {
   public void deleteData() {
     // Design features have been dropped in 5.2
     assumeTrue(!orchestrator.getServer().version().isGreaterThanOrEquals(5, 2));
-    orchestrator.resetData();
+    //orchestrator.resetData();
   }
 
   @Test
@@ -52,7 +53,8 @@ public class DependencyTest extends AbstractMavenTest {
       .setGoals(cleanPackageSonarGoal());
     orchestrator.executeBuild(build);
 
-    String jsonDeps = orchestrator.getServer().adminWsClient().post("/api/dependency_tree", "resource", "com.sonarsource.it.samples:sample-with-deps", "format", "json");
+    String jsonDeps = wsConnector.call(new PostRequest("/api/dependency_tree").setParam("resource", "com.sonarsource.it.samples:sample-with-deps").setParam("format", "json"))
+      .content();
     JSONAssert
       .assertEquals(
         "[{\"w\":1,\"u\":\"compile\",\"s\":\"PRJ\",\"q\":\"LIB\",\"v\":\"2.4\",\"k\":\"commons-io:commons-io\",\"n\":\"commons-io:commons-io\"},"
@@ -68,7 +70,8 @@ public class DependencyTest extends AbstractMavenTest {
       .setGoals(cleanPackageSonarGoal());
     orchestrator.executeBuild(build);
 
-    String jsonDeps = orchestrator.getServer().adminWsClient().post("/api/dependency_tree", "resource", "com.sonarsource.it.samples:module_b", "format", "json");
+    String jsonDeps = wsConnector.call(new PostRequest("/api/dependency_tree").setParam("resource", "com.sonarsource.it.samples:module_b").setParam("format", "json"))
+      .content();
     JSONAssert
       .assertEquals(
         "[{\"w\":1,\"u\":\"compile\",\"s\":\"PRJ\",\"q\":\"BRC\",\"v\":\"1.0-SNAPSHOT\",\"k\":\"com.sonarsource.it.samples:module_a\",\"n\":\"Module A\"},"

@@ -20,6 +20,7 @@
 package com.sonar.maven.it.suite;
 
 import com.sonar.orchestrator.Orchestrator;
+import com.sonar.orchestrator.container.Server;
 import com.sonar.orchestrator.version.Version;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +29,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.sonarqube.ws.Components.Component;
 import org.sonarqube.ws.Measures;
@@ -50,6 +52,9 @@ public abstract class AbstractMavenTest {
   @ClassRule
   public static Orchestrator orchestrator = MavenTestSuite.ORCHESTRATOR;
 
+  protected HttpConnector wsConnector;
+  protected WsClient wsClient;
+
   protected static String[] cleanInstallSonarGoal() {
     return new String[] {"clean install " + sonarGoal()};
   }
@@ -68,6 +73,15 @@ public abstract class AbstractMavenTest {
 
   protected static String[] cleanVerifySonarGoal() {
     return new String[] {"clean verify " + sonarGoal()};
+  }
+
+  @Before
+  public void setUpWsClient() {
+    wsConnector = HttpConnector.newBuilder()
+      .url(orchestrator.getServer().getUrl())
+      .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
+      .build();
+    wsClient = WsClientFactories.getDefault().newClient(wsConnector);
   }
 
   protected static Version mojoVersion() {

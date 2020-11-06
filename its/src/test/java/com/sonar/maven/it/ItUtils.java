@@ -19,8 +19,6 @@
  */
 package com.sonar.maven.it;
 
-import com.sonar.orchestrator.Orchestrator;
-import com.sonar.orchestrator.container.Server;
 import java.io.File;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -32,9 +30,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.apache.commons.io.FileUtils;
-import org.sonarqube.ws.client.HttpConnector;
-import org.sonarqube.ws.client.WsClient;
-import org.sonarqube.ws.client.WsClientFactories;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -133,14 +128,6 @@ public final class ItUtils {
     repository.appendChild(url);
 
     return repositories;
-  }
-
-  public static WsClient newAdminWsClient(Orchestrator orchestrator) {
-    Server server = orchestrator.getServer();
-    return WsClientFactories.getDefault().newClient(HttpConnector.newBuilder()
-      .url(server.getUrl())
-      .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
-      .build());
   }
 
 }

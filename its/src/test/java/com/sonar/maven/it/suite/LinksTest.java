@@ -39,7 +39,7 @@ public class LinksTest extends AbstractMavenTest {
 
   @Before
   public void deleteData() {
-    orchestrator.resetData();
+    //orchestrator.resetData();
   }
 
   @Before

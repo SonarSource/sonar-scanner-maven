@@ -36,13 +36,12 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Assume;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.sonar.wsclient.user.UserParameters;
 import org.sonarqube.ws.Components.Component;
 import org.sonarqube.ws.client.settings.SetRequest;
+import org.sonarqube.ws.client.users.CreateRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
@@ -55,14 +54,9 @@ public class MavenTest extends AbstractMavenTest {
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
 
-  @Before
-  public void deleteData() {
-    orchestrator.resetData();
-  }
-
   @After
   public void cleanup() {
-    ItUtils.newAdminWsClient(orchestrator).settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("false"));
+    wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("false"));
   }
 
   /**
@@ -502,8 +496,8 @@ public class MavenTest extends AbstractMavenTest {
    */
   @Test
   public void supportMavenEncryption() throws Exception {
-    ItUtils.newAdminWsClient(orchestrator).settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("true"));
-    orchestrator.getServer().adminWsClient().userClient().create(UserParameters.create().login("julien").name("Julien").password("123abc").passwordConfirmation("123abc"));
+    wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("true"));
+    wsClient.users().create(new CreateRequest().setLogin("julien").setName("Julien").setPassword("123abc"));
 
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
       .setGoals(cleanSonarGoal());

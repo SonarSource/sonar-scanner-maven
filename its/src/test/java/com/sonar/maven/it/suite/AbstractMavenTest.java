@@ -21,14 +21,20 @@ package com.sonar.maven.it.suite;
 
 import com.sonar.orchestrator.Orchestrator;
 import com.sonar.orchestrator.container.Server;
+import com.sonar.orchestrator.http.HttpMethod;
 import com.sonar.orchestrator.version.Version;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.sonarqube.ws.Components.Component;
@@ -82,6 +88,24 @@ public abstract class AbstractMavenTest {
       .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
       .build();
     wsClient = WsClientFactories.getDefault().newClient(wsConnector);
+  }
+
+  @After
+  public void resetData() {
+    // We add one day to ensure that today's entries are deleted.
+    Instant instant = Instant.now().plus(1, ChronoUnit.DAYS);
+
+    // The expected format is yyyy-MM-dd.
+    String currentDateTime = DateTimeFormatter.ISO_LOCAL_DATE
+      .withZone(ZoneId.of("UTC"))
+      .format(instant);
+
+    orchestrator.getServer()
+      .newHttpCall("/api/projects/bulk_delete")
+      .setAdminCredentials()
+      .setMethod(HttpMethod.POST)
+      .setParams("analyzedBefore", currentDateTime)
+      .execute();
   }
 
   protected static Version mojoVersion() {

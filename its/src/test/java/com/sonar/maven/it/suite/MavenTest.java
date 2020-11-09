@@ -36,7 +36,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Assume;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -54,11 +53,6 @@ public class MavenTest extends AbstractMavenTest {
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
-
-  @Before
-  public void deleteData() {
-    //orchestrator.resetData();
-  }
 
   @After
   public void cleanup() {

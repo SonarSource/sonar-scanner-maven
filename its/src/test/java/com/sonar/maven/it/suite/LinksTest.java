@@ -38,11 +38,6 @@ import static org.assertj.core.groups.Tuple.tuple;
 public class LinksTest extends AbstractMavenTest {
 
   @Before
-  public void deleteData() {
-    //orchestrator.resetData();
-  }
-
-  @Before
   @After
   public void cleanProjectLinksTable() {
     orchestrator.getDatabase().truncate("project_links");

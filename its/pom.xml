@@ -15,14 +15,14 @@
   <inceptionYear>2009</inceptionYear>
 
   <properties>
-    <jetty.version>9.4.24.v20191120</jetty.version>
+    <jetty.version>9.4.35.v20201120</jetty.version>
   </properties>
   
   <dependencies>
     <dependency>
       <groupId>org.sonarsource.orchestrator</groupId>
       <artifactId>sonar-orchestrator</artifactId>
-      <version>3.33.0.2677</version>
+      <version>3.34.0.2692</version>
       <scope>test</scope>
     </dependency>
     <dependency>

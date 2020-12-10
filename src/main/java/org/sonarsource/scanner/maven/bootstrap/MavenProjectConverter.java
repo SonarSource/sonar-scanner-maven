@@ -47,6 +47,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.sonarsource.scanner.api.ScanProperties;
 import org.sonarsource.scanner.api.ScannerProperties;
+import org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver.MavenCompilerConfiguration;
 
 public class MavenProjectConverter {
   private final Log log;
@@ -90,6 +91,8 @@ public class MavenProjectConverter {
 
   private static final String JAVA_PROJECT_MAIN_LIBRARIES = "sonar.java.libraries";
 
+  private static final String SONAR_JAVA_JDK_HOME_PROPERTY = "sonar.java.jdkHome";
+
   private static final String GROOVY_PROJECT_MAIN_BINARY_DIRS = "sonar.groovy.binaries";
 
   private static final String JAVA_PROJECT_TEST_BINARY_DIRS = "sonar.java.test.binaries";
@@ -117,11 +120,11 @@ public class MavenProjectConverter {
 
   private final Properties envProperties;
 
-  private final JavaVersionResolver javaVersionResolver;
+  private final MavenCompilerResolver mavenCompilerResolver;
 
-  public MavenProjectConverter(Log log, JavaVersionResolver javaVersionResolver, Properties envProperties) {
+  public MavenProjectConverter(Log log, MavenCompilerResolver mavenCompilerResolver, Properties envProperties) {
     this.log = log;
-    this.javaVersionResolver = javaVersionResolver;
+    this.mavenCompilerResolver = mavenCompilerResolver;
     this.envProperties = envProperties;
   }
 
@@ -244,7 +247,7 @@ public class MavenProjectConverter {
       props.put(ScanProperties.PROJECT_DESCRIPTION, description);
     }
 
-    guessJavaVersion(pom, props);
+    populateJavaAnalyzerProperties(pom, props);
     guessEncoding(pom, props);
     convertMavenLinksToProperties(props, pom);
     synchronizeFileSystemAndOtherProps(pom, props);
@@ -288,25 +291,29 @@ public class MavenProjectConverter {
     }
   }
 
-  private void guessJavaVersion(MavenProject pom, Map<String, String> props) {
+  private void populateJavaAnalyzerProperties(MavenProject pom, Map<String, String> props) {
+    Optional<MavenCompilerConfiguration> javaCompilerConfig = mavenCompilerResolver.extractConfiguration(pom);
+    javaCompilerConfig.ifPresent(config -> {
+      populateJavaAnalyzerSourceAndTarget(config, props);
+      populateJavaAnalyzerJdkHome(config, props);
+    });
+  }
 
+  private static void populateJavaAnalyzerJdkHome(MavenCompilerConfiguration config, Map<String, String> props) {
+    config.getJdkHome().ifPresent(jdkHome -> props.put(SONAR_JAVA_JDK_HOME_PROPERTY, jdkHome));
+  }
+
+  private static void populateJavaAnalyzerSourceAndTarget(MavenCompilerConfiguration config, Map<String, String> props) {
     // Get Java release version from maven-compiler-plugin.
-    String version = javaVersionResolver.getRelease(pom);
-    if (version != null) {
-      props.put(JAVA_SOURCE_PROPERTY, version);
-      props.put(JAVA_TARGET_PROPERTY, version);
-      return;
-    }
-
-    // See http://jira.codehaus.org/browse/SONAR-2148
-    // Get Java source and target versions from maven-compiler-plugin.
-    version = javaVersionResolver.getSource(pom);
-    if (version != null) {
-      props.put(JAVA_SOURCE_PROPERTY, version);
-    }
-    version = javaVersionResolver.getTarget(pom);
-    if (version != null) {
-      props.put(JAVA_TARGET_PROPERTY, version);
+    Optional<String> release = config.getRelease();
+    if (release.isPresent()) {
+      props.put(JAVA_SOURCE_PROPERTY, release.get());
+      props.put(JAVA_TARGET_PROPERTY, release.get());
+    } else {
+      // See http://jira.codehaus.org/browse/SONAR-2148
+      // Get Java source and target versions from maven-compiler-plugin.
+      config.getSource().ifPresent(s -> props.put(JAVA_SOURCE_PROPERTY, s));
+      config.getTarget().ifPresent(t -> props.put(JAVA_TARGET_PROPERTY, t));
     }
   }
 
@@ -491,21 +498,20 @@ public class MavenProjectConverter {
     Set<String> sources = new LinkedHashSet<>();
     if (MAVEN_PACKAGING_WAR.equals(pom.getModel().getPackaging())) {
       sources.add(MavenUtils.getPluginSetting(
-            pom,
-            MavenUtils.GROUP_ID_APACHE_MAVEN,
-            ARTIFACTID_MAVEN_WAR_PLUGIN,
-            "warSourceDirectory",
-            new File( pom.getBasedir().getAbsolutePath(), "src/main/webapp" ).getAbsolutePath())
-      );
+        pom,
+        MavenUtils.GROUP_ID_APACHE_MAVEN,
+        ARTIFACTID_MAVEN_WAR_PLUGIN,
+        "warSourceDirectory",
+        new File(pom.getBasedir().getAbsolutePath(), "src/main/webapp").getAbsolutePath()));
     }
 
     sources.add(pom.getFile().getAbsolutePath());
     if (!MAVEN_PACKAGING_POM.equals(pom.getModel().getPackaging())) {
       pom.getCompileSourceRoots().stream()
-        .map( Paths::get )
-        .map( path -> path.isAbsolute() ? path : pom.getBasedir().toPath().resolve( path ) )
-        .map( Path::toString )
-        .forEach( sources::add );
+        .map(Paths::get)
+        .map(path -> path.isAbsolute() ? path : pom.getBasedir().toPath().resolve(path))
+        .map(Path::toString)
+        .forEach(sources::add);
     }
 
     return sourcePaths(pom, ScanProperties.PROJECT_SOURCE_DIRS, sources);

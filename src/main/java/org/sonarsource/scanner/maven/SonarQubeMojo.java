@@ -34,10 +34,11 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.api.ScanProperties;
 import org.sonarsource.scanner.api.Utils;
-import org.sonarsource.scanner.maven.bootstrap.JavaVersionResolver;
+import org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver;
 import org.sonarsource.scanner.maven.bootstrap.LogHandler;
 import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
 import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
@@ -75,6 +76,9 @@ public class SonarQubeMojo extends AbstractMojo {
   @Parameter(defaultValue = "${mojoExecution}", required = true, readonly = true)
   private MojoExecution mojoExecution;
 
+  @Component
+  private ToolchainManager toolchainManager;
+
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     if (getLog().isDebugEnabled()) {
@@ -88,8 +92,8 @@ public class SonarQubeMojo extends AbstractMojo {
 
     Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
 
-    JavaVersionResolver pluginParameterResolver = new JavaVersionResolver(session, lifecycleExecutor, getLog());
-    MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), pluginParameterResolver, envProps);
+    MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), toolchainManager);
+    MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), mavenCompilerResolver, envProps);
     LogHandler logHandler = new LogHandler(getLog());
 
     PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
@@ -134,15 +138,15 @@ public class SonarQubeMojo extends AbstractMojo {
     List<MavenProject> sortedProjects = session.getProjectDependencyGraph().getSortedProjects();
 
     MavenProject lastProject = sortedProjects.isEmpty()
-          ? session.getCurrentProject()
-          : sortedProjects.get( sortedProjects.size() - 1 );
+      ? session.getCurrentProject()
+      : sortedProjects.get(sortedProjects.size() - 1);
 
-    if ( getLog().isDebugEnabled() ) {
-      getLog().debug( "Current project: '" + session.getCurrentProject().getName() +
-            "', Last project to execute based on dependency graph: '" + lastProject.getName() + "'" );
+    if (getLog().isDebugEnabled()) {
+      getLog().debug("Current project: '" + session.getCurrentProject().getName() +
+        "', Last project to execute based on dependency graph: '" + lastProject.getName() + "'");
     }
 
-    return session.getCurrentProject().equals( lastProject );
+    return session.getCurrentProject().equals(lastProject);
   }
 
   private boolean isSkip(Map<String, String> properties) {

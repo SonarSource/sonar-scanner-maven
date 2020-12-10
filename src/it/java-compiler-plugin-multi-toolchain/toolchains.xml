@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF8"?>
+<toolchains>
+  <!-- JDK toolchains -->
+  <toolchain>
+    <type>jdk</type>
+    <provides>
+      <version>1.5</version>
+    </provides>
+    <configuration>
+      <jdkHome>fake_jdk_1.5</jdkHome>
+    </configuration>
+  </toolchain>
+  <toolchain>
+    <type>jdk</type>
+    <provides>
+      <version>1.6</version>
+    </provides>
+    <configuration>
+      <jdkHome>fake_jdk_1.6</jdkHome>
+    </configuration>
+  </toolchain>
+  <toolchain>
+    <type>jdk</type>
+    <provides>
+      <version>1.7</version>
+    </provides>
+    <configuration>
+      <jdkHome>fake_jdk_1.7</jdkHome>
+    </configuration>
+  </toolchain>
+</toolchains>

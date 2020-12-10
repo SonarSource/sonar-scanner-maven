@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.execution.ProjectDependencyGraph;
@@ -34,7 +35,6 @@ import org.assertj.core.data.MapEntry;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -44,8 +44,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarQubeMojoTest {
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
 
   @Rule
   public MojoRule mojoRule = new MojoRule();
@@ -139,20 +137,6 @@ public class SonarQubeMojoTest {
   }
 
   @Test
-  public void should_get_java_target_source() throws IOException, Exception {
-    executeProject("sample-project-with-java-version");
-    assertPropsContains(entry("sonar.java.target", "1.8"));
-    assertPropsContains(entry("sonar.java.source", "1.7"));
-  }
-
-  @Test
-  public void should_get_java_release() throws IOException, Exception {
-    executeProject("sample-project-with-compiler-release");
-    assertPropsContains(entry("sonar.java.target", "8"));
-    assertPropsContains(entry("sonar.java.source", "8"));
-  }
-
-  @Test
   public void verbose() throws Exception {
     when(mockedLogger.isDebugEnabled()).thenReturn(true);
     executeProject("project-with-findbugs-reporting");
@@ -191,14 +175,14 @@ public class SonarQubeMojoTest {
     assertThat(readProps("target/dump.properties")).contains(entries);
   }
 
-  private Properties readProps(String filePath) throws FileNotFoundException, IOException {
+  private Map<String, String> readProps(String filePath) throws FileNotFoundException, IOException {
     FileInputStream fis = null;
     try {
       File dump = new File(filePath);
       Properties props = new Properties();
       fis = new FileInputStream(dump);
       props.load(fis);
-      return props;
+      return (Map) props;
     } finally {
       IOUtils.closeQuietly(fis);
     }

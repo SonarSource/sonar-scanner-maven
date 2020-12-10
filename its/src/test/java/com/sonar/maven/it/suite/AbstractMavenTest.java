@@ -20,6 +20,8 @@
 package com.sonar.maven.it.suite;
 
 import com.sonar.orchestrator.Orchestrator;
+import com.sonar.orchestrator.build.BuildResult;
+import com.sonar.orchestrator.build.MavenBuild;
 import com.sonar.orchestrator.container.Server;
 import com.sonar.orchestrator.http.HttpMethod;
 import com.sonar.orchestrator.version.Version;
@@ -32,6 +34,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
 import org.junit.After;
@@ -162,6 +166,30 @@ public abstract class AbstractMavenTest {
     return WsClientFactories.getDefault().newClient(HttpConnector.newBuilder()
       .url(orchestrator.getServer().getUrl())
       .build());
+  }
+
+  Version mavenVersion = null;
+
+  protected Version getMavenVersion() {
+    String versionRegex = "Apache Maven\\s(\\d+\\.\\d+(?:\\.\\d+)?)\\s";
+
+    if (mavenVersion != null) {
+      return mavenVersion;
+    }
+
+    MavenBuild build = MavenBuild.create()
+      .setGoals("-version");
+    BuildResult result = orchestrator.executeBuild(build);
+
+    String logs = result.getLogs();
+    Pattern p = Pattern.compile(versionRegex);
+    Matcher matcher = p.matcher(logs);
+
+    if (matcher.find()) {
+      mavenVersion = Version.create(matcher.group(1));
+      return mavenVersion;
+    }
+    throw new IllegalStateException("Could not find maven version: " + logs);
   }
 
 }

@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -39,8 +40,10 @@ import org.sonarsource.scanner.api.ScanProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class MavenProjectConverterTest {
 
@@ -53,7 +56,7 @@ public class MavenProjectConverterTest {
 
   private MavenProjectConverter projectConverter;
 
-  private JavaVersionResolver javaVersionResolver;
+  private MavenCompilerResolver mavenCompilerResolver;
 
   @Rule
   public ExpectedException exception = ExpectedException.none();
@@ -61,9 +64,10 @@ public class MavenProjectConverterTest {
   @Before
   public void prepare() {
     log = mock(Log.class);
-    javaVersionResolver = mock(JavaVersionResolver.class);
+    mavenCompilerResolver = mock(MavenCompilerResolver.class);
+    when(mavenCompilerResolver.extractConfiguration(any())).thenReturn(Optional.empty());
     env = new Properties();
-    projectConverter = new MavenProjectConverter(log, javaVersionResolver, env);
+    projectConverter = new MavenProjectConverter(log, mavenCompilerResolver, env);
   }
 
   @Test

@@ -21,12 +21,14 @@ package com.sonar.maven.it.suite;
 
 import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.MavenBuild;
+import com.sonar.orchestrator.version.Version;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -104,8 +106,6 @@ public class JavaTest extends AbstractMavenTest {
       entry("sonar.java.target", "1.8"));
   }
 
-  Integer mavenVersion = null;
-
   @Test
   public void setJavaVersionProperties() throws IOException {
     File outputProps = temp.newFile();
@@ -120,6 +120,75 @@ public class JavaTest extends AbstractMavenTest {
     assertThat(props).contains(
       entry("sonar.java.source", "1.7"),
       entry("sonar.java.target", "1.8"));
+  }
+
+  @Test
+  public void setJdkHomeFromCompilerExecutableConfiguration() throws FileNotFoundException, IOException {
+    File outputProps = temp.newFile();
+
+    File pom = ItUtils.locateProjectPom("jdkHome/compilerPluginConfigExecutable");
+    MavenBuild build = MavenBuild.create(pom)
+      .setGoals(sonarGoal())
+      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
+    orchestrator.executeBuild(build);
+
+    Properties props = getProps(outputProps);
+    assertThat(props).contains(entry("sonar.java.jdkHome", "path/to/java_executable"));
+  }
+
+  @Test
+  public void setJdkHomeFromGlobalToolchainsPlugin() throws FileNotFoundException, IOException {
+    File outputProps = temp.newFile();
+
+    File pom = ItUtils.locateProjectPom("jdkHome/globalToolchain");
+    MavenBuild build = MavenBuild.create(pom)
+      .setExecutionDir(pom.getParentFile())
+      // Run only the toolchain goal + sonar. Can't run a true build since our toolchains paths are fake
+      .setGoals("toolchains:toolchain " + sonarGoal())
+      .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
+      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
+    orchestrator.executeBuild(build);
+
+    Properties props = getProps(outputProps);
+    assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_1.5"));
+  }
+
+  @Test
+  public void setJdkHomeFromCompilerToolchainsConfiguration() throws FileNotFoundException, IOException {
+    // https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#jdkToolchain requires Maven 3.3.1+
+    Assume.assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
+
+    File outputProps = temp.newFile();
+
+    File pom = ItUtils.locateProjectPom("jdkHome/compilerPluginConfigToolchain");
+    MavenBuild build = MavenBuild.create(pom)
+      .setExecutionDir(pom.getParentFile())
+      .setGoals(sonarGoal())
+      .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
+      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
+    orchestrator.executeBuild(build);
+
+    Properties props = getProps(outputProps);
+    assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_1.6"));
+  }
+
+  @Test
+  public void takeFirstToolchainIfMultipleExecutions() throws FileNotFoundException, IOException {
+    // https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#jdkToolchain requires Maven 3.3.1+
+    Assume.assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
+
+    File outputProps = temp.newFile();
+
+    File pom = ItUtils.locateProjectPom("jdkHome/compilerPluginConfigToolchainMultipleExecutions");
+    MavenBuild build = MavenBuild.create(pom)
+      .setExecutionDir(pom.getParentFile())
+      .setGoals(sonarGoal())
+      .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
+      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
+    orchestrator.executeBuild(build);
+
+    Properties props = getProps(outputProps);
+    assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_9"));
   }
 
   private Properties getProps(File outputProps)

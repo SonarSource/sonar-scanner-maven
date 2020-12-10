@@ -1,0 +1,51 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.codehaus.sonar</groupId>
+  <artifactId>sample-project</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>Test project</name>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.6.2</version>
+        <configuration>
+          <jdkToolchain>
+            <version>1.7</version>
+          </jdkToolchain>
+        </configuration>
+        <executions>
+          <execution>
+            <id>before-default</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <jdkToolchain>
+                <version>1.6</version>
+              </jdkToolchain>
+            </configuration>
+          </execution>
+          <execution>
+            <id>default-compile</id>
+          </execution>
+          <execution>
+            <id>after-default</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <jdkToolchain>
+                <version>1.8</version>
+              </jdkToolchain>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

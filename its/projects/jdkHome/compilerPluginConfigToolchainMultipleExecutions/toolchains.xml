@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF8"?>
+<toolchains>
+  <!-- JDK toolchains -->
+  <toolchain>
+    <type>jdk</type>
+    <provides>
+      <version>1.8</version>
+    </provides>
+    <configuration>
+      <jdkHome>fake_jdk_1.8</jdkHome>
+    </configuration>
+  </toolchain>
+  <toolchain>
+    <type>jdk</type>
+    <provides>
+      <version>9</version>
+    </provides>
+    <configuration>
+      <jdkHome>fake_jdk_9</jdkHome>
+    </configuration>
+  </toolchain>
+</toolchains>

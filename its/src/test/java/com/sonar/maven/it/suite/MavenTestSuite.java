@@ -27,7 +27,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-  LinksTest.class, MavenTest.class, ProxyTest.class
+  LinksTest.class, MavenTest.class, ProxyTest.class, JavaTest.class
 })
 public class MavenTestSuite {
 

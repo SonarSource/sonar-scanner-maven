@@ -162,13 +162,13 @@ public class SonarQubeMojoTest {
 
   private File executeProject(String projectName, String... properties) throws Exception {
 
-    File baseDir = new File("src/test/resources/org/sonarsource/scanner/maven/SonarQubeMojoTest/" + projectName);
+    File baseDir = new File("src/test/projects/" + projectName).getAbsoluteFile();
     SonarQubeMojo mojo = getMojo(baseDir);
     mojo.getSession().getProjects().get(0).setExecutionRoot(true);
     mojo.getSession().setAllProjects(mojo.getSession().getProjects());
 
-    Result<? extends ProjectDependencyGraph> result = mojoRule.lookup( GraphBuilder.class ).build( mojo.getSession() );
-    mojo.getSession().setProjectDependencyGraph( result.get() ); // done by maven in a normal execution
+    Result<? extends ProjectDependencyGraph> result = mojoRule.lookup(GraphBuilder.class).build(mojo.getSession());
+    mojo.getSession().setProjectDependencyGraph(result.get()); // done by maven in a normal execution
 
     mojo.setLog(mockedLogger);
 

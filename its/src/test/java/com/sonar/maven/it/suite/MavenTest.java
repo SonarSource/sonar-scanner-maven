@@ -24,18 +24,10 @@ import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.BuildRunner;
 import com.sonar.orchestrator.build.MavenBuild;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -44,7 +36,6 @@ import org.sonarqube.ws.client.settings.SetRequest;
 import org.sonarqube.ws.client.users.CreateRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.data.MapEntry.entry;
 
 public class MavenTest extends AbstractMavenTest {
 
@@ -88,7 +79,7 @@ public class MavenTest extends AbstractMavenTest {
   public void supportSonarHostURLParam() {
     BuildRunner runner = new BuildRunner(orchestrator.getConfiguration());
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-global-properties"))
-      //global property should take precedence
+      // global property should take precedence
       .setEnvironmentVariable("SONAR_HOST_URL", "http://from-env.org:9000")
       .setGoals(cleanSonarGoal());
 
@@ -419,30 +410,6 @@ public class MavenTest extends AbstractMavenTest {
       "java2' does not exist for Maven module com.sonarsource.it.samples:maven-bad-tests-property:jar:1.0-SNAPSHOT. Please check the property sonar.tests");
   }
 
-  // MSONAR-83
-  @Test
-  public void shouldPopulateLibraries() throws IOException {
-    File outputProps = temp.newFile();
-    File projectPom = ItUtils.locateProjectPom("shared/struts-1.3.9-diet");
-    MavenBuild build = MavenBuild.create(projectPom)
-      .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
-
-    Properties generatedProps = getProps(outputProps);
-    String[] moduleIds = generatedProps.getProperty("sonar.modules").split(",");
-    String strutsCoreModuleId = null;
-    for (String moduleId : moduleIds) {
-      if (generatedProps.getProperty(moduleId + ".sonar.moduleKey").equals("org.apache.struts:struts-core")) {
-        strutsCoreModuleId = moduleId;
-        break;
-      }
-    }
-    assertThat(strutsCoreModuleId).isNotNull();
-    assertThat(generatedProps.getProperty(strutsCoreModuleId + ".sonar.java.libraries")).contains("antlr-2.7.2.jar");
-    assertThat(generatedProps.getProperty(strutsCoreModuleId + ".sonar.libraries")).contains("antlr-2.7.2.jar");
-  }
-
   // MSONAR-91
   @Test
   public void shouldSkipModules() {
@@ -472,25 +439,6 @@ public class MavenTest extends AbstractMavenTest {
     assertThat(result.getLogs()).contains("SonarQube Scanner analysis skipped");
   }
 
-  @Test
-  public void read_default_from_plugins_config() throws Exception {
-    File outputProps = temp.newFile();
-    // Need package to have test execution
-    // Surefire reports are not in standard directory
-    File pom = ItUtils.locateProjectPom("project-default-config");
-    MavenBuild build = MavenBuild.create(pom)
-      .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
-
-    Properties props = getProps(outputProps);
-    assertThat(props).contains(
-      entry("sonar.findbugs.excludeFilters", new File(pom.getParentFile(), "findbugs-filter.xml").toString()),
-      entry("sonar.junit.reportsPath", new File(pom.getParentFile(), "target/surefire-output").toString()),
-      entry("sonar.junit.reportPaths", new File(pom.getParentFile(), "target/surefire-output").toString()),
-      entry("sonar.java.source", "1.7"));
-  }
-
   /**
    * MSONAR-141
    */
@@ -511,79 +459,6 @@ public class MavenTest extends AbstractMavenTest {
     build.setProperty("sonar.login", "julien");
     build.addArgument("-Psonar-password");
     orchestrator.executeBuild(build);
-  }
-
-  @Test
-  public void setJavaVersionCompilerConfiguration() throws FileNotFoundException, IOException {
-    Assume.assumeTrue(3 == getMavenMajorVersion());
-
-    File outputProps = temp.newFile();
-
-    File pom = ItUtils.locateProjectPom("version/compilerPluginConfig");
-    MavenBuild build = MavenBuild.create(pom)
-      .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
-
-    Properties props = getProps(outputProps);
-    assertThat(props).contains(
-      entry("sonar.java.source", "1.7"),
-      entry("sonar.java.target", "1.8"));
-  }
-
-  Integer mavenVersion = null;
-
-  private int getMavenMajorVersion() {
-    String versionRegex = "Apache Maven\\s(\\d+)\\.\\d+(?:\\.\\d+)?\\s";
-
-    if (mavenVersion != null) {
-      return mavenVersion;
-    }
-
-    MavenBuild build = MavenBuild.create()
-      .setGoals("-version");
-    BuildResult result = orchestrator.executeBuild(build);
-
-    String logs = result.getLogs();
-    Pattern p = Pattern.compile(versionRegex);
-    Matcher matcher = p.matcher(logs);
-
-    if (matcher.find()) {
-      mavenVersion = Integer.parseInt(matcher.group(1));
-      return mavenVersion;
-    }
-    throw new IllegalStateException("Could not find maven version: " + logs);
-  }
-
-  @Test
-  public void setJavaVersionProperties() throws IOException {
-    Assume.assumeTrue(3 == getMavenMajorVersion());
-
-    File outputProps = temp.newFile();
-
-    File pom = ItUtils.locateProjectPom("version/properties");
-    MavenBuild build = MavenBuild.create(pom)
-      .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
-
-    Properties props = getProps(outputProps);
-    assertThat(props).contains(
-      entry("sonar.java.source", "1.7"),
-      entry("sonar.java.target", "1.8"));
-  }
-
-  private Properties getProps(File outputProps)
-    throws FileNotFoundException, IOException {
-    FileInputStream fis = null;
-    try {
-      Properties props = new Properties();
-      fis = new FileInputStream(outputProps);
-      props.load(fis);
-      return props;
-    } finally {
-      IOUtils.closeQuietly(fis);
-    }
   }
 
   private boolean hasModules() {

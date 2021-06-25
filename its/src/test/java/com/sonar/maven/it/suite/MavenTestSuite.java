@@ -35,19 +35,16 @@ public class MavenTestSuite {
   public static final Orchestrator ORCHESTRATOR = Orchestrator.builderEnv()
     .setSonarVersion(getSonarVersion())
 
-    // The scanner for maven should still be compatible with previous LTS 6.7, and not the 7.9
-    // at the time of writing, so the installed plugins should be compatible with
-    // both 6.7 and 8.x. The latest releases of analysers drop the compatibility with
-    // 6.7, that's why versions are hardcoded here.
-    .addBundledPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", "5.14.0.18788"))
+    // The scanner for maven should still be compatible with LTS 7.9 and the latest version of SonarQube.
+    .addBundledPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", "6.0.0.20538"))
     .addBundledPlugin(MavenLocation.of("org.sonarsource.javascript", "sonar-javascript-plugin", "5.2.1.7778"))
-    .addBundledPlugin(MavenLocation.of("org.sonarsource.python", "sonar-python-plugin", "1.12.0.2726"))
+    .addBundledPlugin(MavenLocation.of("org.sonarsource.python", "sonar-python-plugin", "1.14.1.3143"))
     .addBundledPlugin(MavenLocation.of("org.sonarsource.html", "sonar-html-plugin", "3.2.0.2082"))
     .addBundledPlugin(MavenLocation.of("org.sonarsource.xml", "sonar-xml-plugin", "2.0.1.2020"))
     .build();
 
   private static String getSonarVersion() {
     String versionProperty = System.getProperty("sonar.runtimeVersion");
-    return versionProperty != null ? versionProperty : "LATEST_RELEASE";
+    return versionProperty != null ? versionProperty : "DEV";
   }
 }

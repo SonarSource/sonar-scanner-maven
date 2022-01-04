@@ -3,7 +3,7 @@ name: Release
 on:
   release:
     types:
-    - published
+      - published
 
 env:
   PYTHONUNBUFFERED: 1
@@ -14,45 +14,46 @@ jobs:
     name: Start release process
     timeout-minutes: 60
     steps:
-    - name: Run release action
-      id: run_release
-      uses: SonarSource/gh-action_release/main@v3
-      with:
-        distribute: true
-        publish_to_binaries: true
-        attach_artifacts_to_github_release: false
-        run_rules_cov: false
-        slack_channel: sonarqube-build
-      env:
-        ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
-        BURGRX_USER: ${{ secrets.BURGRX_USER }}
-        BURGRX_PASSWORD: ${{ secrets.BURGRX_PASSWORD }}
-        CIRRUS_TOKEN: ${{ secrets.CIRRUS_TOKEN }}
-        PATH_PREFIX: ${{ secrets.BINARIES_PATH_PREFIX }}
-        GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
-        RELEASE_SSH_USER: ${{ secrets.RELEASE_SSH_USER }}
-        RELEASE_SSH_KEY: ${{ secrets.RELEASE_SSH_KEY }}
-        SLACK_API_TOKEN: ${{secrets.SLACK_API_TOKEN }}
-    - name: Log outputs
-      if: always()
-      run: |
-        echo "${{ steps.run_release.outputs.releasability }}"
-        echo "${{ steps.run_release.outputs.release }}"
-        echo "${{ steps.run_release.outputs.distribute_release }}"
-    - name: Notify success on Slack
-      uses: Ilshidur/action-slack@2.0.0
-      env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-      with:
-        args: "Release successful for {{ GITHUB_REPOSITORY }} by {{ GITHUB_ACTOR }}"
-    - name: Notify failures on Slack
-      uses: Ilshidur/action-slack@2.0.0
-      if: failure()
-      env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-      with:
-        args: "Release failed, see the logs at https://github.com/{{ GITHUB_REPOSITORY }}/actions by {{ GITHUB_ACTOR }}"
+      - name: Run release action
+        id: run_release
+        uses: SonarSource/gh-action_release/main@v3
+        with:
+          distribute: true
+          publish_to_binaries: true
+          attach_artifacts_to_github_release: false
+          run_rules_cov: false
+          slack_channel: sonarqube-build
+        env:
+          ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
+          BURGRX_USER: ${{ secrets.BURGRX_USER }}
+          BURGRX_PASSWORD: ${{ secrets.BURGRX_PASSWORD }}
+          CIRRUS_TOKEN: ${{ secrets.CIRRUS_TOKEN }}
+          PATH_PREFIX: ${{ secrets.BINARIES_PATH_PREFIX }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          RELEASE_SSH_USER: ${{ secrets.RELEASE_SSH_USER }}
+          RELEASE_SSH_KEY: ${{ secrets.RELEASE_SSH_KEY }}
+          SLACK_API_TOKEN: ${{secrets.SLACK_API_TOKEN }}
+      - name: Log outputs
+        if: always()
+        run: |
+          echo "${{ steps.run_release.outputs.releasability }}"
+          echo "${{ steps.run_release.outputs.release }}"
+          echo "${{ steps.run_release.outputs.distribute_release }}"
+      - name: Notify success on Slack
+        uses: Ilshidur/action-slack@2.0.0
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        with:
+          args: "Release successful for {{ GITHUB_REPOSITORY }} by {{ GITHUB_ACTOR }}"
+      - name: Notify failures on Slack
+        uses: Ilshidur/action-slack@2.0.0
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        with:
+          args: "Release failed, see the logs at https://github.com/{{ GITHUB_REPOSITORY }}/actions by {{ GITHUB_ACTOR }}"
   maven-central-sync:
+    name: Sync with Maven Central
     runs-on: ubuntu-latest
     needs:
       - run_release
@@ -87,6 +88,53 @@ jobs:
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
       - name: Notify on failure
         if: ${{ failure() || steps.maven-central-sync.outcome == 'failure' }}
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          fields: repo,author,eventName
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_BUILD_WEBHOOK }}
+  relocation-pom:
+    name: Publish relocation POM
+    runs-on: ubuntu-latest
+    needs:
+      - maven-central-sync
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Prepare repo for uploading
+        working-directory: relocation/
+        run: |
+          GROUP_ID=$(mvn --batch-mode org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression="project.groupId" -q -DforceStdout)
+          ARTIFACT_ID=$(mvn --batch-mode org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression="project.artifactId" -q -DforceStdout)
+          _PATH="local_repo/${GROUP_ID//.//}/${ARTIFACT_ID}/${{ github.event.release.tag_name }}"
+          POM_PATH="${_PATH}/${ARTIFACT_ID}-${{ github.event.release.tag_name }}.pom"
+          mkdir --parent "${_PATH}"
+          sed 's|REPLACE_ME|${{ github.event.release.tag_name }}|' pom.xml > "${POM_PATH}"
+          md5sum "${POM_PATH}"    | cut -d\  -f1 > "${POM_PATH}.md5"
+          sha1sum "${POM_PATH}"   | cut -d\  -f1 > "${POM_PATH}.sha1"
+          sha256sum "${POM_PATH}" | cut -d\  -f1 > "${POM_PATH}.sha256"
+          sha512sum "${POM_PATH}" | cut -d\  -f1 > "${POM_PATH}.sha512"
+          export GNUPGHOMEDIR=gnupg/
+          mkdir --parent "${GNUPGHOMEDIR}"
+          echo "${GPG_PRIVATE_KEY_PASSPHRASE}" | gpg --batch --pinentry-mode loopback --passphrase-fd 0 --quiet --import <(echo "${GPG_PRIVATE_KEY_BASE64}")
+          echo "${GPG_PRIVATE_KEY_PASSPHRASE}" | gpg --batch --pinentry-mode loopback --passphrase-fd 0 --quiet --detach-sign --armor "${POM_PATH}"
+          rm -rf "${GNUPGHOMEDIR}"
+        env:
+          GPG_PRIVATE_KEY_BASE64: ${{ secrets.GPG_PRIVATE_KEY_BASE64 }}
+          GPG_PRIVATE_KEY_PASSPHRASE: ${{ secrets.GPG_PRIVATE_KEY_PASSPHRASE }}
+      - name: Maven Central Sync
+        id: maven-central-sync
+        uses: SonarSource/gh-action_release/maven-central-sync@v4
+        with:
+          local-repo-dir: relocation/local_repo/
+          nexus-url: https://oss.sonatype.org/
+          staging-profile-id: 23a95768f56d42
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+      - name: Notify on failure
+        if: failure()
         uses: 8398a7/action-slack@v3
         with:
           status: failure

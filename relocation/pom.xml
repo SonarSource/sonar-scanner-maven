@@ -1,0 +1,28 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>mojo-parent</artifactId>
+    <version>40</version>
+    <relativePath />
+  </parent>
+  <groupId>org.codehaus.mojo</groupId>
+  <artifactId>sonar-maven-plugin</artifactId>
+  <packaging>pom</packaging>
+  <version>REPLACE_ME</version>
+
+  <distributionManagement>
+    <relocation>
+      <groupId>org.sonarsource.scanner.maven</groupId>
+      <message>SonarQube plugin was moved to SonarSource organisation</message>
+    </relocation>
+  </distributionManagement>
+
+  <scm>
+    <connection>scm:git:https://github.com/SonarSource/sonar-scanner-maven.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/SonarSource/sonar-scanner-maven.git</developerConnection>
+    <url>https://github.com/SonarSource/sonar-scanner-maven</url>
+    <tag>HEAD</tag>
+  </scm>
+
+</project>

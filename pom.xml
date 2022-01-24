@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.sonarsource.parent</groupId>
     <artifactId>parent</artifactId>
-    <version>59.0.29</version>
+    <version>60.0.52</version>
     <relativePath />
   </parent>
 
@@ -80,6 +80,7 @@
   <properties>
     <mojo.java.target>1.7</mojo.java.target>
     <mavenVersion>3.5.2</mavenVersion>
+    <maven.compiler.release>8</maven.compiler.release>
     <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*</sonar.exclusions>
     <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
   </properties>

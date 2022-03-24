@@ -36,6 +36,12 @@ container_definition: &CONTAINER_DEFINITION
   zone: us-central1-a
   namespace: default
 
+container_definition_17: &CONTAINER_DEFINITION_17
+  image: us.gcr.io/sonarqube-team/base:j17-m3.8.2-latest
+  cluster_name: cirrus-ci-cluster
+  zone: us-central1-a
+  namespace: default
+
 only_sonarsource_qa: &ONLY_SONARSOURCE_QA
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == "master" || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH =~ "dogfood-on-.*")
 
@@ -84,6 +90,24 @@ qa_task:
         MAVEN_VERSION: 3.0.5
       - SQ_VERSION: DEV
         MAVEN_VERSION: 3.6.1
+  maven_cache:
+    folder: ${CIRRUS_WORKING_DIR}/.m2/repository
+  qa_script:
+    - ./cirrus/cirrus-qa.sh
+  cleanup_before_cache_script:
+    - cleanup_maven_repository
+
+qa_j17_task:
+  depends_on:
+    - build
+  <<: *ONLY_SONARSOURCE_QA
+  gke_container:
+    <<: *CONTAINER_DEFINITION_17
+    cpu: 2
+    memory: 4G
+  env:
+    SQ_VERSION: DEV
+    MAVEN_VERSION: 3.8.5
   maven_cache:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
   qa_script:

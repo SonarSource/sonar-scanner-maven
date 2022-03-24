@@ -32,16 +32,27 @@ import org.junit.runners.Suite;
 public class MavenTestSuite {
 
   @ClassRule
-  public static final Orchestrator ORCHESTRATOR = Orchestrator.builderEnv()
-    .setSonarVersion(getSonarVersion())
+  public static final Orchestrator ORCHESTRATOR;
 
-    // The scanner for maven should still be compatible with LTS 7.9 and the latest version of SonarQube.
-    .addBundledPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", "6.0.0.20538"))
-    .addBundledPlugin(MavenLocation.of("org.sonarsource.javascript", "sonar-javascript-plugin", "5.2.1.7778"))
-    .addBundledPlugin(MavenLocation.of("org.sonarsource.python", "sonar-python-plugin", "1.14.1.3143"))
-    .addBundledPlugin(MavenLocation.of("org.sonarsource.html", "sonar-html-plugin", "3.2.0.2082"))
-    .addBundledPlugin(MavenLocation.of("org.sonarsource.xml", "sonar-xml-plugin", "2.0.1.2020"))
-    .build();
+  static {
+    if (getSonarVersion().equals("DEV")) {
+      ORCHESTRATOR = Orchestrator.builderEnv()
+        .setSonarVersion(getSonarVersion())
+        .keepBundledPlugins()
+        .build();
+    } else {
+      ORCHESTRATOR = Orchestrator.builderEnv()
+        .setSonarVersion(getSonarVersion())
+
+        // The scanner for maven should still be compatible with LTS 7.9 and the latest version of SonarQube.
+        .addBundledPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", "6.0.0.20538"))
+        .addBundledPlugin(MavenLocation.of("org.sonarsource.javascript", "sonar-javascript-plugin", "5.2.1.7778"))
+        .addBundledPlugin(MavenLocation.of("org.sonarsource.python", "sonar-python-plugin", "1.14.1.3143"))
+        .addBundledPlugin(MavenLocation.of("org.sonarsource.html", "sonar-html-plugin", "3.2.0.2082"))
+        .addBundledPlugin(MavenLocation.of("org.sonarsource.xml", "sonar-xml-plugin", "2.0.1.2020"))
+        .build();
+    }
+  }
 
   private static String getSonarVersion() {
     String versionProperty = System.getProperty("sonar.runtimeVersion");

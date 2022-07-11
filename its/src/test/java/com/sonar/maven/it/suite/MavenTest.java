@@ -267,6 +267,17 @@ public class MavenTest extends AbstractMavenTest {
   }
 
   /**
+   * See SONAR-16554
+   */
+  @Test
+  public void shouldAnalyzeMultiModules_whenRootIsSharingTargetWithSubmodule_mustNotFail() {
+    MavenBuild build = MavenBuild.create(
+      new File(ItUtils.locateProjectDir("maven/modules-target-shared-by-root-and-submodule"), "module_a/buildpom.xml"))
+      .setGoals(cleanSonarGoal());
+    orchestrator.executeBuild(build);
+  }
+
+  /**
    * See SONAR-2735
    */
   @Test

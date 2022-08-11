@@ -67,7 +67,7 @@ To get coverage information, you'll need to generate the coverage report before 
 
 
 ## Configuring Analysis
-Most analysis properties will be read from your project. If you would like override the default values of specify additional parameters, configure the parameter names found on the [Analysis Parameters](/analysis/analysis-parameters/) page in the `<properties>` section of your pom.xml like this:
+Most analysis properties will be read from your project. If you would like override the default values of specify additional parameters, configure the parameter names found on the [Analysis Parameters](https://docs.sonarqube.org/latest/analysis/analysis-parameters/) page in the `<properties>` section of your pom.xml like this:
 ```
 <properties>
   <sonar.buildString> [...] </sonar.buildString>

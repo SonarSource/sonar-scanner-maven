@@ -37,13 +37,13 @@ public class MavenTestSuite {
   static {
     if (getSonarVersion().equals("DEV")) {
       ORCHESTRATOR = Orchestrator.builderEnv()
+        .useDefaultAdminCredentialsForBuilds(true)
         .setSonarVersion(getSonarVersion())
         .keepBundledPlugins()
         .build();
     } else {
       ORCHESTRATOR = Orchestrator.builderEnv()
         .setSonarVersion(getSonarVersion())
-
         // The scanner for maven should still be compatible with LTS 7.9 and the latest version of SonarQube.
         .addBundledPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", "6.0.0.20538"))
         .addBundledPlugin(MavenLocation.of("org.sonarsource.javascript", "sonar-javascript-plugin", "5.2.1.7778"))

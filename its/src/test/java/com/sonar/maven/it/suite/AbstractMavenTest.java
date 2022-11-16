@@ -19,11 +19,15 @@
  */
 package com.sonar.maven.it.suite;
 
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonValue;
+import com.google.gson.Gson;
 import com.sonar.orchestrator.Orchestrator;
 import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.MavenBuild;
 import com.sonar.orchestrator.container.Server;
 import com.sonar.orchestrator.http.HttpMethod;
+import com.sonar.orchestrator.http.HttpResponse;
 import com.sonar.orchestrator.version.Version;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -34,10 +38,17 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -66,7 +77,7 @@ public abstract class AbstractMavenTest {
   protected WsClient wsClient;
 
   protected static String[] cleanInstallSonarGoal() {
-    return new String[] {"clean install " + sonarGoal()};
+    return new String[]{"clean install " + sonarGoal()};
   }
 
   protected static String sonarGoal() {
@@ -74,15 +85,15 @@ public abstract class AbstractMavenTest {
   }
 
   protected static String[] cleanSonarGoal() {
-    return new String[] {"clean " + sonarGoal()};
+    return new String[]{"clean " + sonarGoal()};
   }
 
   protected static String[] cleanPackageSonarGoal() {
-    return new String[] {"clean package " + sonarGoal()};
+    return new String[]{"clean package " + sonarGoal()};
   }
 
   protected static String[] cleanVerifySonarGoal() {
-    return new String[] {"clean verify " + sonarGoal()};
+    return new String[]{"clean verify " + sonarGoal()};
   }
 
   @Before
@@ -96,20 +107,36 @@ public abstract class AbstractMavenTest {
 
   @After
   public void resetData() {
-    // We add one day to ensure that today's entries are deleted.
-    Instant instant = Instant.now().plus(1, ChronoUnit.DAYS);
+    Set<String> projectKeys = getProjectKeysToDelete();
 
-    // The expected format is yyyy-MM-dd.
-    String currentDateTime = DateTimeFormatter.ISO_LOCAL_DATE
-      .withZone(ZoneId.of("UTC"))
-      .format(instant);
+    if (!projectKeys.isEmpty()) {
+      orchestrator.getServer()
+        .newHttpCall("/api/projects/bulk_delete")
+        .setAdminCredentials()
+        .setMethod(HttpMethod.POST)
+        .setParams("projects", String.join(",", projectKeys))
+        .execute();
+    }
+  }
 
-    orchestrator.getServer()
-      .newHttpCall("/api/projects/bulk_delete")
+  private Set<String> getProjectKeysToDelete() {
+    HttpResponse ps = orchestrator.getServer()
+      .newHttpCall("api/projects/search")
       .setAdminCredentials()
-      .setMethod(HttpMethod.POST)
-      .setParams("analyzedBefore", currentDateTime)
+      .setMethod(HttpMethod.GET)
+      .setParam("ps", "100")
       .execute();
+
+    return Json.parse(ps.getBodyAsString())
+      .asObject()
+      .get("components")
+      .asArray()
+      .values()
+      .stream()
+      .map(JsonValue::asObject)
+      .map(members -> members.getString("key", ""))
+      .filter(s -> !s.isEmpty())
+      .collect(Collectors.toSet());
   }
 
   protected static Version mojoVersion() {

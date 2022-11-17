@@ -62,6 +62,7 @@ public class MavenTest extends AbstractMavenTest {
     File settingsXml = temp.newFile();
     Map<String, String> props = orchestrator.getDatabase().getSonarProperties();
     props.put("sonar.host.url", orchestrator.getServer().getUrl());
+    props.put("sonar.login", orchestrator.getDefaultAdminToken());
     FileUtils.write(settingsXml, ItUtils.createSettingsXml(props));
 
     build.addArgument("--settings=" + settingsXml.getAbsolutePath());

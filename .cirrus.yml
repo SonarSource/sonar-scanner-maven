@@ -17,8 +17,6 @@ env:
   GCF_ACCESS_TOKEN: VAULT[development/kv/data/promote data.token]
   PROMOTE_URL: VAULT[development/kv/data/promote data.url]
 
-  GITHUB_TOKEN: VAULT[development/github/token/SonarSource-sonar-scanner-maven-ro token]
-
   BURGR_URL: VAULT[development/kv/data/burgr data.url]
   BURGR_USERNAME: VAULT[development/kv/data/burgr data.cirrus_username]
   BURGR_PASSWORD: VAULT[development/kv/data/burgr data.cirrus_password]

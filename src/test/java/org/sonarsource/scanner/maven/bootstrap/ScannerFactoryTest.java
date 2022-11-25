@@ -91,7 +91,7 @@ public class ScannerFactoryTest {
   public void testProxy() {
     Proxy proxy = new Proxy();
     proxy.setActive(true);
-    proxy.setProtocol("http");
+    proxy.setProtocol("https");
     proxy.setHost("myhost");
     Settings settings = new Settings();
     settings.setProxies(Collections.singletonList(proxy));

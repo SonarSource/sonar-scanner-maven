@@ -1,6 +1,3 @@
-# content of service-account-credentials.json, used to access to Google Cloud Platform
-gcp_credentials: ENCRYPTED[0f521f37b53602cd374f0da202d56b0160a00e7fc7f11a7d2397263b60b972132816e26fb68954617a93770c338fb580]
-
 #
 # ENV VARIABLES
 #
@@ -29,15 +26,15 @@ env:
 # RE-USABLE CONFIGS
 #
 container_definition: &CONTAINER_DEFINITION
-  image: us.gcr.io/sonarqube-team/base:j11-m3-latest
-  cluster_name: cirrus-ci-cluster
-  zone: us-central1-a
+  image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-m3-latest
+  cluster_name: ${CIRRUS_CLUSTER_NAME}
+  region: eu-central-1
   namespace: default
 
 container_definition_17: &CONTAINER_DEFINITION_17
-  image: us.gcr.io/sonarqube-team/base:j17-m3.8.2-latest
-  cluster_name: cirrus-ci-cluster
-  zone: us-central1-a
+  image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j17-m3.8.6-latest
+  cluster_name: ${CIRRUS_CLUSTER_NAME}
+  region: eu-central-1
   namespace: default
 
 only_sonarsource_qa: &ONLY_SONARSOURCE_QA
@@ -47,7 +44,7 @@ only_sonarsource_qa: &ONLY_SONARSOURCE_QA
 # TASKS
 #
 build_task:
-  gke_container:
+  eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 1
     memory: 2G
@@ -68,7 +65,7 @@ qa_task:
   depends_on:
     - build
   <<: *ONLY_SONARSOURCE_QA
-  gke_container:
+  eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 2
     memory: 4G
@@ -99,7 +96,7 @@ qa_j17_task:
   depends_on:
     - build
   <<: *ONLY_SONARSOURCE_QA
-  gke_container:
+  eks_container:
     <<: *CONTAINER_DEFINITION_17
     cpu: 2
     memory: 4G
@@ -117,7 +114,7 @@ promote_task:
   depends_on:
     - qa
   <<: *ONLY_SONARSOURCE_QA
-  gke_container:
+  eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 0.5
     memory: 500M

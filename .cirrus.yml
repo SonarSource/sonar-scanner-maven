@@ -83,8 +83,6 @@ qa_task:
         MAVEN_VERSION: 3.1.1
       - SQ_VERSION: LATEST_RELEASE[8.9]
         MAVEN_VERSION: 3.0.5
-      - SQ_VERSION: DEV
-        MAVEN_VERSION: 3.6.1
   maven_cache:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
   qa_script:

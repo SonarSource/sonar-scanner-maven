@@ -109,7 +109,9 @@ public class MavenCompilerResolver {
       return jdkHome;
     }
 
-    public Optional<String> getEnablePreview() { return enablePreview; }
+    public Optional<String> getEnablePreview() {
+      return enablePreview;
+    }
 
     public String getExecutionId() {
       return executionId;
@@ -244,7 +246,6 @@ public class MavenCompilerResolver {
   }
 
   /**
-   *
    * @param javacPath Should be something like <jdk home>/bin/javac[.exe]
    * @return <jdk home>
    */

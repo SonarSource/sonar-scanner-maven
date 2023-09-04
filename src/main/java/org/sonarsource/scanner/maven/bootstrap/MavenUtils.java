@@ -19,8 +19,10 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
@@ -87,6 +89,29 @@ public final class MavenUtils {
     for (final String name : src.stringPropertyNames()) {
       dest.put(name, src.getProperty(name));
     }
+  }
+
+  /**
+   * Joins a list of strings that may contain commas by wrapping those strings in double quotes, like in CSV format.
+   * <p>
+   * For example:
+   *  values = { "/home/users/me/artifact-123,456.jar", "/opt/lib" }
+   *  separator = ","
+   *  return is the string: "\"/home/users/me/artifact-123,456.jar\",/opt/lib"
+   *
+   * @param values
+   * @return a string having all the values separated by commas
+   * and each single value that contains a comma wrapped in double quotes
+   */
+  public static String joinAsCsv(List<String> values) {
+    return values.stream()
+      .map(MavenUtils::escapeCommas)
+      .collect(Collectors.joining(","));
+  }
+
+  private static String escapeCommas(String value) {
+    // escape only when needed
+    return value.contains(",") ? ("\"" + value + "\"") : value;
   }
 
 }

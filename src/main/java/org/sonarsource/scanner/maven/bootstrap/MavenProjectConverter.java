@@ -65,6 +65,8 @@ public class MavenProjectConverter {
 
   private static final String JAVA_TARGET_PROPERTY = "sonar.java.target";
 
+  private static final String JAVA_ENABLE_PREVIEW = "sonar.java.enablePreview";
+
   private static final String LINKS_HOME_PAGE = "sonar.links.homepage";
 
   private static final String LINKS_CI = "sonar.links.ci";
@@ -295,6 +297,7 @@ public class MavenProjectConverter {
     Optional<MavenCompilerConfiguration> javaCompilerConfig = mavenCompilerResolver.extractConfiguration(pom);
     javaCompilerConfig.ifPresent(config -> {
       populateJavaAnalyzerSourceAndTarget(config, props);
+      populateEnablePreview(config, props);
       populateJavaAnalyzerJdkHome(config, props);
     });
   }
@@ -315,6 +318,10 @@ public class MavenProjectConverter {
       config.getSource().ifPresent(s -> props.put(JAVA_SOURCE_PROPERTY, s));
       config.getTarget().ifPresent(t -> props.put(JAVA_TARGET_PROPERTY, t));
     }
+  }
+
+  private static void populateEnablePreview(MavenCompilerConfiguration config, Map<String, String> props) {
+    config.getEnablePreview().ifPresent(property -> props.put(JAVA_ENABLE_PREVIEW, property));
   }
 
   private static void findBugsExcludeFileMaven(MavenProject pom, Map<String, String> props) {

@@ -103,9 +103,9 @@ qa_task:
   env:
     matrix:
       - SQ_VERSION: LATEST_RELEASE[8.9]
-        MAVEN_VERSION: 3.6.1
+        MAVEN_VERSION: 3.6.3
       - SQ_VERSION: LATEST_RELEASE[8.9]
-        MAVEN_VERSION: 3.5.2
+        MAVEN_VERSION: 3.5.4
       - SQ_VERSION: LATEST_RELEASE[8.9]
         MAVEN_VERSION: 3.3.9
       - SQ_VERSION: LATEST_RELEASE[8.9]

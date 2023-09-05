@@ -86,6 +86,7 @@ public class MavenCompilerResolver {
     private Optional<String> target;
     private Optional<String> source;
     private Optional<String> jdkHome;
+    private Optional<String> enablePreview;
     private final String executionId;
 
     private MavenCompilerConfiguration(String executionId) {
@@ -108,6 +109,10 @@ public class MavenCompilerResolver {
       return jdkHome;
     }
 
+    public Optional<String> getEnablePreview() {
+      return enablePreview;
+    }
+
     public String getExecutionId() {
       return executionId;
     }
@@ -116,7 +121,8 @@ public class MavenCompilerResolver {
       return Objects.equals(one.jdkHome, two.jdkHome)
         && Objects.equals(one.release, two.release)
         && Objects.equals(one.source, two.source)
-        && Objects.equals(one.target, two.target);
+        && Objects.equals(one.target, two.target)
+        && Objects.equals(one.enablePreview, two.enablePreview);
     }
 
   }
@@ -164,6 +170,7 @@ public class MavenCompilerResolver {
     result.release = getStringConfiguration(compilerExecution, "release");
     result.target = getStringConfiguration(compilerExecution, "target");
     result.source = getStringConfiguration(compilerExecution, "source");
+    result.enablePreview = getStringConfiguration(compilerExecution, "enablePreview");
     result.jdkHome = getJdkHome(compilerExecution);
     return result;
   }
@@ -239,7 +246,6 @@ public class MavenCompilerResolver {
   }
 
   /**
-   *
    * @param javacPath Should be something like <jdk home>/bin/javac[.exe]
    * @return <jdk home>
    */

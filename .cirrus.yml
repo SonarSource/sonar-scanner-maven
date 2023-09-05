@@ -102,6 +102,8 @@ qa_task:
     memory: 4G
   env:
     matrix:
+      - SQ_VERSION: DEV
+        MAVEN_VERSION: 3.9.4
       - SQ_VERSION: LATEST_RELEASE[8.9]
         MAVEN_VERSION: 3.6.3
       - SQ_VERSION: LATEST_RELEASE[8.9]
@@ -131,7 +133,7 @@ qa_j17_task:
     memory: 4G
   env:
     SQ_VERSION: DEV
-    MAVEN_VERSION: 3.8.5
+    MAVEN_VERSION: 3.9.4
   maven_cache:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
   qa_script:

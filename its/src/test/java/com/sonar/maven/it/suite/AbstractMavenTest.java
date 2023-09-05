@@ -198,7 +198,7 @@ public abstract class AbstractMavenTest {
   Version mavenVersion = null;
 
   protected Version getMavenVersion() {
-    String versionRegex = "Apache Maven\\s(\\d+\\.\\d+(?:\\.\\d+)?)\\s";
+    String versionRegex = "Apache Maven\\s(\\d+\\.\\d+(?:\\.\\d+)?)(?:-\\S+)?\\s";
 
     if (mavenVersion != null) {
       return mavenVersion;

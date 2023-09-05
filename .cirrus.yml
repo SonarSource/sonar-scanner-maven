@@ -102,20 +102,12 @@ qa_task:
     memory: 4G
   env:
     matrix:
-      - SQ_VERSION: DEV
-        MAVEN_VERSION: 3.9.4
-      - SQ_VERSION: LATEST_RELEASE[8.9]
-        MAVEN_VERSION: 3.6.3
       - SQ_VERSION: LATEST_RELEASE[8.9]
         MAVEN_VERSION: 3.5.4
       - SQ_VERSION: LATEST_RELEASE[8.9]
         MAVEN_VERSION: 3.3.9
       - SQ_VERSION: LATEST_RELEASE[8.9]
         MAVEN_VERSION: 3.2.5
-      - SQ_VERSION: LATEST_RELEASE[8.9]
-        MAVEN_VERSION: 3.1.1
-      - SQ_VERSION: LATEST_RELEASE[8.9]
-        MAVEN_VERSION: 3.0.5
   maven_cache:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
   qa_script:
@@ -132,8 +124,19 @@ qa_j17_task:
     cpu: 2
     memory: 4G
   env:
-    SQ_VERSION: DEV
-    MAVEN_VERSION: 3.9.4
+    matrix:
+      - SQ_VERSION: DEV
+        MAVEN_VERSION: 3.9.4
+      - SQ_VERSION: DEV
+        MAVEN_VERSION: 3.8.8
+      - SQ_VERSION: DEV
+        MAVEN_VERSION: 3.6.3
+      - SQ_VERSION: LATEST_RELEASE[9.9]
+        MAVEN_VERSION: 3.9.4
+      - SQ_VERSION: LATEST_RELEASE[9.9]
+        MAVEN_VERSION: 3.8.8
+      - SQ_VERSION: LATEST_RELEASE[9.9]
+        MAVEN_VERSION: 3.6.3
   maven_cache:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
   qa_script:

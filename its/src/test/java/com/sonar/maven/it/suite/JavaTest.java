@@ -91,7 +91,7 @@ public class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  public void setJavaVersionCompilerConfiguration() throws FileNotFoundException, IOException {
+  public void setJavaVersionCompilerConfiguration() throws IOException {
     File outputProps = temp.newFile();
 
     File pom = ItUtils.locateProjectPom("version/compilerPluginConfig");
@@ -123,7 +123,7 @@ public class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  public void setJdkHomeFromCompilerExecutableConfiguration() throws FileNotFoundException, IOException {
+  public void setJdkHomeFromCompilerExecutableConfiguration() throws IOException {
     File outputProps = temp.newFile();
 
     File pom = ItUtils.locateProjectPom("jdkHome/compilerPluginConfigExecutable");
@@ -137,7 +137,7 @@ public class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  public void setJdkHomeFromGlobalToolchainsPlugin() throws FileNotFoundException, IOException {
+  public void setJdkHomeFromGlobalToolchainsPlugin() throws IOException {
     File outputProps = temp.newFile();
 
     File pom = ItUtils.locateProjectPom("jdkHome/globalToolchain");
@@ -154,7 +154,7 @@ public class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  public void setJdkHomeFromCompilerToolchainsConfiguration() throws FileNotFoundException, IOException {
+  public void setJdkHomeFromCompilerToolchainsConfiguration() throws IOException {
     // https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#jdkToolchain requires Maven 3.3.1+
     Assume.assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
 
@@ -173,7 +173,7 @@ public class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  public void takeFirstToolchainIfMultipleExecutions() throws FileNotFoundException, IOException {
+  public void takeFirstToolchainIfMultipleExecutions() throws IOException {
     // https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#jdkToolchain requires Maven 3.3.1+
     Assume.assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
 

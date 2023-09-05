@@ -19,7 +19,11 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.junit.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class MavenUtilsTest {
@@ -31,5 +35,17 @@ public class MavenUtilsTest {
 
     assertThat(MavenUtils.coalesce(o1, o2)).isNull();
     assertThat(MavenUtils.coalesce(o1, o3, o2)).isEqualTo(o3);
+  }
+
+  @Test
+  public void testJoinAsCsv() {
+    List<String> values = Arrays.asList("/home/users/me/artifact-123,456.jar", "/opt/lib");
+    assertThat(MavenUtils.joinAsCsv(values)).isEqualTo("\"/home/users/me/artifact-123,456.jar\",/opt/lib");
+
+    values = Arrays.asList("/opt/lib", "/home/users/me/artifact-123,456.jar");
+    assertThat(MavenUtils.joinAsCsv(values)).isEqualTo("/opt/lib,\"/home/users/me/artifact-123,456.jar\"");
+
+    values = Arrays.asList("/opt/lib", "/home/users/me");
+    assertThat(MavenUtils.joinAsCsv(values)).isEqualTo("/opt/lib,/home/users/me");
   }
 }

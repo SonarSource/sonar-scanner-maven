@@ -52,8 +52,6 @@ import org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver.MavenCompil
 public class MavenProjectConverter {
   private final Log log;
 
-  private static final char SEPARATOR = ',';
-
   private static final String UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE = "Unable to determine structure of project."
     + " Probably you use Maven Advanced Reactor Options with a broken tree of modules.";
 
@@ -178,7 +176,7 @@ public class MavenProjectConverter {
       }
     }
     if (!moduleIds.isEmpty()) {
-      properties.put(prefix + "sonar.modules", StringUtils.join(moduleIds, SEPARATOR));
+      properties.put(prefix + "sonar.modules", MavenUtils.joinAsCsv(moduleIds));
     }
     return topLevelDir;
   }
@@ -392,10 +390,10 @@ public class MavenProjectConverter {
     MavenUtils.putAll(userProperties, props);
 
     List<File> mainDirs = mainSources(pom);
-    props.put(ScanProperties.PROJECT_SOURCE_DIRS, StringUtils.join(toPaths(mainDirs), SEPARATOR));
+    props.put(ScanProperties.PROJECT_SOURCE_DIRS, MavenUtils.joinAsCsv(toPaths(mainDirs)));
     List<File> testDirs = testSources(pom);
     if (!testDirs.isEmpty()) {
-      props.put(ScanProperties.PROJECT_TEST_DIRS, StringUtils.join(toPaths(testDirs), SEPARATOR));
+      props.put(ScanProperties.PROJECT_TEST_DIRS, MavenUtils.joinAsCsv(toPaths(testDirs)));
     } else {
       props.remove(ScanProperties.PROJECT_TEST_DIRS);
     }
@@ -432,7 +430,7 @@ public class MavenProjectConverter {
         .forEach(libraries::add);
     }
     if (!libraries.isEmpty()) {
-      String librariesValue = StringUtils.join(toPaths(libraries), SEPARATOR);
+      String librariesValue = MavenUtils.joinAsCsv(toPaths(libraries));
       if (test) {
         props.put(JAVA_PROJECT_TEST_LIBRARIES, librariesValue);
       } else {
@@ -589,7 +587,7 @@ public class MavenProjectConverter {
     return !maybeChild.equals(possibleParent) && maybeChild.toPath().startsWith(possibleParent.toPath());
   }
 
-  private static String[] toPaths(Collection<File> dirs) {
-    return dirs.stream().map(File::getAbsolutePath).toArray(String[]::new);
+  private static List<String> toPaths(Collection<File> dirs) {
+    return dirs.stream().map(File::getAbsolutePath).collect(Collectors.toList());
   }
 }

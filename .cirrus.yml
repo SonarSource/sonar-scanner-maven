@@ -97,41 +97,29 @@ qa_task:
     - build
   <<: *ONLY_SONARSOURCE_QA
   eks_container:
-    <<: *CONTAINER_DEFINITION
-    cpu: 2
-    memory: 4G
-  env:
-    matrix:
-      - SQ_VERSION: LATEST_RELEASE[8.9]
-        MAVEN_VERSION: 3.6.1
-      - SQ_VERSION: LATEST_RELEASE[8.9]
-        MAVEN_VERSION: 3.5.2
-      - SQ_VERSION: LATEST_RELEASE[8.9]
-        MAVEN_VERSION: 3.3.9
-      - SQ_VERSION: LATEST_RELEASE[8.9]
-        MAVEN_VERSION: 3.2.5
-      - SQ_VERSION: LATEST_RELEASE[8.9]
-        MAVEN_VERSION: 3.1.1
-      - SQ_VERSION: LATEST_RELEASE[8.9]
-        MAVEN_VERSION: 3.0.5
-  maven_cache:
-    folder: ${CIRRUS_WORKING_DIR}/.m2/repository
-  qa_script:
-    - ./cirrus/cirrus-qa.sh
-  cleanup_before_cache_script:
-    - cleanup_maven_repository
-
-qa_j17_task:
-  depends_on:
-    - build
-  <<: *ONLY_SONARSOURCE_QA
-  eks_container:
     <<: *CONTAINER_DEFINITION_17
     cpu: 2
     memory: 4G
   env:
-    SQ_VERSION: DEV
-    MAVEN_VERSION: 3.8.5
+    matrix:
+      - SQ_VERSION: DEV
+        MAVEN_VERSION: 3.9.4
+      - SQ_VERSION: DEV
+        MAVEN_VERSION: 3.8.8
+      - SQ_VERSION: DEV
+        MAVEN_VERSION: 3.6.3
+      - SQ_VERSION: LATEST_RELEASE[9.9]
+        MAVEN_VERSION: 3.9.4
+      - SQ_VERSION: LATEST_RELEASE[9.9]
+        MAVEN_VERSION: 3.8.8
+      - SQ_VERSION: LATEST_RELEASE[9.9]
+        MAVEN_VERSION: 3.6.3
+      - SQ_VERSION: LATEST_RELEASE[9.9]
+        MAVEN_VERSION: 3.5.4
+      - SQ_VERSION: LATEST_RELEASE[9.9]
+        MAVEN_VERSION: 3.3.9
+      - SQ_VERSION: LATEST_RELEASE[9.9]
+        MAVEN_VERSION: 3.2.5
   maven_cache:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
   qa_script:

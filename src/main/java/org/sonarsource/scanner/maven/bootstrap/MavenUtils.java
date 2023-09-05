@@ -96,7 +96,6 @@ public final class MavenUtils {
    * <p>
    * For example:
    *  values = { "/home/users/me/artifact-123,456.jar", "/opt/lib" }
-   *  separator = ","
    *  return is the string: "\"/home/users/me/artifact-123,456.jar\",/opt/lib"
    *
    * @param values

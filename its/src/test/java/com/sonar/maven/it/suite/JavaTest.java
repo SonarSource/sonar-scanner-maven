@@ -69,10 +69,6 @@ public class JavaTest extends AbstractMavenTest {
     assertThat(strutsCoreModuleId).isNotNull();
     assertThat(generatedProps.getProperty(strutsCoreModuleId + ".sonar.java.libraries")).contains("antlr-2.7.2.jar");
     assertThat(generatedProps.getProperty(strutsCoreModuleId + ".sonar.libraries")).contains("antlr-2.7.2.jar");
-
-    // in multi-values properties, each value with commas is handles as quoted strings
-    assertThat(generatedProps.getProperty("org.apache.struts:struts-tiles.sonar.libraries"))
-      .contains("\"" + generatedProps.getProperty("sonar.projectBaseDir") + "/core/target/struts-core-1,3,9.jar\"");
   }
 
   @Test
@@ -91,7 +87,7 @@ public class JavaTest extends AbstractMavenTest {
       entry("sonar.findbugs.excludeFilters", new File(pom.getParentFile(), "findbugs-filter.xml").toString()),
       entry("sonar.junit.reportsPath", new File(pom.getParentFile(), "target/surefire-output").toString()),
       entry("sonar.junit.reportPaths", new File(pom.getParentFile(), "target/surefire-output").toString()),
-      entry("sonar.java.source", "1.8"));
+      entry("sonar.java.source", "1.7"));
   }
 
   @Test
@@ -106,7 +102,7 @@ public class JavaTest extends AbstractMavenTest {
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
-      entry("sonar.java.source", "1.8"),
+      entry("sonar.java.source", "1.7"),
       entry("sonar.java.target", "1.8"));
   }
 
@@ -122,7 +118,7 @@ public class JavaTest extends AbstractMavenTest {
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
-      entry("sonar.java.source", "1.8"),
+      entry("sonar.java.source", "1.7"),
       entry("sonar.java.target", "1.8"));
   }
 

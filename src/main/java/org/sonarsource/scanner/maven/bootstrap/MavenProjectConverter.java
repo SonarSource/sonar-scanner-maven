@@ -386,7 +386,7 @@ public class MavenProjectConverter {
     props.put(ScanProperties.PROJECT_SOURCE_DIRS, MavenUtils.joinAsCsv(toPaths(mainDirs)));
     List<File> testDirs = testSources(pom);
     if (!testDirs.isEmpty()) {
-      props.put(ScanProperties.PROJECT_TEST_DIRS,  MavenUtils.joinAsCsv(toPaths(testDirs)));
+      props.put(ScanProperties.PROJECT_TEST_DIRS, MavenUtils.joinAsCsv(toPaths(testDirs)));
     } else {
       props.remove(ScanProperties.PROJECT_TEST_DIRS);
     }
@@ -423,7 +423,7 @@ public class MavenProjectConverter {
         .forEach(libraries::add);
     }
     if (!libraries.isEmpty()) {
-      String librariesValue =  MavenUtils.joinAsCsv(toPaths(libraries));
+      String librariesValue = MavenUtils.joinAsCsv(toPaths(libraries));
       if (test) {
         props.put(JAVA_PROJECT_TEST_LIBRARIES, librariesValue);
       } else {

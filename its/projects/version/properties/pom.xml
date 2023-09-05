@@ -6,7 +6,7 @@
   <name>Sonar :: Integration Tests :: Java Version</name>
   
   <properties>
-    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
   

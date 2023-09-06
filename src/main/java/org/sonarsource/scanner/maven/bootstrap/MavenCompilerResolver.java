@@ -118,11 +118,11 @@ public class MavenCompilerResolver {
     }
 
     public static boolean same(MavenCompilerConfiguration one, MavenCompilerConfiguration two) {
-      return Objects.equals(one.jdkHome, two.jdkHome)
-        && Objects.equals(one.release, two.release)
-        && Objects.equals(one.source, two.source)
-        && Objects.equals(one.target, two.target)
-        && Objects.equals(one.enablePreview, two.enablePreview);
+      return Objects.equals(one.getJdkHome(), two.getJdkHome())
+        && Objects.equals(one.getRelease(), two.getRelease())
+        && Objects.equals(one.getSource(), two.getSource())
+        && Objects.equals(one.getTarget(), two.getTarget())
+        && Objects.equals(one.getEnablePreview(), two.getEnablePreview());
     }
 
   }

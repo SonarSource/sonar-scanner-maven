@@ -14,10 +14,21 @@ Run a scan using your local build:
     # run scan in some project
     `mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.5-SNAPSHOT:sonar`
 
-    
+### Testing
+
 There are 3 type of tests:
 
-* Unit tests (in src/test/java) that you can run with `mvn test`
-* Invoker tests (in src/it) that you can run with `mvn verify`
-* Integration tests (in its) that you have to run as a separate Maven project (`cd its && mvn verify`)
+#### Unit Tests
+The Unit Tests are located in src/test/java, and they can be run with `mvn test`
 
+#### Invoker Tests
+The Invoker tests are located in src/it, and they can be run with `mvn verify`
+
+The [maven-invoker-plugin](https://maven.apache.org/plugins/maven-invoker-plugin/) allows to debug single tests from the cli with `mvn invoker:run -Dinvoker.test=<test-name> -Dinvoker.mavenExecutable=mvnDebug`.
+
+For example, in order to debug the test [java-compiler-executable](src/it/java-compiler-executable), run `mvn invoker:run -Dinvoker.test=java-compiler-executable -Dinvoker.mavenExecutable=mvnDebug` and then attach the project to the debug process: IntelliJ Toolbar -> Run -> Attach to Process.
+
+*Note* that you have to run `mvn invoker:install` to debug the latest changes in your code!
+
+#### Integration Tests
+The Integration tests are located in its, and they can be run as a separate Maven project: `cd its && mvn verify`

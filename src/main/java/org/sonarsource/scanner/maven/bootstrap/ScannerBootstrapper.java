@@ -52,7 +52,6 @@ public class ScannerBootstrapper {
 
   public void execute() throws MojoExecutionException {
     try {
-      applyMasks();
       scanner.start();
       serverVersion = scanner.serverVersion();
 
@@ -66,26 +65,6 @@ public class ScannerBootstrapper {
     } catch (Exception e) {
       throw new MojoExecutionException(e.getMessage(), e);
     }
-  }
-
-  private void applyMasks() {
-    // Exclude log implementation to not conflict with Maven 3.1 logging impl
-    scanner.mask("org.slf4j.LoggerFactory");
-    // Include slf4j Logger that is exposed by some Sonar components
-    scanner.unmask("org.slf4j.Logger");
-    scanner.unmask("org.slf4j.ILoggerFactory");
-    // MSONAR-122
-    scanner.unmask("org.slf4j.Marker");
-    // Exclude other slf4j classes
-    // .unmask("org.slf4j.impl.")
-    scanner.mask("org.slf4j.");
-    // Exclude logback
-    scanner.mask("ch.qos.logback.");
-    scanner.mask("org.sonar.");
-    // Guava is not the same version in SonarQube classloader
-    scanner.mask("com.google.common");
-    // Include everything else (we need to unmask all extensions that might be passed to the batch)
-    scanner.unmask("");
   }
 
   private Map<String, String> collectProperties()

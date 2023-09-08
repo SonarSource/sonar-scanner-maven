@@ -130,9 +130,6 @@ public class ScannerBootstrapperTest {
   }
 
   private void verifyCommonCalls() {
-    verify(scanner, atLeastOnce()).mask(anyString());
-    verify(scanner, atLeastOnce()).unmask(anyString());
-
     verify(scanner).start();
     verify(scanner).serverVersion();
     verify(scanner).execute(projectProperties);

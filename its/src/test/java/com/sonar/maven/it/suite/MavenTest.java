@@ -313,7 +313,7 @@ public class MavenTest extends AbstractMavenTest {
   public void should_support_shade_with_dependency_reduced_pom_with_clean_install_sonar_goals() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/shade-with-dependency-reduced-pom"))
       .setGoals(cleanInstallSonarGoal());
-    BuildResult result = orchestrator.executeBuildQuietly(build);
+    BuildResult result = orchestrator.executeBuild(build);
     assertThat(result.getLastStatus()).isEqualTo(0);
     assertThat(result.getLogs()).doesNotContain(
       "Unable to determine structure of project. Probably you use Maven Advanced Reactor Options, which is not supported by Sonar and should not be used.");

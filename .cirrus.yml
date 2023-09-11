@@ -26,11 +26,6 @@ env:
 #
 # RE-USABLE CONFIGS
 #
-container_definition: &CONTAINER_DEFINITION
-  image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-m3-latest
-  cluster_name: ${CIRRUS_CLUSTER_NAME}
-  region: eu-central-1
-  namespace: default
 
 container_definition_17: &CONTAINER_DEFINITION_17
   image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j17-m3.8.6-latest
@@ -49,7 +44,7 @@ except_nightly_cron: &EXCEPT_ON_NIGHTLY_CRON
 #
 build_task:
   eks_container:
-    <<: *CONTAINER_DEFINITION
+    <<: *CONTAINER_DEFINITION_17
     cpu: 1
     memory: 2G
   env:
@@ -141,7 +136,7 @@ promote_task:
   <<: *ONLY_SONARSOURCE_QA
   <<: *EXCEPT_ON_NIGHTLY_CRON
   eks_container:
-    <<: *CONTAINER_DEFINITION
+    <<: *CONTAINER_DEFINITION_17
     cpu: 0.5
     memory: 500M
   env:

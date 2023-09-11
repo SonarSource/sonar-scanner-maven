@@ -21,7 +21,6 @@ package com.sonar.maven.it.suite;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonValue;
-import com.google.gson.Gson;
 import com.sonar.orchestrator.Orchestrator;
 import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.MavenBuild;
@@ -33,10 +32,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -44,11 +39,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -63,10 +53,11 @@ import org.sonarqube.ws.client.components.ShowRequest;
 import org.sonarqube.ws.client.components.TreeRequest;
 import org.sonarqube.ws.client.measures.ComponentRequest;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 public abstract class AbstractMavenTest {
+
+  private static final Pattern VERSION_REGEX = Pattern.compile("Apache Maven\\s(\\d+\\.\\d+(?:\\.\\d+)?)(?:-\\S+)?\\s");
 
   private static Version mojoVersion;
 
@@ -186,7 +177,7 @@ public abstract class AbstractMavenTest {
   }
 
   static List<Component> getModules(String projectKey) {
-    return newWsClient().components().tree(new TreeRequest().setComponent(projectKey).setQualifiers(asList("BRC"))).getComponentsList();
+    return newWsClient().components().tree(new TreeRequest().setComponent(projectKey).setQualifiers(singletonList("BRC"))).getComponentsList();
   }
 
   static WsClient newWsClient() {
@@ -198,7 +189,6 @@ public abstract class AbstractMavenTest {
   Version mavenVersion = null;
 
   protected Version getMavenVersion() {
-    String versionRegex = "Apache Maven\\s(\\d+\\.\\d+(?:\\.\\d+)?)\\s";
 
     if (mavenVersion != null) {
       return mavenVersion;
@@ -209,8 +199,7 @@ public abstract class AbstractMavenTest {
     BuildResult result = orchestrator.executeBuild(build);
 
     String logs = result.getLogs();
-    Pattern p = Pattern.compile(versionRegex);
-    Matcher matcher = p.matcher(logs);
+    Matcher matcher = VERSION_REGEX.matcher(logs);
 
     if (matcher.find()) {
       mavenVersion = Version.create(matcher.group(1));

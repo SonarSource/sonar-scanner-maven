@@ -122,6 +122,8 @@ public class MavenProjectConverter {
 
   private final MavenCompilerResolver mavenCompilerResolver;
 
+  private static final List<File> originalPoms = new ArrayList<>();
+
   public MavenProjectConverter(Log log, MavenCompilerResolver mavenCompilerResolver, Properties envProperties) {
     this.log = log;
     this.mavenCompilerResolver = mavenCompilerResolver;
@@ -132,6 +134,14 @@ public class MavenProjectConverter {
     this.userProperties = userProperties;
     this.specifiedProjectKey = specifiedProjectKey(userProperties, root);
     Map<MavenProject, Map<String, String>> propsByModule = new LinkedHashMap<>();
+
+    for (String module : root.getModules()) {
+      File modulePom = new File(root.getFile().getParentFile(), module);
+      if (!module.endsWith(".xml")) {
+        modulePom = new File(modulePom, "pom.xml");
+      }
+      originalPoms.add(modulePom);
+    }
 
     try {
       configureModules(mavenProjects, propsByModule);
@@ -228,13 +238,27 @@ public class MavenProjectConverter {
       }
     } else {
       for (MavenProject module : modules) {
-        if (module.getFile().getCanonicalFile().equals(canonical)) {
+        if (getOriginalPom(module).equals(canonical)) {
           return module;
         }
       }
     }
 
     return null;
+  }
+
+  private static File getOriginalPom(MavenProject module) throws IOException {
+    File canonical = module.getFile().getCanonicalFile();
+    if (originalPoms.contains(module.getFile())) {
+      return canonical;
+    }
+    return originalPoms.stream()
+      .filter(origPom -> filesHaveSameParent(origPom, module.getFile())).findFirst()
+      .orElse(canonical);
+  }
+
+  private static boolean filesHaveSameParent(File f1, File f2) {
+    return f1.getParentFile().equals(f2.getParentFile());
   }
 
   private Map<String, String> computeSonarQubeProperties(MavenProject pom) throws MojoExecutionException {

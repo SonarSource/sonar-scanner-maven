@@ -26,33 +26,6 @@
     </license>
   </licenses>
 
-  <developers>
-    <developer>
-      <id>olamy</id>
-      <name>Olivier Lamy</name>
-      <email>olamy@apache.org</email>
-      <timezone>+1</timezone>
-    </developer>
-    <developer>
-      <id>godin</id>
-      <name>Evgeny Mandrikov</name>
-      <email>mandrikov@gmail.com</email>
-      <timezone>+3</timezone>
-    </developer>
-    <developer>
-      <id>simon.brandhof</id>
-      <name>Simon Brandhof</name>
-      <email>simon.brandhof@gmail.com</email>
-      <timezone>+1</timezone>
-    </developer>
-    <developer>
-      <id>henryju</id>
-      <name>Julien Henry</name>
-      <email>henryju@yahoo.fr</email>
-      <timezone>+1</timezone>
-    </developer>
-  </developers>
-
   <prerequisites>
     <maven>3.0</maven>
   </prerequisites>
@@ -78,61 +51,39 @@
   </distributionManagement>
 
   <properties>
-    <mojo.java.target>1.7</mojo.java.target>
-    <mavenVersion>3.5.2</mavenVersion>
+    <mojo.java.target>1.8</mojo.java.target>
+    <mavenVersion>3.8.2</mavenVersion>
     <maven.compiler.release>8</maven.compiler.release>
     <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*</sonar.exclusions>
     <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-plugin-api</artifactId>
-      <version>${mavenVersion}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-model</artifactId>
-      <version>${mavenVersion}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-artifact</artifactId>
-      <version>${mavenVersion}</version>
-      <scope>provided</scope>
-    </dependency>
+    <!-- TODO when upgrading the mavenVersion to 3.8.3+ it breaks the Unit Tests with Mojo! -->
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-core</artifactId>
       <version>${mavenVersion}</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.sonatype.plexus</groupId>
-      <artifactId>plexus-sec-dispatcher</artifactId>
-      <version>1.4</version>
-    </dependency>
-    <!-- MSONAR-141 and MSONAR-171 -->
+
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-utils</artifactId>
-      <version>3.2.1</version>
+      <artifactId>plexus-sec-dispatcher</artifactId>
+      <version>2.0</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
       <artifactId>maven-plugin-annotations</artifactId>
-      <version>3.5</version>
+      <version>3.6.0</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.sonarsource.scanner.api</groupId>
       <artifactId>sonar-scanner-api</artifactId>
-      <version>2.16.3.1081</version>
+      <version>2.16.2.588</version>
     </dependency>
 
     <dependency>
@@ -142,16 +93,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>jsr305</artifactId>
-      <version>2.0.3</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.13.1</version>
+      <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -166,22 +110,11 @@
       <version>3.18.0</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.skyscreamer</groupId>
-      <artifactId>jsonassert</artifactId>
-      <version>1.2.3</version>
-      <scope>test</scope>
-    </dependency>
+
     <dependency>
       <groupId>org.apache.maven.plugin-testing</groupId>
       <artifactId>maven-plugin-testing-harness</artifactId>
       <version>3.3.0</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mortbay.jetty</groupId>
-      <artifactId>jetty</artifactId>
-      <version>6.1.25</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -195,6 +128,7 @@
   <build>
     <pluginManagement>
       <plugins>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
@@ -202,9 +136,12 @@
             <source>8</source>
           </configuration>
         </plugin>
+
       </plugins>
     </pluginManagement>
+
     <plugins>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
@@ -228,6 +165,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-component-metadata</artifactId>
@@ -240,6 +178,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
@@ -248,6 +187,7 @@
           <goals>deploy site site:stage</goals>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
@@ -265,6 +205,7 @@
           <skipDeploy>true</skipDeploy>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-scm-publish-plugin</artifactId>
@@ -282,6 +223,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -324,6 +266,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-invoker-plugin</artifactId>

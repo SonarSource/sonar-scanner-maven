@@ -36,10 +36,9 @@ import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -76,7 +75,7 @@ public class ScannerBootstrapperTest {
     when(session.getProjects()).thenReturn(Collections.singletonList(rootProject));
 
     projectProperties = new HashMap<>();
-    when(mavenProjectConverter.configure(anyListOf(MavenProject.class), any(MavenProject.class), any(Properties.class))).thenReturn(projectProperties);
+    when(mavenProjectConverter.configure(anyList(), any(MavenProject.class), any(Properties.class))).thenReturn(projectProperties);
 
     when(scanner.mask(anyString())).thenReturn(scanner);
     when(scanner.unmask(anyString())).thenReturn(scanner);

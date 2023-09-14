@@ -79,7 +79,7 @@
 
   <properties>
     <mojo.java.target>1.7</mojo.java.target>
-    <mavenVersion>3.5.2</mavenVersion>
+    <mavenVersion>3.9.4</mavenVersion>
     <maven.compiler.release>8</maven.compiler.release>
     <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*</sonar.exclusions>
     <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
@@ -111,15 +111,9 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.sonatype.plexus</groupId>
-      <artifactId>plexus-sec-dispatcher</artifactId>
-      <version>1.4</version>
-    </dependency>
-    <!-- MSONAR-141 and MSONAR-171 -->
-    <dependency>
       <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-utils</artifactId>
-      <version>3.2.1</version>
+      <artifactId>plexus-sec-dispatcher</artifactId>
+      <version>2.0</version>
     </dependency>
 
     <dependency>
@@ -156,32 +150,27 @@
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
-      <version>1.9.5</version>
+      <artifactId>mockito-core</artifactId>
+      <version>5.3.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
-      <version>3.18.0</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.skyscreamer</groupId>
-      <artifactId>jsonassert</artifactId>
-      <version>1.2.3</version>
+      <version>3.24.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugin-testing</groupId>
       <artifactId>maven-plugin-testing-harness</artifactId>
-      <version>3.3.0</version>
+      <version>4.0.0-alpha-1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.mortbay.jetty</groupId>
-      <artifactId>jetty</artifactId>
-      <version>6.1.25</version>
+      <!-- Needed for the maven-plugin-testing-harness -->
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-compat</artifactId>
+      <version>${mavenVersion}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -285,7 +274,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.4</version>
+        <version>0.8.10</version>
         <executions>
           <execution>
             <id>pre-unit-test</id>

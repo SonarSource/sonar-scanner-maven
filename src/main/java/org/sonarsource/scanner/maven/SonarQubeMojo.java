@@ -67,7 +67,7 @@ public class SonarQubeMojo extends AbstractMojo {
   @Component
   private LifecycleExecutor lifecycleExecutor;
 
-  @Component(hint = "mng-4384")
+  @Component(role = SecDispatcher.class, hint = "default")
   private SecDispatcher securityDispatcher;
 
   @Component

@@ -14,7 +14,7 @@ jobs:
     with:
       publishToBinaries: true
       mavenCentralSync: true
-      slackChannel: team-sonarqube-build
+      slackChannel: team-lang-java-notifs
   relocation-pom:
     name: Publish relocation POM
     runs-on: ubuntu-latest
@@ -71,7 +71,7 @@ jobs:
         if: failure()
         uses: 8398a7/action-slack@v3
         with:
-          channel: team-sonarqube-build
+          channel: team-lang-java-notifs
           status: failure
           fields: repo,author,eventName
         env:

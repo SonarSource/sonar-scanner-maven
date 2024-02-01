@@ -81,9 +81,7 @@ public class SonarQubeMojo extends AbstractMojo {
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
-    if (getLog().isDebugEnabled()) {
-      setLog(new TimestampLogger(getLog()));
-    }
+    setLog(new TimestampLogger(getLog()));
 
     if (shouldDelayExecution()) {
       getLog().info("Delaying SonarQube Scanner to the end of multi-module project");

@@ -22,34 +22,40 @@ package org.sonarsource.scanner.maven;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import org.apache.maven.plugin.logging.Log;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TimestampLoggerTest {
 
-  private static final Supplier<LocalTime> FROZEN_TIME_SUPPLIER = () -> LocalTime.of(10, 10, 30);
-
-
   @Test
   void all_messages_are_timestamped() {
     TestLog mavenLog = new TestLog(TestLog.LogLevel.DEBUG);
-    TimestampLogger logger = new TimestampLogger(mavenLog, FROZEN_TIME_SUPPLIER);
+    TimestampLogger logger = new TimestampLogger(mavenLog);
 
-    logger.debug("My debug message");
-    logger.debug("My debug message", new IllegalArgumentException());
-    logger.debug(new IllegalArgumentException());
-    logger.info("My info message");
-    logger.info("My info message", new IllegalArgumentException());
-    logger.info(new IllegalArgumentException());
-    logger.warn("My warn message");
-    logger.warn("My warn message", new IllegalArgumentException());
-    logger.warn(new IllegalArgumentException());
-    logger.error("My error message");
-    logger.error("My error message", new IllegalArgumentException());
-    logger.error(new IllegalArgumentException());
+    LocalTime expectedCurrentTime = LocalTime.of(10, 10, 30);
+
+    try (MockedStatic<LocalTime> localTimeMockedStatic = Mockito.mockStatic(LocalTime.class)) {
+      localTimeMockedStatic.when(LocalTime::now).thenReturn(expectedCurrentTime);
+
+      logger.debug("My debug message");
+      logger.debug("My debug message", new IllegalArgumentException());
+      logger.debug(new IllegalArgumentException());
+      logger.info("My info message");
+      logger.info("My info message", new IllegalArgumentException());
+      logger.info(new IllegalArgumentException());
+      logger.warn("My warn message");
+      logger.warn("My warn message", new IllegalArgumentException());
+      logger.warn(new IllegalArgumentException());
+      logger.error("My error message");
+      logger.error("My error message", new IllegalArgumentException());
+      logger.error(new IllegalArgumentException());
+    }
+
 
     assertThat(mavenLog.logs).containsOnly(
       "[DEBUG] 10:10:30.000 My debug message",

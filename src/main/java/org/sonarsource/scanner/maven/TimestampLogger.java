@@ -22,23 +22,15 @@ package org.sonarsource.scanner.maven;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
-import java.util.function.Supplier;
 import org.apache.maven.plugin.logging.Log;
 
 public class TimestampLogger implements Log {
   private final DateTimeFormatter timeFormatter;
   private final Log log;
 
-  private final Supplier<LocalTime> currentTimeSupplier;
-
   public TimestampLogger(Log log) {
-    this(log, LocalTime::now);
-  }
-
-  public TimestampLogger(Log log, Supplier<LocalTime> currentTimeSupplier) {
     this.log = log;
     this.timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS ");
-    this.currentTimeSupplier = currentTimeSupplier;
   }
 
   @Override
@@ -82,7 +74,7 @@ public class TimestampLogger implements Log {
   }
 
   private String getCurrentTimeStamp() {
-    LocalTime currentTime = currentTimeSupplier.get();
+    LocalTime currentTime = LocalTime.now();
     return currentTime.format(timeFormatter);
   }
 

@@ -14,4 +14,15 @@ assert properties."$source" == '9'
 
 
 def logs = new File(basedir, 'build.log').readLines()
-assert logs.contains('[WARNING] Heterogeneous compiler configuration has been detected. Using compiler configuration from execution: \'default-compile\'')
+assert containsCompilerWarning(logs)
+
+static boolean containsCompilerWarning(List<String> logs) {
+    for (String log: logs) {
+        if (log.startsWith("[WARNING]") &&
+                log.endsWith("Heterogeneous compiler configuration has been detected. Using compiler configuration from execution: 'default-compile'")) {
+            return true
+        }
+    }
+    return false
+}
+

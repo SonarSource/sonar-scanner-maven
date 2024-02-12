@@ -20,7 +20,6 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 
@@ -47,5 +46,29 @@ public class MavenUtilsTest {
 
     values = Arrays.asList("/opt/lib", "/home/users/me");
     assertThat(MavenUtils.joinAsCsv(values)).isEqualTo("/opt/lib,/home/users/me");
+  }
+
+  @Test
+  public void testSplitAsCsv() {
+    String[] expectedValues = {"/home/users/me/artifact-123,456.jar", "/opt/lib", "src/main/java"};
+    // Single escaped value
+    assertThat(MavenUtils.splitAsCsv("\"/home/users/me/artifact-123,456.jar\",/opt/lib,src/main/java"))
+      .containsOnly(expectedValues);
+    assertThat(MavenUtils.splitAsCsv("/opt/lib,\"/home/users/me/artifact-123,456.jar\",src/main/java"))
+      .containsOnly("/opt/lib", "/home/users/me/artifact-123,456.jar", "src/main/java");
+    assertThat(MavenUtils.splitAsCsv("/opt/lib,src/main/java,\"/home/users/me/artifact-123,456.jar\""))
+      .containsOnly(expectedValues);
+
+    // Consecutive escaped values
+    assertThat(MavenUtils.splitAsCsv("/opt/lib,\"src/main/java\",\"/home/users/me/artifact-123,456.jar\""))
+      .containsOnly(expectedValues);
+    assertThat(MavenUtils.splitAsCsv("\"/opt/lib\",\"src/main/java\",\"/home/users/me/artifact-123,456.jar\""))
+      .containsOnly(expectedValues);
+    assertThat(MavenUtils.splitAsCsv("\"/opt/lib\",\"/home/users/me/artifact-123,456.jar\",src/main/java"))
+      .containsOnly("/opt/lib", "/home/users/me/artifact-123,456.jar", "src/main/java");
+
+    // Interleaved escaped values
+    assertThat(MavenUtils.splitAsCsv("\"/opt/lib\",src/main/java,\"/home/users/me/artifact-123,456.jar\""))
+      .containsOnly(expectedValues);
   }
 }

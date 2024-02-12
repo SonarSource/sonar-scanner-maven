@@ -314,6 +314,8 @@ public class MavenProjectConverterTest {
     assertThat(props.get(module2Key
       + ".sonar.projectBaseDir")).isEqualTo(module2BaseDir.getAbsolutePath());
 
+    assertThat(projectConverter.getSkippedBasedDirs()).containsOnly(module11BaseDir.toPath());
+
     verify(log).info("Module MavenProject: com.foo:module11:2.1 @ "
       + new File(module11BaseDir, "pom.xml").getAbsolutePath()
       + " skipped by property 'sonar.skip'");
@@ -386,6 +388,8 @@ public class MavenProjectConverterTest {
     assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
 
     assertThat(props.get("sonar.sources")).isEqualTo(srcMainDir.getAbsolutePath());
+
+    assertThat(projectConverter.isSourceDirsOverridden()).isTrue();
   }
 
   @Test
@@ -464,6 +468,8 @@ public class MavenProjectConverterTest {
     assertThat(props.get(module2Key + ".sonar.binaries")).isEqualTo(module2BinaryDir.getAbsolutePath());
     assertThat(props.get(module2Key + ".sonar.groovy.binaries")).isEqualTo(module2BinaryDir.getAbsolutePath());
     assertThat(props.get(module2Key + ".sonar.java.binaries")).isEqualTo(module2BinaryDir.getAbsolutePath());
+
+    assertThat(projectConverter.isSourceDirsOverridden()).isTrue();
   }
 
   @Test(expected = MojoExecutionException.class)

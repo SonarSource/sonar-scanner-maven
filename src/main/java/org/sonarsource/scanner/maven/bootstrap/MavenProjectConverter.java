@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -122,10 +123,22 @@ public class MavenProjectConverter {
 
   private final MavenCompilerResolver mavenCompilerResolver;
 
+  private final Set<Path> skippedBasedDirs = new HashSet<>();
+
+  private boolean sourceDirsIsOverridden = false;
+
   public MavenProjectConverter(Log log, MavenCompilerResolver mavenCompilerResolver, Properties envProperties) {
     this.log = log;
     this.mavenCompilerResolver = mavenCompilerResolver;
     this.envProperties = envProperties;
+  }
+
+  public Set<Path> getSkippedBasedDirs() {
+    return skippedBasedDirs;
+  }
+
+  public boolean isSourceDirsOverridden() {
+    return sourceDirsIsOverridden;
   }
 
   Map<String, String> configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties) throws MojoExecutionException {
@@ -203,6 +216,7 @@ public class MavenProjectConverter {
     for (MavenProject pom : mavenProjects) {
       boolean skipped = "true".equals(pom.getModel().getProperties().getProperty("sonar.skip"));
       if (skipped) {
+        skippedBasedDirs.add(pom.getBasedir().toPath());
         log.info("Module " + pom + " skipped by property 'sonar.skip'");
         continue;
       }
@@ -529,6 +543,8 @@ public class MavenProjectConverter {
   private List<File> sourcePaths(MavenProject pom, String propertyKey, Collection<String> mavenPaths) throws MojoExecutionException {
     List<File> filesOrDirs;
     boolean userDefined = false;
+
+
     String prop = StringUtils.defaultIfEmpty(userProperties.getProperty(propertyKey), envProperties.getProperty(propertyKey));
     prop = StringUtils.defaultIfEmpty(prop, pom.getProperties().getProperty(propertyKey));
 
@@ -536,6 +552,7 @@ public class MavenProjectConverter {
       List<String> paths = Arrays.asList(StringUtils.split(prop, ","));
       filesOrDirs = resolvePaths(paths, pom.getBasedir());
       userDefined = true;
+      sourceDirsIsOverridden |= propertyKey.equals(ScanProperties.PROJECT_SOURCE_DIRS);
     } else {
       removeTarget(pom, mavenPaths);
       filesOrDirs = resolvePaths(mavenPaths, pom.getBasedir());

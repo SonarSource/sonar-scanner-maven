@@ -7,4 +7,5 @@ propertiesFile.withInputStream {
 def projectBaseDir = 'sonar.projectBaseDir'
 def sources = 'sonar.sources'
 // testing that sources with commas in the name are escaped as double-quoted strings
-assert properties."$sources" ==  properties."$projectBaseDir" + '/pom.xml,' + '"' + properties."$projectBaseDir" + '/src/main/my,src,0"'
+assert properties."$sources".contains(properties."$projectBaseDir" + '/pom.xml')
+assert properties."$sources".contains('"' + properties."$projectBaseDir" + '/src/main/my,src,0' + '"')

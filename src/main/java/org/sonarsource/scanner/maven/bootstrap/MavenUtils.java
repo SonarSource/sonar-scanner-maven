@@ -19,6 +19,8 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -55,10 +57,10 @@ public final class MavenUtils {
   /**
    * Search for a configuration setting of an other plugin for a configuration setting.
    *
-   * @param project the current maven project to get the configuration from.
-   * @param groupId the group id of the plugin to search for
-   * @param artifactId the artifact id of the plugin to search for
-   * @param optionName the option to get from the configuration
+   * @param project      the current maven project to get the configuration from.
+   * @param groupId      the group id of the plugin to search for
+   * @param artifactId   the artifact id of the plugin to search for
+   * @param optionName   the option to get from the configuration
    * @param defaultValue the default value if the configuration was not found
    * @return the value of the option configured in the plugin configuration
    */
@@ -72,6 +74,7 @@ public final class MavenUtils {
 
   /**
    * Returns first non null object or null if all objects are null
+   *
    * @param objs
    * @return First null argument, or null if they are all null
    */
@@ -95,8 +98,8 @@ public final class MavenUtils {
    * Joins a list of strings that may contain commas by wrapping those strings in double quotes, like in CSV format.
    * <p>
    * For example:
-   *  values = { "/home/users/me/artifact-123,456.jar", "/opt/lib" }
-   *  return is the string: "\"/home/users/me/artifact-123,456.jar\",/opt/lib"
+   * values = { "/home/users/me/artifact-123,456.jar", "/opt/lib" }
+   * return is the string: "\"/home/users/me/artifact-123,456.jar\",/opt/lib"
    *
    * @param values
    * @return a string having all the values separated by commas
@@ -111,6 +114,40 @@ public final class MavenUtils {
   private static String escapeCommas(String value) {
     // escape only when needed
     return value.contains(",") ? ("\"" + value + "\"") : value;
+  }
+
+  public static List<String> splitAsCsv(String joined) {
+    List<String> collected = new ArrayList<>();
+    if (joined.indexOf('"') == -1) {
+      return Arrays.asList(joined.split(","));
+    }
+    int start = 0;
+    int end = joined.length() - 1;
+    while (start < end && end < joined.length()) {
+      if (joined.charAt(start) == '"') {
+        end = joined.indexOf('"', start + 1);
+        String value = joined.substring(start + 1, end);
+        collected.add(value);
+        int nextComma = joined.indexOf(",", end);
+        if (nextComma == -1) {
+          break;
+        }
+        start = nextComma + 1;
+      } else {
+        int nextComma = joined.indexOf(",", start);
+        if (nextComma == -1) {
+          end = joined.length();
+        } else {
+          end = nextComma;
+        }
+        String value = joined.substring(start, end);
+        collected.add(value);
+        start = end + 1;
+      }
+      end = start + 1;
+    }
+
+    return collected;
   }
 
 }

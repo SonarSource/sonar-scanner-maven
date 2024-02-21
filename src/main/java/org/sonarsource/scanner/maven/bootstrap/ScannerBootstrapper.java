@@ -95,6 +95,7 @@ public class ScannerBootstrapper {
     Map<String, String> props = mavenProjectConverter.configure(sortedProjects, topLevelProject, userProperties);
     props.putAll(propertyDecryptor.decryptProperties(props));
     if (shouldCollectAllSources(userProperties)) {
+      log.info("Parameter " + MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES + " is enabled. The scanner will attempt to collect additional sources.");
       if (!mavenProjectConverter.isSourceDirsOverridden()) {
         collectAllSources(props);
       } else {

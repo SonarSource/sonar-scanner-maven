@@ -49,6 +49,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -166,6 +167,7 @@ public class ScannerBootstrapperTest {
     assertThat(sourceDirs).hasSize(2);
     assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
     assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
+    verify(log, never()).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
 
     // When sonar.scanner.scanAll is set explicitly to false
     Properties withScanAllSetToFalse = new Properties();
@@ -177,6 +179,7 @@ public class ScannerBootstrapperTest {
     assertThat(sourceDirs).hasSize(2);
     assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
     assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
+    verify(log, never()).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
 
 
     // When sonar.scanner.scanAll is set explicitly to true
@@ -190,6 +193,7 @@ public class ScannerBootstrapperTest {
     assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
     assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
     assertThat(sourceDirs[2]).endsWith(Paths.get("src", "main", "resources", "index.js").toString());
+    verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
   }
 
   @Test
@@ -207,6 +211,9 @@ public class ScannerBootstrapperTest {
     String[] sourceDirs = collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS).split(",");
     assertThat(sourceDirs).hasSize(1);
     assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "resources").toString());
+
+    verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
+    verify(log, times(1)).warn("Parameter sonar.maven.scanAll is enabled but the scanner will not collect additional sources because sonar.sources has been overridden.");
   }
 
   @Test

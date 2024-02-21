@@ -207,6 +207,7 @@ public class ScannerBootstrapperTest {
     String[] sourceDirs = collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS).split(",");
     assertThat(sourceDirs).hasSize(1);
     assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "resources").toString());
+    verify(log, times(1)).warn("Parameter sonar.maven.scanAll is enabled but the scanner will not collect additional sources because sonar.sources has been overridden.");
   }
 
   @Test

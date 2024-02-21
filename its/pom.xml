@@ -22,8 +22,8 @@
   <dependencies>
     <dependency>
       <groupId>org.sonarsource.orchestrator</groupId>
-      <artifactId>sonar-orchestrator</artifactId>
-      <version>3.42.0.312</version>
+      <artifactId>sonar-orchestrator-junit5</artifactId>
+      <version>4.7.1.1872</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -94,11 +94,6 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <configuration>
-            <includes>
-              <include>**/MavenTestSuite.java</include>
-            </includes>
-          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>

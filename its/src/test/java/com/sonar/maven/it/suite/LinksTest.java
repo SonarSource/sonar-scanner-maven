@@ -22,9 +22,10 @@ package com.sonar.maven.it.suite;
 import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.MavenBuild;
 import com.sonar.orchestrator.container.Server;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.sonarqube.ws.ProjectLinks;
 import org.sonarqube.ws.ProjectLinks.SearchWsResponse;
 import org.sonarqube.ws.client.HttpConnector;
@@ -37,8 +38,8 @@ import static org.assertj.core.groups.Tuple.tuple;
 
 public class LinksTest extends AbstractMavenTest {
 
-  @Before
-  @After
+  @BeforeEach
+  @AfterEach
   public void cleanProjectLinksTable() {
     orchestrator.getDatabase().truncate("project_links");
   }

@@ -24,13 +24,14 @@ import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.BuildRunner;
 import com.sonar.orchestrator.build.MavenBuild;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.sonarqube.ws.Components.Component;
 import org.sonarqube.ws.client.settings.SetRequest;
 import org.sonarqube.ws.client.users.CreateRequest;
@@ -42,10 +43,10 @@ public class MavenTest extends AbstractMavenTest {
   private static final String MODULE_START_7_6 = "------------- Run sensors on module ";
   private static final String MODULE_START = "-------------  Scan ";
 
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
+  @TempDir
+  public Path temp;
 
-  @After
+  @AfterEach
   public void cleanup() {
     wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("false"));
   }
@@ -59,7 +60,7 @@ public class MavenTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
       .setGoals(cleanSonarGoal());
 
-    File settingsXml = temp.newFile();
+    File settingsXml = temp.resolve("settings.xml").toFile();
     Map<String, String> props = orchestrator.getDatabase().getSonarProperties();
     props.put("sonar.host.url", orchestrator.getServer().getUrl());
     props.put("sonar.login", orchestrator.getDefaultAdminToken());

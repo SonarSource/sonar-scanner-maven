@@ -30,29 +30,27 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
 import com.sonar.maven.it.ItUtils;
 import com.sonar.maven.it.Proxy;
 import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.MavenBuild;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class ProxyTest extends AbstractMavenTest {
   private Proxy proxy;
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
+  @TempDir
+  public Path temp;
 
-  @Before
+  @BeforeEach
   public void prepare() throws Exception {
     proxy = new Proxy();
     proxy.startProxy();
   }
 
-  @After
+  @AfterEach
   public void after() throws Exception {
     if (proxy != null) {
       proxy.stopProxy();
@@ -63,7 +61,7 @@ public class ProxyTest extends AbstractMavenTest {
   public void useActiveProxyInSettings() throws IOException, URISyntaxException, InterruptedException {
     Thread.sleep(2000);
     Path proxyXml = Paths.get(this.getClass().getResource("/proxy-settings.xml").toURI());
-    Path proxyXmlPatched = temp.newFile("settings.xml").toPath();
+    Path proxyXmlPatched = temp.resolve("settings.xml");
     assertThat(proxyXml).exists();
     replaceInFile(proxyXml, proxyXmlPatched, "8080", String.valueOf(proxy.port()));
 

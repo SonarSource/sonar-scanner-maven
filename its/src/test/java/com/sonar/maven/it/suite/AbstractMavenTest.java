@@ -21,12 +21,12 @@ package com.sonar.maven.it.suite;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonValue;
-import com.sonar.orchestrator.Orchestrator;
 import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.MavenBuild;
 import com.sonar.orchestrator.container.Server;
 import com.sonar.orchestrator.http.HttpMethod;
 import com.sonar.orchestrator.http.HttpResponse;
+import com.sonar.orchestrator.junit5.OrchestratorExtension;
 import com.sonar.orchestrator.version.Version;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -39,9 +39,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.sonarqube.ws.Components.Component;
 import org.sonarqube.ws.Measures;
 import org.sonarqube.ws.Measures.Measure;
@@ -61,8 +61,12 @@ public abstract class AbstractMavenTest {
 
   private static Version mojoVersion;
 
-  @ClassRule
-  public static Orchestrator orchestrator = MavenTestSuite.ORCHESTRATOR;
+  @RegisterExtension
+  public static final OrchestratorExtension orchestrator = OrchestratorExtension.builderEnv()
+          .setSonarVersion(getSonarVersion())
+          .useDefaultAdminCredentialsForBuilds(true)
+          .keepBundledPlugins()
+          .build();
 
   protected HttpConnector wsConnector;
   protected WsClient wsClient;
@@ -87,7 +91,7 @@ public abstract class AbstractMavenTest {
     return new String[]{"clean verify " + sonarGoal()};
   }
 
-  @Before
+  @BeforeEach
   public void setUpWsClient() {
     wsConnector = HttpConnector.newBuilder()
       .url(orchestrator.getServer().getUrl())
@@ -96,7 +100,7 @@ public abstract class AbstractMavenTest {
     wsClient = WsClientFactories.getDefault().newClient(wsConnector);
   }
 
-  @After
+  @AfterEach
   public void resetData() {
     Set<String> projectKeys = getProjectKeysToDelete();
 
@@ -206,6 +210,11 @@ public abstract class AbstractMavenTest {
       return mavenVersion;
     }
     throw new IllegalStateException("Could not find maven version: " + logs);
+  }
+
+  private static String getSonarVersion() {
+    String versionProperty = System.getProperty("sonar.runtimeVersion");
+    return versionProperty != null ? versionProperty : "DEV";
   }
 
 }

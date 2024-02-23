@@ -127,6 +127,12 @@ public class MavenProjectConverter {
 
   private boolean sourceDirsIsOverridden = false;
 
+  /**
+   * This field is introduced to keep track of the root project in multi-module projects and can be used to decide
+   * whether to apply specific treatments to submodules as we recursively configure them.
+   */
+  private MavenProject root;
+
   public MavenProjectConverter(Log log, MavenCompilerResolver mavenCompilerResolver, Properties envProperties) {
     this.log = log;
     this.mavenCompilerResolver = mavenCompilerResolver;
@@ -151,6 +157,7 @@ public class MavenProjectConverter {
     Map<MavenProject, Map<String, String>> propsByModule = new LinkedHashMap<>();
 
     try {
+      this.root = root;
       configureModules(mavenProjects, propsByModule);
       Map<String, String> props = new HashMap<>();
       props.put(ScanProperties.PROJECT_KEY, getArtifactKey(root));
@@ -163,6 +170,8 @@ public class MavenProjectConverter {
       return props;
     } catch (IOException e) {
       throw new IllegalStateException("Cannot configure project", e);
+    } finally {
+      this.root = null;
     }
   }
 
@@ -252,7 +261,7 @@ public class MavenProjectConverter {
 
   private Map<String, String> computeSonarQubeProperties(MavenProject pom) throws MojoExecutionException {
     Map<String, String> props = new HashMap<>();
-    defineModuleKey(pom, props, specifiedProjectKey);
+    defineModuleKey(pom, props);
     props.put(ScanProperties.PROJECT_VERSION, pom.getVersion());
     props.put(ScanProperties.PROJECT_NAME, pom.getName());
     String description = pom.getDescription();
@@ -280,16 +289,24 @@ public class MavenProjectConverter {
     return projectKey;
   }
 
-  private static void defineModuleKey(MavenProject pom, Map<String, String> props, @Nullable String specifiedProjectKey) {
+  /**
+   * Generates a unique module key for a (sub)module and adds it to the existing properties.
+   * If the project is the root, we try to use the specified project key ({@link MavenProjectConverter#specifiedProjectKey}) if available.
+   * Otherwise, we use the artifact key ({@link MavenProjectConverter#getArtifactKey(MavenProject)}.
+   *
+   * @param project The maven submodule for which a key must be generated
+   * @param props The existing properties where the module key will be added
+   * @return The generated module key
+   */
+  private String defineModuleKey(MavenProject project, Map<String, String> props) {
     String key;
-    if (pom.getModel().getProperties().containsKey(ScanProperties.PROJECT_KEY)) {
-      key = pom.getModel().getProperties().getProperty(ScanProperties.PROJECT_KEY);
-    } else if (specifiedProjectKey != null) {
-      key = specifiedProjectKey + ":" + getArtifactKey(pom);
+    if (project.equals(root) && this.specifiedProjectKey != null) {
+      key = this.specifiedProjectKey;
     } else {
-      key = getArtifactKey(pom);
+      key = getArtifactKey(project);
     }
     props.put(MODULE_KEY, key);
+    return key;
   }
 
   private static String getArtifactKey(MavenProject pom) {
@@ -393,7 +410,9 @@ public class MavenProjectConverter {
     // IMPORTANT NOTE : reference on properties from POM model must not be saved,
     // instead they should be copied explicitly - see SONAR-2896
     for (String k : pom.getModel().getProperties().stringPropertyNames()) {
-      props.put(k, pom.getModel().getProperties().getProperty(k));
+      if (!ScanProperties.PROJECT_KEY.equals(k) || pom.equals(this.root)) {
+        props.put(k, pom.getModel().getProperties().getProperty(k));
+      }
     }
 
     MavenUtils.putAll(envProperties, props);

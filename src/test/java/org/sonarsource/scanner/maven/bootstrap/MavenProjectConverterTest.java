@@ -29,11 +29,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -636,6 +634,53 @@ class MavenProjectConverterTest {
 
     assertThat(props).containsEntry(module1Key + ".sonar.projectBaseDir", modulesBaseDir.getAbsolutePath())
       .containsEntry(module2Key + ".sonar.projectBaseDir", modulesBaseDir.getAbsolutePath());
+  }
+
+  @Test
+  void submodules_are_not_assigned_user_provided_project_key_from_parent() throws MojoExecutionException, IOException {
+    Properties rootPomProperties = new Properties();
+    rootPomProperties.put(ScanProperties.PROJECT_KEY, "the_greatest_project_key_there_ever_was");
+    File baseDir = temp.toFile();
+    baseDir.mkdirs();
+    MavenProject root = createProject(rootPomProperties, "pom");
+    root.setGroupId("org.example");
+    root.setArtifactId("root");
+
+    File module1BaseDir = temp.resolve("module1").toFile();
+    module1BaseDir.mkdirs();
+    File module1Pom = new File(module1BaseDir, "pom.xml");
+    MavenProject module1 = new MavenProject();
+    File target = new File(module1Pom.getParentFile(), "target");
+    File classes = new File(target, "classes");
+    File testClasses = new File(target, "test-classes");
+    classes.mkdirs();
+    testClasses.mkdirs();
+
+    module1.getModel().setGroupId("org.example");
+    module1.getModel().setArtifactId("module1");
+    module1.getModel().setName("My Project");
+    module1.getModel().setDescription("My sample module1");
+    module1.getModel().setVersion("2.1");
+    module1.getModel().setPackaging("jar");
+    module1.getBuild().setOutputDirectory(classes.getAbsolutePath());
+    module1.getBuild().setTestOutputDirectory(testClasses.getAbsolutePath());
+    module1.getModel().setProperties(rootPomProperties);
+    module1.getBuild().setDirectory(new File(module1Pom.getParentFile(), "target").getAbsolutePath());
+    module1.setFile(module1Pom);
+    module1.setParent(root);
+    root.getModules().add("module1");
+
+    Map<String, String> properties = projectConverter.configure(
+      Arrays.asList(module1, root),
+      root,
+      new Properties()
+    );
+
+    assertThat(properties.get(ScanProperties.PROJECT_KEY))
+      .isNotNull()
+      .isEqualTo("the_greatest_project_key_there_ever_was");
+    String keyPrefixForModule1 = module1.getGroupId() + ":" + module1.getArtifactId() + ".";
+    assertThat(properties).doesNotContainKey(keyPrefixForModule1 + ScanProperties.PROJECT_KEY);
   }
 
   private MavenProject createProject(Properties pomProps, String packaging) throws IOException {

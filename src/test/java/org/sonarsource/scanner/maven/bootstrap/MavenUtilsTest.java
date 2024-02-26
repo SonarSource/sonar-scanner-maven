@@ -19,15 +19,17 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
+import org.junit.jupiter.api.Test;
+
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Test;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class MavenUtilsTest {
+class MavenUtilsTest {
   @Test
-  public void testCoalesce() {
+  void testCoalesce() {
     Object o1 = null;
     Object o2 = null;
     Object o3 = new Object();
@@ -37,7 +39,7 @@ public class MavenUtilsTest {
   }
 
   @Test
-  public void testJoinAsCsv() {
+  void testJoinAsCsv() {
     List<String> values = Arrays.asList("/home/users/me/artifact-123,456.jar", "/opt/lib");
     assertThat(MavenUtils.joinAsCsv(values)).isEqualTo("\"/home/users/me/artifact-123,456.jar\",/opt/lib");
 
@@ -49,7 +51,7 @@ public class MavenUtilsTest {
   }
 
   @Test
-  public void testSplitAsCsv() {
+  void testSplitAsCsv() {
     String[] expectedValues = {"/home/users/me/artifact-123,456.jar", "/opt/lib", "src/main/java"};
     // Single escaped value
     assertThat(MavenUtils.splitAsCsv("\"/home/users/me/artifact-123,456.jar\",/opt/lib,src/main/java"))

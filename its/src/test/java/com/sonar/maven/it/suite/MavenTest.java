@@ -61,6 +61,7 @@ public class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
 
     File settingsXml = temp.resolve("settings.xml").toFile();
+    settingsXml.createNewFile();
     Map<String, String> props = orchestrator.getDatabase().getSonarProperties();
     props.put("sonar.host.url", orchestrator.getServer().getUrl());
     props.put("sonar.login", orchestrator.getDefaultAdminToken());

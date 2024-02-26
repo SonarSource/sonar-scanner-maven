@@ -62,6 +62,7 @@ public class ProxyTest extends AbstractMavenTest {
     Thread.sleep(2000);
     Path proxyXml = Paths.get(this.getClass().getResource("/proxy-settings.xml").toURI());
     Path proxyXmlPatched = temp.resolve("settings.xml");
+    proxyXmlPatched.toFile().createNewFile();
     assertThat(proxyXml).exists();
     replaceInFile(proxyXml, proxyXmlPatched, "8080", String.valueOf(proxy.port()));
 

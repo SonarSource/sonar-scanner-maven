@@ -52,6 +52,8 @@ public class JavaTest extends AbstractMavenTest {
   @Test
   public void shouldPopulateLibraries() throws IOException {
     File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
+
     File projectPom = ItUtils.locateProjectPom("shared/struts-1.3.9-diet");
     MavenBuild build = MavenBuild.create(projectPom)
       .setGoals(cleanPackageSonarGoal())
@@ -75,6 +77,8 @@ public class JavaTest extends AbstractMavenTest {
   @Test
   public void read_default_from_plugins_config() throws Exception {
     File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
+
     // Need package to have test execution
     // Surefire reports are not in standard directory
     File pom = ItUtils.locateProjectPom("project-default-config");
@@ -94,6 +98,7 @@ public class JavaTest extends AbstractMavenTest {
   @Test
   public void setJavaVersionCompilerConfiguration() throws IOException {
     File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
 
     File pom = ItUtils.locateProjectPom("version/compilerPluginConfig");
     MavenBuild build = MavenBuild.create(pom)
@@ -110,6 +115,7 @@ public class JavaTest extends AbstractMavenTest {
   @Test
   public void setJavaVersionProperties() throws IOException {
     File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
 
     File pom = ItUtils.locateProjectPom("version/properties");
     MavenBuild build = MavenBuild.create(pom)
@@ -126,6 +132,7 @@ public class JavaTest extends AbstractMavenTest {
   @Test
   public void setJdkHomeFromCompilerExecutableConfiguration() throws IOException {
     File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
 
     File pom = ItUtils.locateProjectPom("jdkHome/compilerPluginConfigExecutable");
     MavenBuild build = MavenBuild.create(pom)
@@ -140,6 +147,7 @@ public class JavaTest extends AbstractMavenTest {
   @Test
   public void setJdkHomeFromGlobalToolchainsPlugin() throws IOException {
     File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
 
     File pom = ItUtils.locateProjectPom("jdkHome/globalToolchain");
     MavenBuild build = MavenBuild.create(pom)
@@ -160,6 +168,7 @@ public class JavaTest extends AbstractMavenTest {
     assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
 
     File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
 
     File pom = ItUtils.locateProjectPom("jdkHome/compilerPluginConfigToolchain");
     MavenBuild build = MavenBuild.create(pom)
@@ -179,6 +188,7 @@ public class JavaTest extends AbstractMavenTest {
     assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
 
     File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
 
     File pom = ItUtils.locateProjectPom("jdkHome/compilerPluginConfigToolchainMultipleExecutions");
     MavenBuild build = MavenBuild.create(pom)

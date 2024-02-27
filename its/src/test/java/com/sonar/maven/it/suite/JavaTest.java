@@ -58,7 +58,7 @@ public class JavaTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(projectPom)
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties generatedProps = getProps(outputProps);
     String[] moduleIds = generatedProps.getProperty("sonar.modules").split(",");
@@ -85,7 +85,7 @@ public class JavaTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
@@ -104,7 +104,7 @@ public class JavaTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
@@ -121,7 +121,7 @@ public class JavaTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
@@ -138,7 +138,7 @@ public class JavaTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(sonarGoal())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "path/to/java_executable"));
@@ -156,7 +156,7 @@ public class JavaTest extends AbstractMavenTest {
       .setGoals("toolchains:toolchain " + sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_1.5"));
@@ -176,7 +176,7 @@ public class JavaTest extends AbstractMavenTest {
       .setGoals(sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_1.6"));
@@ -196,7 +196,7 @@ public class JavaTest extends AbstractMavenTest {
       .setGoals(sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_9"));

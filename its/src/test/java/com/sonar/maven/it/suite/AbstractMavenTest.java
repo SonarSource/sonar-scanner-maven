@@ -62,7 +62,7 @@ public abstract class AbstractMavenTest {
   private static Version mojoVersion;
 
   @RegisterExtension
-  public static final OrchestratorExtension orchestrator = OrchestratorExtension.builderEnv()
+  public static final OrchestratorExtension ORCHESTRATOR = OrchestratorExtension.builderEnv()
           .setSonarVersion(getSonarVersion())
           .useDefaultAdminCredentialsForBuilds(true)
           .keepBundledPlugins()
@@ -94,7 +94,7 @@ public abstract class AbstractMavenTest {
   @BeforeEach
   public void setUpWsClient() {
     wsConnector = HttpConnector.newBuilder()
-      .url(orchestrator.getServer().getUrl())
+      .url(ORCHESTRATOR.getServer().getUrl())
       .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
       .build();
     wsClient = WsClientFactories.getDefault().newClient(wsConnector);
@@ -105,7 +105,7 @@ public abstract class AbstractMavenTest {
     Set<String> projectKeys = getProjectKeysToDelete();
 
     if (!projectKeys.isEmpty()) {
-      orchestrator.getServer()
+      ORCHESTRATOR.getServer()
         .newHttpCall("/api/projects/bulk_delete")
         .setAdminCredentials()
         .setMethod(HttpMethod.POST)
@@ -115,7 +115,7 @@ public abstract class AbstractMavenTest {
   }
 
   private Set<String> getProjectKeysToDelete() {
-    HttpResponse ps = orchestrator.getServer()
+    HttpResponse ps = ORCHESTRATOR.getServer()
       .newHttpCall("api/projects/search")
       .setAdminCredentials()
       .setMethod(HttpMethod.GET)
@@ -186,7 +186,7 @@ public abstract class AbstractMavenTest {
 
   static WsClient newWsClient() {
     return WsClientFactories.getDefault().newClient(HttpConnector.newBuilder()
-      .url(orchestrator.getServer().getUrl())
+      .url(ORCHESTRATOR.getServer().getUrl())
       .build());
   }
 
@@ -200,7 +200,7 @@ public abstract class AbstractMavenTest {
 
     MavenBuild build = MavenBuild.create()
       .setGoals("-version");
-    BuildResult result = orchestrator.executeBuild(build);
+    BuildResult result = ORCHESTRATOR.executeBuild(build);
 
     String logs = result.getLogs();
     Matcher matcher = VERSION_REGEX.matcher(logs);

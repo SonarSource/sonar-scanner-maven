@@ -32,8 +32,8 @@ import org.apache.maven.model.building.Result;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.testing.MojoRule;
 import org.assertj.core.data.MapEntry;
-import org.junit.Rule;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

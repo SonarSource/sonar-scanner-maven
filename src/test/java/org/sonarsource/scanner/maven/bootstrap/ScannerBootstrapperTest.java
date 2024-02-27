@@ -94,9 +94,9 @@ class ScannerBootstrapperTest {
     // Create folders
     Path pom = tmpFolder.resolve("pom.xml");
     pom.toFile().createNewFile();
-    Path sourceMainDirs = tmpFolder.resolve("src").resolve("main").resolve("java");
+    Path sourceMainDirs = tmpFolder.resolve(Paths.get("src", "main", "java"));
     sourceMainDirs.toFile().mkdirs();
-    Path sourceResourceDirs = tmpFolder.resolve("src").resolve("main").resolve("resources");
+    Path sourceResourceDirs = tmpFolder.resolve(Paths.get("src", "main", "resources"));
     sourceResourceDirs.toFile().mkdirs();
     Path javascriptResource = sourceResourceDirs.resolve("index.js");
     javascriptResource.toFile().createNewFile();

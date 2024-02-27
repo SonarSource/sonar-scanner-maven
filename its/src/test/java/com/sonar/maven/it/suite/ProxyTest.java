@@ -71,7 +71,7 @@ public class ProxyTest extends AbstractMavenTest {
     build.addArgument("--settings=" + proxyXmlPatched.toAbsolutePath().toString());
     build.addArgument("-X");
     build.addArgument("-U");
-    BuildResult result = orchestrator.executeBuildQuietly(build);
+    BuildResult result = ORCHESTRATOR.executeBuildQuietly(build);
 
     assertThat(result.getLogs()).contains("Setting proxy properties");
     assertThat(proxy.seen()).isNotEmpty();

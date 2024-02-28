@@ -20,6 +20,7 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import com.google.common.annotations.VisibleForTesting;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,9 +28,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -37,6 +40,9 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.api.ScanProperties;
+import org.sonarsource.scanner.api.ScannerProperties;
+
+import static org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter.getPropertyByKey;
 
 /**
  * Configure properties and bootstrap using SonarQube scanner API
@@ -44,6 +50,7 @@ import org.sonarsource.scanner.api.ScanProperties;
 public class ScannerBootstrapper {
 
   static final String UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE = "With SonarQube server prior to 5.6, use sonar-maven-plugin <= 3.3";
+  private static final String SONARCLOUD_HOST_URL = "https://sonarcloud.io";
 
   private final Log log;
   private final MavenSession session;
@@ -65,7 +72,15 @@ public class ScannerBootstrapper {
       scanner.start();
       serverVersion = scanner.serverVersion();
 
-      checkSQVersion();
+      if (isSonarCloudUsed()) {
+        log.info("Communicating with SonarCloud");
+      } else {
+        if (serverVersion != null) {
+          log.info("Communicating with SonarQube Server " + serverVersion);
+        }
+        checkSQVersion();
+      }
+
 
       if (log.isDebugEnabled()) {
         scanner.setGlobalProperty("sonar.verbose", "true");
@@ -75,6 +90,20 @@ public class ScannerBootstrapper {
     } catch (Exception e) {
       throw new MojoExecutionException(e.getMessage(), e);
     }
+  }
+
+
+  // TODO remove this workaround when discovering if the sevrer is SC or SQ is available through the API
+  private boolean isSonarCloudUsed() {
+    return session.getProjects().stream()
+      // We can use EnvProperties from MavenProjectConverter as they are initialized at construction time,
+      // but we can't use UserProperties from the MavenProjectConverter as they are only initialized
+      // in the "collectProperties" method.
+      .map(project ->
+        getPropertyByKey(ScannerProperties.HOST_URL, project, session.getUserProperties(), mavenProjectConverter.getEnvProperties())
+      )
+      .filter(Objects::nonNull)
+      .anyMatch(hostUrl -> hostUrl.startsWith(SONARCLOUD_HOST_URL));
   }
 
   @VisibleForTesting
@@ -143,10 +172,6 @@ public class ScannerBootstrapper {
   }
 
   private void checkSQVersion() {
-    if (serverVersion != null) {
-      log.info("SonarQube version: " + serverVersion);
-    }
-
     if (isVersionPriorTo("5.6")) {
       throw new UnsupportedOperationException(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
     }

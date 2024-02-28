@@ -25,30 +25,31 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TemporaryFolder;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.sonarsource.scanner.api.ScanProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class MavenProjectConverterTest {
+class MavenProjectConverterTest {
 
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
+  @TempDir
+  public Path temp;
 
   private Log log;
 
@@ -56,80 +57,76 @@ public class MavenProjectConverterTest {
 
   private MavenProjectConverter projectConverter;
 
-  private MavenCompilerResolver mavenCompilerResolver;
-
-  @Rule
-  public ExpectedException exception = ExpectedException.none();
-
-  @Before
+  @BeforeEach
   public void prepare() {
     log = mock(Log.class);
-    mavenCompilerResolver = mock(MavenCompilerResolver.class);
+    MavenCompilerResolver mavenCompilerResolver = mock(MavenCompilerResolver.class);
     when(mavenCompilerResolver.extractConfiguration(any())).thenReturn(Optional.empty());
     env = new Properties();
     projectConverter = new MavenProjectConverter(log, mavenCompilerResolver, env);
   }
 
   @Test
-  public void convertSingleModuleProject() throws Exception {
+  void convertSingleModuleProject() throws Exception {
     MavenProject project = createProject(new Properties(), "jar");
 
-    Map<String, String> props = projectConverter.configure(Arrays.asList(project),
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project),
       project, new Properties());
-    assertThat(props.get("sonar.projectKey")).isEqualTo("com.foo:myProject");
-    assertThat(props.get("sonar.projectName")).isEqualTo("My Project");
-    assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
+    assertThat(props)
+      .containsEntry("sonar.projectKey", "com.foo:myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1");
   }
 
   // MSONAR-104
   @Test
-  public void convertSingleModuleProjectAvoidNestedFolders() throws Exception {
-    File baseDir = temp.getRoot();
+  void convertSingleModuleProjectAvoidNestedFolders() throws Exception {
+    File baseDir = temp.toAbsolutePath().toFile();
     File webappDir = new File(baseDir, "src/main/webapp");
     webappDir.mkdirs();
     MavenProject project = createProject(new Properties(), "war");
-    Map<String, String> props = projectConverter.configure(Arrays.asList(project), project, new Properties());
-    assertThat(props.get("sonar.projectKey")).isEqualTo("com.foo:myProject");
-    assertThat(props.get("sonar.projectName")).isEqualTo("My Project");
-    assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+    assertThat(props).containsEntry("sonar.projectKey", "com.foo:myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1");
     assertThat(props.get("sonar.sources").split(",")).containsOnly(webappDir.getAbsolutePath(), new File(baseDir, "pom.xml").getAbsolutePath());
 
     project.getModel().getProperties().setProperty("sonar.sources", "src");
     File srcDir = new File(baseDir, "src");
     srcDir.mkdirs();
-    props = projectConverter.configure(Arrays.asList(project), project, new Properties());
-    assertThat(props.get("sonar.sources")).isEqualTo(srcDir.getAbsolutePath());
+    props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+    assertThat(props).containsEntry("sonar.sources", srcDir.getAbsolutePath());
   }
 
   @Test
-  public void shouldIncludePomIfRequested() throws Exception {
+  void shouldIncludePomIfRequested() throws Exception {
     MavenProject project = createProject(new Properties(), "jar");
 
-    Map<String, String> props = projectConverter.configure(Arrays.asList(project), project, new Properties());
-    assertThat(props.get("sonar.projectKey")).isEqualTo("com.foo:myProject");
-    assertThat(props.get("sonar.projectName")).isEqualTo("My Project");
-    assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
-    assertThat(props.get("sonar.sources")).contains("pom.xml");
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+    assertThat(props).containsEntry("sonar.projectKey", "com.foo:myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1")
+      .containsEntry("sonar.sources", temp.toAbsolutePath().resolve("pom.xml").toAbsolutePath().toString());
   }
 
   @Test
-  public void shouldUseEnvironment() throws Exception {
+  void shouldUseEnvironment() throws Exception {
     env.put("sonar.projectKey", "com.foo:anotherProject");
     MavenProject project = createProject(new Properties(), "jar");
 
-    Map<String, String> props = projectConverter.configure(Arrays.asList(project), project, new Properties());
-    assertThat(props.get("sonar.projectKey")).isEqualTo("com.foo:anotherProject");
-    assertThat(props.get("sonar.projectName")).isEqualTo("My Project");
-    assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
-    assertThat(props.get("sonar.sources")).contains("pom.xml");
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+    assertThat(props).containsEntry("sonar.projectKey", "com.foo:anotherProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1")
+      .containsEntry("sonar.sources", temp.toAbsolutePath().resolve("pom.xml").toAbsolutePath().toString());
   }
 
   @Test
-  public void convertMultiModuleProjectRelativePaths() throws Exception {
-    File rootBaseDir = new File(temp.getRoot(), "root");
+  void convertMultiModuleProjectRelativePaths() throws Exception {
+    File rootBaseDir = new File(temp.toAbsolutePath().toFile(), "root");
     MavenProject root = createProject(new File(rootBaseDir, "pom.xml"), new Properties(), "pom");
 
-    File module1BaseDir = new File(temp.getRoot(), "module1");
+    File module1BaseDir = new File(temp.toAbsolutePath().toFile(), "module1");
     module1BaseDir.mkdir();
     MavenProject module1 = createProject(new File(module1BaseDir, "pom.xml"), new Properties(), "jar");
     module1.getModel().setArtifactId("module1");
@@ -141,27 +138,27 @@ public class MavenProjectConverterTest {
 
     Map<String, String> props = projectConverter.configure(Arrays.asList(module1, root), root, new Properties());
     // MSONAR-164
-    assertThat(props.get("sonar.projectBaseDir")).isEqualTo(temp.getRoot().getAbsolutePath());
+    assertThat(props).containsEntry("sonar.projectBaseDir", temp.toAbsolutePath().toFile().toString());
   }
 
   @Test
-  public void findCommonParentDir() throws Exception {
-    assertThat(MavenProjectConverter.findCommonParentDir(temp.getRoot().toPath(), temp.getRoot().toPath().resolve("foo").resolve("bar"))).isEqualTo(temp.getRoot().toPath());
-    assertThat(MavenProjectConverter.findCommonParentDir(temp.getRoot().toPath().resolve("foo").resolve("bar"), temp.getRoot().toPath())).isEqualTo(temp.getRoot().toPath());
-    assertThat(MavenProjectConverter.findCommonParentDir(temp.getRoot().toPath().resolve("foo").resolve("bar"), temp.getRoot().toPath().resolve("foo2").resolve("bar2")))
-      .isEqualTo(temp.getRoot().toPath());
+  void findCommonParentDir() {
+    Path fooBarPath = Paths.get("foo", "bar");
+    assertThat(MavenProjectConverter.findCommonParentDir(temp, temp.resolve(fooBarPath))).isEqualTo(temp);
+    assertThat(MavenProjectConverter.findCommonParentDir(temp.resolve(fooBarPath), temp)).isEqualTo(temp);
+    assertThat(MavenProjectConverter.findCommonParentDir(temp.resolve(fooBarPath), temp.resolve(Paths.get("foo2", "bar2"))))
+      .isEqualTo(temp);
 
-    try {
-      MavenProjectConverter.findCommonParentDir(Paths.get("foo", "bar"), Paths.get("foo2", "bar2"));
-      fail("Expected exception");
-    } catch (Exception e) {
-      assertThat(e).isInstanceOf(IllegalStateException.class).hasMessageMatching("Unable to find a common parent between two modules baseDir: 'foo.bar' and 'foo2.bar2'");
-    }
+    IllegalStateException exception = assertThrows(IllegalStateException.class,
+      () -> MavenProjectConverter.findCommonParentDir(fooBarPath, Paths.get("foo2", "bar2"))
+    );
+
+    assertThat(exception).hasMessageMatching("Unable to find a common parent between two modules baseDir: 'foo.bar' and 'foo2.bar2'");
   }
 
   @Test
-  public void convertMultiModuleProject() throws Exception {
-    File baseDir = temp.getRoot();
+  void convertMultiModuleProject() throws Exception {
+    File baseDir = temp.toAbsolutePath().toFile();
     MavenProject root = createProject(new Properties(), "pom");
 
     File module1BaseDir = new File(baseDir, "module1");
@@ -203,11 +200,10 @@ public class MavenProjectConverterTest {
     Map<String, String> props = projectConverter.configure(Arrays.asList(module12, module11, module1, module2, root),
       root, new Properties());
 
-    assertThat(props.get("sonar.projectKey")).isEqualTo("com.foo:myProject");
-    assertThat(props.get("sonar.projectName")).isEqualTo("My Project");
-    assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
-
-    assertThat(props.get("sonar.projectBaseDir")).isEqualTo(baseDir.getAbsolutePath());
+    assertThat(props).containsEntry("sonar.projectKey", "com.foo:myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1")
+      .containsEntry("sonar.projectBaseDir", baseDir.getAbsolutePath());
 
     String module1Key = "com.foo:module1";
     String module2Key = "com.foo:module2";
@@ -216,17 +212,13 @@ public class MavenProjectConverterTest {
     String module11Key = "com.foo:module11";
     String module12Key = "com.foo:module12";
     assertThat(props.get(module1Key + ".sonar.modules").split(",")).containsOnly(module11Key, module12Key);
-    assertThat(props.get(module1Key + ".sonar.moduleKey")).isEqualTo(module1Key);
-    assertThat(props.get(module2Key + ".sonar.moduleKey")).isEqualTo(module2Key);
-
-    assertThat(props.get(module1Key
-      + ".sonar.projectBaseDir")).isEqualTo(module1BaseDir.getAbsolutePath());
-    assertThat(props.get(module1Key + "." + module11Key
-      + ".sonar.projectBaseDir")).isEqualTo(module11BaseDir.getAbsolutePath());
-    assertThat(props.get(module1Key + "." + module12Key
-      + ".sonar.projectBaseDir")).isEqualTo(module12BaseDir.getAbsolutePath());
-    assertThat(props.get(module2Key
-      + ".sonar.projectBaseDir")).isEqualTo(module2BaseDir.getAbsolutePath());
+    assertThat(props)
+      .containsEntry(module1Key + ".sonar.moduleKey", module1Key)
+      .containsEntry(module2Key + ".sonar.moduleKey", module2Key)
+      .containsEntry(module1Key + "." + module11Key + ".sonar.projectBaseDir", module11BaseDir.getAbsolutePath())
+      .containsEntry(module1Key + ".sonar.projectBaseDir", module1BaseDir.getAbsolutePath())
+      .containsEntry(module1Key + "." + module12Key + ".sonar.projectBaseDir", module12BaseDir.getAbsolutePath())
+      .containsEntry(module2Key + ".sonar.projectBaseDir", module2BaseDir.getAbsolutePath());
 
     Properties userProperties = new Properties();
     String userProjectKey = "user-project-key";
@@ -234,20 +226,20 @@ public class MavenProjectConverterTest {
     Map<String, String> propsWithUserProjectKey = projectConverter.configure(Arrays.asList(module12, module11, module1, module2, root),
       root, userProperties);
 
-    assertThat(propsWithUserProjectKey.get("sonar.projectKey")).isEqualTo(userProjectKey);
+    assertThat(propsWithUserProjectKey).containsEntry("sonar.projectKey", userProjectKey);
 
     String customProjectKey = "custom-project-key";
     root.getModel().getProperties().setProperty(ScanProperties.PROJECT_KEY, customProjectKey);
     Map<String, String> propsWithCustomProjectKey = projectConverter.configure(Arrays.asList(module12, module11, module1, module2, root),
       root, new Properties());
 
-    assertThat(propsWithCustomProjectKey.get("sonar.projectKey")).isEqualTo(customProjectKey);
+    assertThat(propsWithCustomProjectKey).containsEntry("sonar.projectKey", customProjectKey);
   }
 
   // MSONAR-91
   @Test
-  public void convertMultiModuleProjectSkipModule() throws Exception {
-    File baseDir = temp.getRoot();
+  void convertMultiModuleProjectSkipModule() throws Exception {
+    File baseDir = temp.toAbsolutePath().toFile();
     MavenProject root = createProject(new Properties(), "pom");
 
     File module1BaseDir = new File(baseDir, "module1");
@@ -291,11 +283,10 @@ public class MavenProjectConverterTest {
     Map<String, String> props = projectConverter.configure(Arrays.asList(module12, module11, module1, module2, root),
       root, new Properties());
 
-    assertThat(props.get("sonar.projectKey")).isEqualTo("com.foo:myProject");
-    assertThat(props.get("sonar.projectName")).isEqualTo("My Project");
-    assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
-
-    assertThat(props.get("sonar.projectBaseDir")).isEqualTo(baseDir.getAbsolutePath());
+    assertThat(props).containsEntry("sonar.projectKey", "com.foo:myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1")
+      .containsEntry("sonar.projectBaseDir", baseDir.getAbsolutePath());
 
     String module1Key = "com.foo:module1";
     String module2Key = "com.foo:module2";
@@ -305,14 +296,11 @@ public class MavenProjectConverterTest {
     String module12Key = "com.foo:module12";
     assertThat(props.get(module1Key + ".sonar.modules").split(",")).containsOnly(module12Key);
 
-    assertThat(props.get(module1Key
-      + ".sonar.projectBaseDir")).isEqualTo(module1BaseDir.getAbsolutePath());
+    assertThat(props).containsEntry(module1Key + ".sonar.projectBaseDir", module1BaseDir.getAbsolutePath());
     // Module 11 is skipped
     assertThat(props.get(module1Key + "." + module11Key + ".sonar.projectBaseDir")).isNull();
-    assertThat(props.get(module1Key + "." + module12Key
-      + ".sonar.projectBaseDir")).isEqualTo(module12BaseDir.getAbsolutePath());
-    assertThat(props.get(module2Key
-      + ".sonar.projectBaseDir")).isEqualTo(module2BaseDir.getAbsolutePath());
+    assertThat(props).containsEntry(module1Key + "." + module12Key + ".sonar.projectBaseDir", module12BaseDir.getAbsolutePath())
+      .containsEntry(module2Key + ".sonar.projectBaseDir", module2BaseDir.getAbsolutePath());
 
     assertThat(projectConverter.getSkippedBasedDirs()).containsOnly(module11BaseDir.toPath());
 
@@ -323,8 +311,8 @@ public class MavenProjectConverterTest {
 
   // MSONAR-125
   @Test
-  public void skipOrphanModule() throws Exception {
-    File baseDir = temp.getRoot();
+  void skipOrphanModule() throws Exception {
+    File baseDir = temp.toAbsolutePath().toFile();
     MavenProject root = createProject(new Properties(), "pom");
 
     File module1BaseDir = new File(baseDir, "module1");
@@ -351,18 +339,16 @@ public class MavenProjectConverterTest {
     Map<String, String> props = projectConverter.configure(Arrays.asList(module1, module2, root),
       root, new Properties());
 
-    assertThat(props.get("sonar.projectKey")).isEqualTo("com.foo:myProject");
-    assertThat(props.get("sonar.projectName")).isEqualTo("My Project");
-    assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
-
-    assertThat(props.get("sonar.projectBaseDir")).isEqualTo(baseDir.getAbsolutePath());
+    assertThat(props).containsEntry("sonar.projectKey", "com.foo:myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1")
+      .containsEntry("sonar.projectBaseDir", baseDir.getAbsolutePath());
 
     String module1Key = "com.foo:module1";
     String module2Key = "com.foo:module2";
     assertThat(props.get("sonar.modules").split(",")).containsOnly(module1Key);
 
-    assertThat(props.get(module1Key
-      + ".sonar.projectBaseDir")).isEqualTo(module1BaseDir.getAbsolutePath());
+    assertThat(props).containsEntry(module1Key + ".sonar.projectBaseDir", module1BaseDir.getAbsolutePath());
     // Module 2 is skipped
     assertThat(props.get(module2Key + ".sonar.projectBaseDir")).isNull();
 
@@ -372,55 +358,58 @@ public class MavenProjectConverterTest {
   }
 
   @Test
-  public void overrideSourcesSingleModuleProject() throws Exception {
-    temp.newFolder("src");
-    File srcMainDir = temp.newFolder("src", "main").getAbsoluteFile();
+  void overrideSourcesSingleModuleProject() throws Exception {
+    File srcMainDir = temp.resolve(Paths.get("src", "main")).toAbsolutePath().toFile();
+    srcMainDir.mkdirs();
 
     Properties pomProps = new Properties();
     pomProps.put("sonar.sources", "src/main");
 
     MavenProject project = createProject(pomProps, "jar");
 
-    Map<String, String> props = projectConverter.configure(Arrays.asList(project), project, new Properties());
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
 
-    assertThat(props.get("sonar.projectKey")).isEqualTo("com.foo:myProject");
-    assertThat(props.get("sonar.projectName")).isEqualTo("My Project");
-    assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
-
-    assertThat(props.get("sonar.sources")).isEqualTo(srcMainDir.getAbsolutePath());
+    assertThat(props).containsEntry("sonar.projectKey", "com.foo:myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1")
+      .containsEntry("sonar.sources", srcMainDir.getAbsolutePath());
 
     assertThat(projectConverter.isSourceDirsOverridden()).isTrue();
   }
 
   @Test
-  public void excludeSourcesInTarget() throws Exception {
-    File src2 = temp.newFolder("src2");
-    File pom = temp.newFile("pom.xml");
+  void excludeSourcesInTarget() throws Exception {
+    File src2 = temp.resolve("src2").toFile();
+    src2.mkdir();
+    File pom = temp.resolve("pom.xml").toFile();
+    pom.createNewFile();
 
     MavenProject project = createProject(pom, new Properties(), "jar");
-    project.addCompileSourceRoot(new File(temp.getRoot(), "target").getAbsolutePath());
-    project.addCompileSourceRoot(new File(temp.getRoot(), "src2").getAbsolutePath());
+    project.addCompileSourceRoot(new File(temp.toAbsolutePath().toFile(), "target").getAbsolutePath());
+    project.addCompileSourceRoot(new File(temp.toAbsolutePath().toFile(), "src2").getAbsolutePath());
 
-    Map<String, String> props = projectConverter.configure(Arrays.asList(project), project, new Properties());
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
 
-    assertThat(props.get("sonar.projectKey")).isEqualTo("com.foo:myProject");
-    assertThat(props.get("sonar.projectName")).isEqualTo("My Project");
-    assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
+    assertThat(props).containsEntry("sonar.projectKey", "com.foo:myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1");
 
     assertThat(props.get("sonar.sources").split(",")).containsOnly(src2.getAbsolutePath(), pom.getAbsolutePath());
   }
 
   @Test
-  public void overrideSourcesMultiModuleProject() throws Exception {
+  void overrideSourcesMultiModuleProject() throws Exception {
     Properties pomProps = new Properties();
     pomProps.put("sonar.sources", "src/main");
     pomProps.put("sonar.tests", "src/test");
 
     MavenProject root = createProject(pomProps, "pom");
 
-    File module1BaseDir = temp.newFolder("module1").getAbsoluteFile();
-    File module1SrcDir = temp.newFolder("module1", "src", "main").getAbsoluteFile();
-    File module1TestDir = temp.newFolder("module1", "src", "test").getAbsoluteFile();
+    File module1BaseDir = temp.resolve("module1").toAbsolutePath().toFile();
+    File module1SrcDir = temp.resolve(Paths.get("module1", "src", "main")).toAbsolutePath().toFile();
+    module1SrcDir.mkdirs();
+    File module1TestDir = temp.resolve(Paths.get("module1", "src", "test")).toAbsolutePath().toFile();
+    module1TestDir.mkdirs();
     MavenProject module1 = createProject(new File(module1BaseDir, "pom.xml"), pomProps, "jar");
     module1.getModel().setArtifactId("module1");
     module1.getModel().setName("My Project - Module 1");
@@ -428,10 +417,13 @@ public class MavenProjectConverterTest {
     module1.setParent(root);
     root.getModules().add("module1");
 
-    File module2BaseDir = temp.newFolder("module2").getAbsoluteFile();
-    File module2SrcDir = temp.newFolder("module2", "src", "main").getAbsoluteFile();
-    File module2TestDir = temp.newFolder("module2", "src", "test").getAbsoluteFile();
-    File module2BinaryDir = temp.newFolder("module2", "target", "classes").getAbsoluteFile();
+    File module2BaseDir = temp.resolve("module2").toAbsolutePath().toFile();
+    File module2SrcDir = temp.resolve(Paths.get("module2", "src", "main")).toAbsolutePath().toFile();
+    module2SrcDir.mkdirs();
+    File module2TestDir = temp.resolve(Paths.get("module2", "src", "test")).toAbsolutePath().toFile();
+    module2TestDir.mkdirs();
+    File module2BinaryDir = temp.resolve(Paths.get("module2", "target", "classes")).toAbsolutePath().toFile();
+    module2BinaryDir.mkdirs();
 
     MavenProject module2 = createProject(new File(module2BaseDir, "pom.xml"), pomProps, "jar");
     module2.getModel().setArtifactId("module2");
@@ -444,62 +436,59 @@ public class MavenProjectConverterTest {
       root,
       new Properties());
 
-    assertThat(props.get("sonar.projectKey")).isEqualTo("com.foo:myProject");
-    assertThat(props.get("sonar.projectName")).isEqualTo("My Project");
-    assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
-
-    assertThat(props.get("sonar.projectBaseDir")).isEqualTo(temp.getRoot().getAbsolutePath());
+    assertThat(props).containsEntry("sonar.projectKey", "com.foo:myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1")
+      .containsEntry("sonar.projectBaseDir", temp.toAbsolutePath().toFile().getAbsolutePath());
 
     String module1Key = "com.foo:module1";
     String module2Key = "com.foo:module2";
     assertThat(props.get("sonar.modules").split(",")).containsOnly(module1Key, module2Key);
 
-    assertThat(props.get(module1Key
-      + ".sonar.projectBaseDir")).isEqualTo(module1BaseDir.getAbsolutePath());
-    assertThat(props.get(module2Key
-      + ".sonar.projectBaseDir")).isEqualTo(module2BaseDir.getAbsolutePath());
-
-    assertThat(props.get("sonar.sources")).isEqualTo("");
+    assertThat(props).containsEntry(module1Key + ".sonar.projectBaseDir", module1BaseDir.getAbsolutePath())
+      .containsEntry(module2Key + ".sonar.projectBaseDir", module2BaseDir.getAbsolutePath())
+      .containsEntry(module1Key + ".sonar.sources", module1SrcDir.getAbsolutePath())
+      .containsEntry(module1Key + ".sonar.tests", module1TestDir.getAbsolutePath())
+      .containsEntry(module2Key + ".sonar.sources", module2SrcDir.getAbsolutePath())
+      .containsEntry(module2Key + ".sonar.tests", module2TestDir.getAbsolutePath())
+      .containsEntry(module2Key + ".sonar.binaries", module2BinaryDir.getAbsolutePath())
+      .containsEntry(module2Key + ".sonar.groovy.binaries", module2BinaryDir.getAbsolutePath())
+      .containsEntry(module2Key + ".sonar.java.binaries", module2BinaryDir.getAbsolutePath())
+      .containsEntry("sonar.sources", "");
     assertThat(props.get("sonar.tests")).isNull();
-    assertThat(props.get(module1Key + ".sonar.sources")).isEqualTo(module1SrcDir.getAbsolutePath());
-    assertThat(props.get(module1Key + ".sonar.tests")).isEqualTo(module1TestDir.getAbsolutePath());
-    assertThat(props.get(module2Key + ".sonar.sources")).isEqualTo(module2SrcDir.getAbsolutePath());
-    assertThat(props.get(module2Key + ".sonar.tests")).isEqualTo(module2TestDir.getAbsolutePath());
-    assertThat(props.get(module2Key + ".sonar.binaries")).isEqualTo(module2BinaryDir.getAbsolutePath());
-    assertThat(props.get(module2Key + ".sonar.groovy.binaries")).isEqualTo(module2BinaryDir.getAbsolutePath());
-    assertThat(props.get(module2Key + ".sonar.java.binaries")).isEqualTo(module2BinaryDir.getAbsolutePath());
 
     assertThat(projectConverter.isSourceDirsOverridden()).isTrue();
   }
 
-  @Test(expected = MojoExecutionException.class)
-  public void overrideSourcesNonexistentFolder() throws Exception {
+  @Test
+  void overrideSourcesNonexistentFolder() throws Exception {
     Properties pomProps = new Properties();
     pomProps.put("sonar.sources", "nonexistent-folder");
 
     MavenProject project = createProject(pomProps, "jar");
 
-    projectConverter.configure(Arrays.asList(project), project, new Properties());
+    assertThrows(MojoExecutionException.class, () ->
+      projectConverter.configure(Collections.singletonList(project), project, new Properties()));
   }
 
   @Test
-  public void overrideProjectKeySingleModuleProject() throws Exception {
+  void overrideProjectKeySingleModuleProject() throws Exception {
     Properties pomProps = new Properties();
     pomProps.put("sonar.projectKey", "myProject");
 
     MavenProject project = createProject(pomProps, "jar");
 
-    Map<String, String> props = projectConverter.configure(Arrays.asList(project), project, new Properties());
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
 
-    assertThat(props.get("sonar.projectKey")).isEqualTo("myProject");
-    assertThat(props.get("sonar.projectName")).isEqualTo("My Project");
-    assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
+    assertThat(props).containsEntry("sonar.projectKey", "myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1");
   }
 
   // MSONAR-134
   @Test
-  public void preserveFoldersHavingCommonPrefix() throws Exception {
-    File baseDir = temp.getRoot();
+  void preserveFoldersHavingCommonPrefix() throws Exception {
+    File baseDir = temp.toAbsolutePath().toFile();
     File srcDir = new File(baseDir, "src");
     srcDir.mkdirs();
     File srcGenDir = new File(baseDir, "src-gen");
@@ -508,28 +497,28 @@ public class MavenProjectConverterTest {
     project.getCompileSourceRoots().add("src");
     project.getCompileSourceRoots().add("src-gen");
 
-    Map<String, String> props = projectConverter.configure(Arrays.asList(project), project, new Properties());
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
 
     assertThat(props.get("sonar.sources")).contains(srcDir.getAbsolutePath(), srcGenDir.getAbsolutePath());
   }
 
   // MSONAR-145
   @Test
-  public void ignoreNonStringModelProperties() throws Exception {
+  void ignoreNonStringModelProperties() throws Exception {
     Properties pomProps = new Properties();
     pomProps.put("sonar.projectKey", "myProject");
-    pomProps.put("sonar.integer", new Integer(10));
+    pomProps.put("sonar.integer", 10);
     pomProps.put("sonar.string", "myString");
 
     MavenProject project = createProject(pomProps, "jar");
-    Map<String, String> props = projectConverter.configure(Arrays.asList(project), project, new Properties());
-    assertThat(props.get("sonar.string")).isEqualTo("myString");
-    assertThat(props).doesNotContainKey("sonar.integer");
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+    assertThat(props).containsEntry("sonar.string", "myString")
+      .doesNotContainKey("sonar.integer");
   }
 
   @Test
-  public void includePomInNonLeaf() throws Exception {
-    Path baseDir = temp.getRoot().toPath();
+  void includePomInNonLeaf() throws Exception {
+    Path baseDir = temp.toAbsolutePath();
     Path basePom = baseDir.resolve("pom.xml");
     MavenProject baseProject = createProject(new Properties(), "pom");
 
@@ -544,13 +533,13 @@ public class MavenProjectConverterTest {
 
     Map<String, String> props = projectConverter.configure(Arrays.asList(leafProject, baseProject), baseProject, new Properties());
 
-    assertThat(props.get("sonar.sources")).isEqualTo(basePom.toString());
-    assertThat(props.get("com.foo:module1.sonar.sources")).isEqualTo(leafPom.toString());
+    assertThat(props).containsEntry("sonar.sources", basePom.toString())
+      .containsEntry("com.foo:module1.sonar.sources", leafPom.toString());
   }
 
   @Test
-  public void ignoreSourcesInNonLeaf() throws Exception {
-    Path baseDir = temp.getRoot().toPath();
+  void ignoreSourcesInNonLeaf() throws Exception {
+    Path baseDir = temp;
     Path basePom = baseDir.resolve("pom.xml");
     MavenProject baseProject = createProject(new Properties(), "pom");
 
@@ -574,17 +563,16 @@ public class MavenProjectConverterTest {
 
     Map<String, String> props = projectConverter.configure(Arrays.asList(leafProject, baseProject), baseProject, new Properties());
 
-    assertThat(props.get("sonar.sources")).isEqualTo(basePom.toString());
-    String allLeafSources = leafPom + "," + leafSources;
-    assertThat(props.get("com.foo:module1.sonar.sources")).isEqualTo(allLeafSources);
+    assertThat(props).containsEntry("sonar.sources", basePom.toString())
+      .containsEntry("com.foo:module1.sonar.sources", leafPom + "," + leafSources);
   }
 
   @Test
-  public void includeSourcesInNonLeafWhenExplicitlyRequested() throws Exception {
+  void includeSourcesInNonLeafWhenExplicitlyRequested() throws Exception {
     Properties pomProps = new Properties();
     pomProps.put("sonar.sources", "pom.xml,src/main/java");
 
-    Path baseDir = temp.getRoot().toPath();
+    Path baseDir = temp;
     Path basePom = baseDir.resolve("pom.xml");
     MavenProject baseProject = createProject(pomProps, "pom");
 
@@ -608,16 +596,14 @@ public class MavenProjectConverterTest {
 
     Map<String, String> props = projectConverter.configure(Arrays.asList(leafProject, baseProject), baseProject, new Properties());
 
-    String allBaseSources = basePom + "," + baseSources;
-    assertThat(props.get("sonar.sources")).isEqualTo(allBaseSources);
-    String allLeafSources = leafPom + "," + leafSources;
-    assertThat(props.get("com.foo:module1.sonar.sources")).isEqualTo(allLeafSources);
+    assertThat(props).containsEntry("sonar.sources", basePom + "," + baseSources)
+      .containsEntry("com.foo:module1.sonar.sources", leafPom + "," + leafSources);
   }
 
   // MSONAR-155
   @Test
-  public void two_modules_in_same_folder() throws Exception {
-    File baseDir = temp.getRoot();
+  void two_modules_in_same_folder() throws Exception {
+    File baseDir = temp.toAbsolutePath().toFile();
     MavenProject root = createProject(new Properties(), "pom");
 
     File modulesBaseDir = new File(baseDir, "modules");
@@ -639,24 +625,22 @@ public class MavenProjectConverterTest {
     Map<String, String> props = projectConverter.configure(Arrays.asList(module1, module2, root),
       root, new Properties());
 
-    assertThat(props.get("sonar.projectKey")).isEqualTo("com.foo:myProject");
-    assertThat(props.get("sonar.projectName")).isEqualTo("My Project");
-    assertThat(props.get("sonar.projectVersion")).isEqualTo("2.1");
-
-    assertThat(props.get("sonar.projectBaseDir")).isEqualTo(baseDir.getAbsolutePath());
+    assertThat(props).containsEntry("sonar.projectKey", "com.foo:myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1")
+      .containsEntry("sonar.projectBaseDir", baseDir.getAbsolutePath());
 
     String module1Key = "com.foo:module1";
     String module2Key = "com.foo:module2";
     assertThat(props.get("sonar.modules").split(",")).containsOnly(module1Key, module2Key);
 
-    assertThat(props.get(module1Key
-      + ".sonar.projectBaseDir")).isEqualTo(modulesBaseDir.getAbsolutePath());
-    assertThat(props.get(module2Key
-      + ".sonar.projectBaseDir")).isEqualTo(modulesBaseDir.getAbsolutePath());
+    assertThat(props).containsEntry(module1Key + ".sonar.projectBaseDir", modulesBaseDir.getAbsolutePath())
+      .containsEntry(module2Key + ".sonar.projectBaseDir", modulesBaseDir.getAbsolutePath());
   }
 
   private MavenProject createProject(Properties pomProps, String packaging) throws IOException {
-    File pom = temp.newFile("pom.xml");
+    File pom = temp.resolve("pom.xml").toFile();
+    pom.createNewFile();
     return createProject(pom, pomProps, packaging);
   }
 

@@ -28,9 +28,9 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.settings.Proxy;
 import org.apache.maven.settings.Settings;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.api.LogOutput;
@@ -42,7 +42,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class ScannerFactoryTest {
+class ScannerFactoryTest {
   private LogOutput logOutput;
   private RuntimeInformation runtimeInformation;
   private MojoExecution mojoExecution;
@@ -51,7 +51,7 @@ public class ScannerFactoryTest {
   private PropertyDecryptor propertyDecryptor;
   private Properties envProps;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     logOutput = mock(LogOutput.class);
     runtimeInformation = mock(RuntimeInformation.class, Mockito.RETURNS_DEEP_STUBS);
@@ -77,8 +77,8 @@ public class ScannerFactoryTest {
     propertyDecryptor = new PropertyDecryptor(mock(Log.class), mock(SecDispatcher.class));
   }
 
-  @After
-  @Before
+  @AfterEach
+  @BeforeEach
   public void clearProxyProperties() {
     System.clearProperty("http.proxyHost");
     System.clearProperty("http.proxyPort");
@@ -88,7 +88,7 @@ public class ScannerFactoryTest {
   }
 
   @Test
-  public void testProxy() {
+  void testProxy() {
     Proxy proxy = new Proxy();
     proxy.setActive(true);
     proxy.setProtocol("https");
@@ -104,7 +104,7 @@ public class ScannerFactoryTest {
   }
 
   @Test
-  public void testProperties() {
+  void testProperties() {
     Log log = mock(Log.class);
     ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     EmbeddedScanner scanner = factory.create();
@@ -117,7 +117,7 @@ public class ScannerFactoryTest {
   }
 
   @Test
-  public void testDebug() {
+  void testDebug() {
     Log log = mock(Log.class);
     when(log.isDebugEnabled()).thenReturn(true);
     ScannerFactory factoryDebug = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);

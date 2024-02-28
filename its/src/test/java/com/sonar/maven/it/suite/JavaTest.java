@@ -26,23 +26,24 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Properties;
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.sonarqube.ws.client.settings.SetRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class JavaTest extends AbstractMavenTest {
 
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
+  @TempDir
+  public Path temp;
 
-  @After
+  @AfterEach
   public void cleanup() {
     wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("false"));
   }
@@ -50,12 +51,14 @@ public class JavaTest extends AbstractMavenTest {
   // MSONAR-83
   @Test
   public void shouldPopulateLibraries() throws IOException {
-    File outputProps = temp.newFile();
+    File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
+
     File projectPom = ItUtils.locateProjectPom("shared/struts-1.3.9-diet");
     MavenBuild build = MavenBuild.create(projectPom)
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties generatedProps = getProps(outputProps);
     String[] moduleIds = generatedProps.getProperty("sonar.modules").split(",");
@@ -73,14 +76,16 @@ public class JavaTest extends AbstractMavenTest {
 
   @Test
   public void read_default_from_plugins_config() throws Exception {
-    File outputProps = temp.newFile();
+    File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
+
     // Need package to have test execution
     // Surefire reports are not in standard directory
     File pom = ItUtils.locateProjectPom("project-default-config");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
@@ -92,13 +97,14 @@ public class JavaTest extends AbstractMavenTest {
 
   @Test
   public void setJavaVersionCompilerConfiguration() throws IOException {
-    File outputProps = temp.newFile();
+    File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
 
     File pom = ItUtils.locateProjectPom("version/compilerPluginConfig");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
@@ -108,13 +114,14 @@ public class JavaTest extends AbstractMavenTest {
 
   @Test
   public void setJavaVersionProperties() throws IOException {
-    File outputProps = temp.newFile();
+    File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
 
     File pom = ItUtils.locateProjectPom("version/properties");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
@@ -124,13 +131,14 @@ public class JavaTest extends AbstractMavenTest {
 
   @Test
   public void setJdkHomeFromCompilerExecutableConfiguration() throws IOException {
-    File outputProps = temp.newFile();
+    File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
 
     File pom = ItUtils.locateProjectPom("jdkHome/compilerPluginConfigExecutable");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(sonarGoal())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "path/to/java_executable"));
@@ -138,7 +146,8 @@ public class JavaTest extends AbstractMavenTest {
 
   @Test
   public void setJdkHomeFromGlobalToolchainsPlugin() throws IOException {
-    File outputProps = temp.newFile();
+    File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
 
     File pom = ItUtils.locateProjectPom("jdkHome/globalToolchain");
     MavenBuild build = MavenBuild.create(pom)
@@ -147,7 +156,7 @@ public class JavaTest extends AbstractMavenTest {
       .setGoals("toolchains:toolchain " + sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_1.5"));
@@ -156,9 +165,10 @@ public class JavaTest extends AbstractMavenTest {
   @Test
   public void setJdkHomeFromCompilerToolchainsConfiguration() throws IOException {
     // https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#jdkToolchain requires Maven 3.3.1+
-    Assume.assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
+    assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
 
-    File outputProps = temp.newFile();
+    File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
 
     File pom = ItUtils.locateProjectPom("jdkHome/compilerPluginConfigToolchain");
     MavenBuild build = MavenBuild.create(pom)
@@ -166,7 +176,7 @@ public class JavaTest extends AbstractMavenTest {
       .setGoals(sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_1.6"));
@@ -175,9 +185,10 @@ public class JavaTest extends AbstractMavenTest {
   @Test
   public void takeFirstToolchainIfMultipleExecutions() throws IOException {
     // https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#jdkToolchain requires Maven 3.3.1+
-    Assume.assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
+    assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
 
-    File outputProps = temp.newFile();
+    File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
 
     File pom = ItUtils.locateProjectPom("jdkHome/compilerPluginConfigToolchainMultipleExecutions");
     MavenBuild build = MavenBuild.create(pom)
@@ -185,7 +196,7 @@ public class JavaTest extends AbstractMavenTest {
       .setGoals(sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
       .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_9"));

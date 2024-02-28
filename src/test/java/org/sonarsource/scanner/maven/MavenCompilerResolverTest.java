@@ -19,18 +19,19 @@
  */
 package org.sonarsource.scanner.maven;
 
+
 import java.util.Optional;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver.MavenCompilerConfiguration;
 
-public class MavenCompilerResolverTest {
+class MavenCompilerResolverTest {
 
   @Test
-  public void testSameCompilerConfiguration() {
+  void testSameCompilerConfiguration() {
     MavenCompilerConfiguration conf1 = mock(MavenCompilerConfiguration.class);
     MavenCompilerConfiguration conf2 = mock(MavenCompilerConfiguration.class);
 

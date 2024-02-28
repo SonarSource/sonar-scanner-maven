@@ -22,9 +22,8 @@ package com.sonar.maven.it.suite;
 import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.MavenBuild;
 import com.sonar.orchestrator.container.Server;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.sonarqube.ws.ProjectLinks;
 import org.sonarqube.ws.ProjectLinks.SearchWsResponse;
 import org.sonarqube.ws.client.HttpConnector;
@@ -35,29 +34,23 @@ import org.sonarqube.ws.client.projectlinks.SearchRequest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
-public class LinksTest extends AbstractMavenTest {
-
-  @Before
-  @After
-  public void cleanProjectLinksTable() {
-    orchestrator.getDatabase().truncate("project_links");
-  }
+class LinksTest extends AbstractMavenTest {
 
   /**
    * SONAR-3676
    */
   @Test
-  public void shouldUseLinkPropertiesOverPomLinksInMaven() {
+  void shouldUseLinkPropertiesOverPomLinksInMaven() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("batch/links-project"))
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scm.disabled", "true");
-    orchestrator.executeBuild(build);
+    ORCHESTRATOR.executeBuild(build);
 
     checkLinks();
   }
 
   private void checkLinks() {
-    Server server = orchestrator.getServer();
+    Server server = ORCHESTRATOR.getServer();
     WsClient client = WsClientFactories.getDefault().newClient(HttpConnector.newBuilder()
       .url(server.getUrl())
       .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)

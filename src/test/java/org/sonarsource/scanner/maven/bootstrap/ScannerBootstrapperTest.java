@@ -32,10 +32,10 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -45,7 +45,7 @@ import org.sonarsource.scanner.api.ScanProperties;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -56,7 +56,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper.UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE;
 
-public class ScannerBootstrapperTest {
+class ScannerBootstrapperTest {
   @Mock
   private Log log;
 
@@ -72,15 +72,15 @@ public class ScannerBootstrapperTest {
   @Mock
   private MavenProjectConverter mavenProjectConverter;
 
-  @Rule
-  public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir
+  public Path tmpFolder;
 
   private ScannerBootstrapper scannerBootstrapper;
 
   private Map<String, String> projectProperties;
 
 
-  @Before
+  @BeforeEach
   public void setUp()
     throws MojoExecutionException, IOException {
     MockitoAnnotations.initMocks(this);
@@ -91,13 +91,13 @@ public class ScannerBootstrapperTest {
     when(session.getUserProperties()).thenReturn(new Properties());
 
     projectProperties = new HashMap<>();
-    projectProperties.put(ScanProperties.PROJECT_BASEDIR, tmpFolder.getRoot().toString());
+    projectProperties.put(ScanProperties.PROJECT_BASEDIR, tmpFolder.toAbsolutePath().toString());
     // Create folders
-    Path pom = tmpFolder.getRoot().toPath().resolve("pom.xml");
+    Path pom = tmpFolder.resolve("pom.xml");
     pom.toFile().createNewFile();
-    Path sourceMainDirs = tmpFolder.getRoot().toPath().resolve("src").resolve("main").resolve("java");
+    Path sourceMainDirs = tmpFolder.resolve(Paths.get("src", "main", "java"));
     sourceMainDirs.toFile().mkdirs();
-    Path sourceResourceDirs = tmpFolder.getRoot().toPath().resolve("src").resolve("main").resolve("resources");
+    Path sourceResourceDirs = tmpFolder.resolve(Paths.get("src", "main", "resources"));
     sourceResourceDirs.toFile().mkdirs();
     Path javascriptResource = sourceResourceDirs.resolve("index.js");
     javascriptResource.toFile().createNewFile();
@@ -112,19 +112,19 @@ public class ScannerBootstrapperTest {
   }
 
   @Test
-  public void testSQBefore56() {
+  void testSQBefore56() {
     when(scanner.serverVersion()).thenReturn("5.1");
-    try {
-      scannerBootstrapper.execute();
-      fail("Expected exception");
-    } catch (Exception e) {
-      assertThat(e).hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
-        .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
-    }
+
+    MojoExecutionException exception = assertThrows(MojoExecutionException.class,
+            () -> scannerBootstrapper.execute());
+
+    assertThat(exception)
+            .hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
+            .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
   }
 
   @Test
-  public void testSQ56() throws MojoExecutionException {
+  void testSQ56() throws MojoExecutionException {
     when(scanner.serverVersion()).thenReturn("5.6");
     ScannerBootstrapper mocked = Mockito.mock(ScannerBootstrapper.class);
     scannerBootstrapper.execute();
@@ -136,7 +136,7 @@ public class ScannerBootstrapperTest {
   }
 
   @Test
-  public void testVersionComparisonWithBuildNumber() throws MojoExecutionException {
+  void testVersionComparisonWithBuildNumber() throws MojoExecutionException {
     when(scanner.serverVersion()).thenReturn("6.3.0.12345");
     scannerBootstrapper.execute();
 
@@ -146,20 +146,19 @@ public class ScannerBootstrapperTest {
   }
 
   @Test
-  public void testNullServerVersion() {
+  void testNullServerVersion() {
     when(scanner.serverVersion()).thenReturn(null);
 
-    try {
-      scannerBootstrapper.execute();
-      fail("Expected exception");
-    } catch (Exception e) {
-      assertThat(e).hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
-        .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
-    }
+    MojoExecutionException exception = assertThrows(MojoExecutionException.class,
+            () -> scannerBootstrapper.execute());
+
+    assertThat(exception)
+            .hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
+            .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
   }
 
   @Test
-  public void scanAll_property_is_detected_and_applied() throws MojoExecutionException {
+  void scanAll_property_is_detected_and_applied() throws MojoExecutionException {
     // When sonar.scanner.scanAll is not set
     Map<String, String> collectedProperties = scannerBootstrapper.collectProperties();
     assertThat(collectedProperties).containsKey(ScanProperties.PROJECT_SOURCE_DIRS);
@@ -197,7 +196,7 @@ public class ScannerBootstrapperTest {
   }
 
   @Test
-  public void should_not_collect_all_sources_when_sonar_sources_is_overridden() throws MojoExecutionException {
+  void should_not_collect_all_sources_when_sonar_sources_is_overridden() throws MojoExecutionException {
     // When sonar.scanner.scanAll is set explicitly to true
     Properties withScanAllSetToTrue = new Properties();
     withScanAllSetToTrue.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "true");
@@ -217,7 +216,7 @@ public class ScannerBootstrapperTest {
   }
 
   @Test
-  public void an_exception_is_logged_at_warning_level_when_failing_to_crawl_the_filesystem_to_scan_all_sources() throws MojoExecutionException, IOException {
+  void an_exception_is_logged_at_warning_level_when_failing_to_crawl_the_filesystem_to_scan_all_sources() throws MojoExecutionException, IOException {
     // Enabling the scanAll option explicitly as a scanner option
     Properties withScanAllSetToTrue = new Properties();
     withScanAllSetToTrue.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "true");
@@ -232,13 +231,13 @@ public class ScannerBootstrapperTest {
   }
 
   @Test
-  public void can_collect_sources_with_commas_in_paths() throws MojoExecutionException, IOException {
+  void can_collect_sources_with_commas_in_paths() throws MojoExecutionException, IOException {
     Properties withScanAllSetToTrue = new Properties();
     withScanAllSetToTrue.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "true");
     when(session.getUserProperties()).thenReturn(withScanAllSetToTrue);
 
     // Create paths with commas in them
-    Path root = tmpFolder.getRoot().toPath();
+    Path root = tmpFolder.toAbsolutePath();
     Path directory = root.resolve(Paths.get("directory,with,commas"));
     directory.toFile().mkdirs();
     Path file = directory.resolve("file.properties");

@@ -188,7 +188,7 @@ public class ScannerBootstrapper {
     String vmInformation = String.format(
       "Java %s %s (%s-bit)",
       SystemEnvironment.getProperty("java.version"),
-      SystemEnvironment.getProperty("java.specification.vendor"),
+      SystemEnvironment.getProperty("java.vm.vendor"),
       SystemEnvironment.getProperty("sun.arch.data.model")
     );
     log.info(vmInformation);

@@ -309,11 +309,11 @@ class ScannerBootstrapperTest {
     @Test
     void jvm_information_is_logged_at_info_level() {
       try (MockedStatic<SystemEnvironment> mockedSystem = mockStatic(SystemEnvironment.class)) {
-        mockedSystem.when(() -> SystemEnvironment.getProperty("java.specification.vendor")).thenReturn("Some Corporation");
+        mockedSystem.when(() -> SystemEnvironment.getProperty("java.vm.vendor")).thenReturn("Artisanal Distribution");
         mockedSystem.when(() -> SystemEnvironment.getProperty("java.version")).thenReturn("4.2.0");
         mockedSystem.when(() -> SystemEnvironment.getProperty("sun.arch.data.model")).thenReturn("16");
         scannerBootstrapper.logEnvironmentInformation();
-        verify(log, times(1)).info("Java 4.2.0 Some Corporation (16-bit)");
+        verify(log, times(1)).info("Java 4.2.0 Artisanal Distribution (16-bit)");
       }
     }
   }

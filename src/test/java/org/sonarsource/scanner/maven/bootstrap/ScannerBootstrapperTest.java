@@ -32,8 +32,8 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
@@ -48,7 +48,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -271,6 +273,27 @@ class ScannerBootstrapperTest {
 
     verify(log).info("Communicating with SonarCloud");
     verify(log, never()).info("Communicating with SonarQube Server 8.0");
+  }
+
+  @Nested
+  class EnvironmentInformation {
+    @Test
+    void maven_opts_is_logged_at_info_level_when_present_in_environment_variables() {
+      try (MockedStatic<SystemEnvironment> mockedSystem = mockStatic(SystemEnvironment.class)) {
+        mockedSystem.when(() -> SystemEnvironment.getenv("MAVEN_OPTS")).thenReturn("-XX:NotAnActualOption=42");
+        scannerBootstrapper.logEnvironmentInformation();
+        verify(log, times(1)).info("MAVEN_OPTS=-XX:NotAnActualOption=42");
+      }
+    }
+
+    @Test
+    void maven_opts_is_not_logged_at_info_level_when_not_absent_from_environment_variables() {
+      try (MockedStatic<SystemEnvironment> mockedSystem = mockStatic(SystemEnvironment.class)) {
+        mockedSystem.when(() -> SystemEnvironment.getenv("MAVEN_OPTS")).thenReturn(null);
+        scannerBootstrapper.logEnvironmentInformation();
+        verify(log, never()).info(contains("MAVEN_OPTS"));
+      }
+    }
   }
 
   private void verifyCommonCalls() {

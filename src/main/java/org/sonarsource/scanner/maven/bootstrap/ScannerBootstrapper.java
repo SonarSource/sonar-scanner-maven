@@ -69,6 +69,7 @@ public class ScannerBootstrapper {
 
   public void execute() throws MojoExecutionException {
     try {
+      logEnvironmentInformation();
       scanner.start();
       serverVersion = scanner.serverVersion();
 
@@ -182,6 +183,13 @@ public class ScannerBootstrapper {
       return true;
     }
     return new ComparableVersion(serverVersion).compareTo(new ComparableVersion(version)) < 0;
+  }
+
+  void logEnvironmentInformation() {
+    String mavenOptions = SystemEnvironment.getenv("MAVEN_OPTS");
+    if (mavenOptions != null) {
+      log.info(String.format("MAVEN_OPTS=%s", mavenOptions));
+    }
   }
 
 }

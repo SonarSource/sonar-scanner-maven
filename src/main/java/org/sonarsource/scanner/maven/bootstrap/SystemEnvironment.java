@@ -29,4 +29,8 @@ class SystemEnvironment {
   static String getenv(String name) {
     return System.getenv(name);
   }
+
+  static String getProperty(String name) {
+    return System.getProperty(name);
+  }
 }

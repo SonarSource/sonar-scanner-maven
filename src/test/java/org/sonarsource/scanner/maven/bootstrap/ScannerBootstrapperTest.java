@@ -294,6 +294,17 @@ class ScannerBootstrapperTest {
         verify(log, never()).info(contains("MAVEN_OPTS"));
       }
     }
+
+    @Test
+    void os_information_is_always_logged() {
+      try (MockedStatic<SystemEnvironment> mockedSystem = mockStatic(SystemEnvironment.class)) {
+        mockedSystem.when(() -> SystemEnvironment.getProperty("os.name")).thenReturn("Solaris");
+        mockedSystem.when(() -> SystemEnvironment.getProperty("os.version")).thenReturn("42.1");
+        mockedSystem.when(() -> SystemEnvironment.getProperty("os.arch")).thenReturn("x68");
+        scannerBootstrapper.logEnvironmentInformation();
+        verify(log, times(1)).info("Solaris 42.1 (x68)");
+      }
+    }
   }
 
   private void verifyCommonCalls() {

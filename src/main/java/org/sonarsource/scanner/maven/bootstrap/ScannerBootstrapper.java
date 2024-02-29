@@ -190,6 +190,13 @@ public class ScannerBootstrapper {
     if (mavenOptions != null) {
       log.info(String.format("MAVEN_OPTS=%s", mavenOptions));
     }
+    String operatingSystem = String.format(
+      "%s %s (%s)",
+      SystemEnvironment.getProperty("os.name"),
+      SystemEnvironment.getProperty("os.version"),
+      SystemEnvironment.getProperty("os.arch")
+    );
+    log.info(operatingSystem);
   }
 
 }

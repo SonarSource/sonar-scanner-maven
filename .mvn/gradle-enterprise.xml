@@ -1,0 +1,9 @@
+<gradleEnterprise>
+    <buildScan>
+        <termsOfService>
+            <url>https://gradle.com/terms-of-service</url>
+            <accept>true</accept>
+        </termsOfService>
+        <publish>ON_DEMAND</publish>
+    </buildScan>
+</gradleEnterprise>

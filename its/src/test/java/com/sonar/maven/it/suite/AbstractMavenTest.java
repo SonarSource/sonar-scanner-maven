@@ -28,6 +28,7 @@ import com.sonar.orchestrator.http.HttpMethod;
 import com.sonar.orchestrator.http.HttpResponse;
 import com.sonar.orchestrator.junit5.OrchestratorExtension;
 import com.sonar.orchestrator.version.Version;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -38,6 +39,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
+
 import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,10 +65,12 @@ public abstract class AbstractMavenTest {
 
   @RegisterExtension
   public static final OrchestratorExtension ORCHESTRATOR = OrchestratorExtension.builderEnv()
-          .setSonarVersion(getSonarVersion())
-          .useDefaultAdminCredentialsForBuilds(true)
-          //.keepBundledPlugins()
-          .build();
+    .setSonarVersion(getSonarVersion())
+    .useDefaultAdminCredentialsForBuilds(true)
+    .addBundledPluginToKeep("sonar-java-plugin")
+    .addBundledPluginToKeep("sonar-xml-plugin")
+    .addBundledPluginToKeep("sonar-html-plugin")
+    .build();
 
   protected HttpConnector wsConnector;
   protected WsClient wsClient;

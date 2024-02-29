@@ -38,7 +38,7 @@ import org.sonarqube.ws.client.users.CreateRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class MavenTest extends AbstractMavenTest {
+class MavenTest extends AbstractMavenTest {
 
   private static final String MODULE_START_7_6 = "------------- Run sensors on module ";
   private static final String MODULE_START = "-------------  Scan ";
@@ -55,7 +55,7 @@ public class MavenTest extends AbstractMavenTest {
    * See MSONAR-129
    */
   @Test
-  public void useUserPropertiesGlobalConfig() throws Exception {
+  void useUserPropertiesGlobalConfig() throws Exception {
     BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
       .setGoals(cleanSonarGoal());
@@ -79,7 +79,7 @@ public class MavenTest extends AbstractMavenTest {
    * See MSONAR-129
    */
   @Test
-  public void supportSonarHostURLParam() {
+  void supportSonarHostURLParam() {
     BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-global-properties"))
       // global property should take precedence
@@ -96,7 +96,7 @@ public class MavenTest extends AbstractMavenTest {
    * See MSONAR-172
    */
   @Test
-  public void supportSonarHostURLParamFromEnvironmentVariable() {
+  void supportSonarHostURLParamFromEnvironmentVariable() {
     BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
       .setEnvironmentVariable("SONAR_HOST_URL", "http://from-env.org:9000")
@@ -112,7 +112,7 @@ public class MavenTest extends AbstractMavenTest {
    * See MSONAR-130
    */
   @Test
-  public void structureWithRelativePaths() {
+  void structureWithRelativePaths() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-structure-relative-paths"))
       .setGoals(cleanSonarGoal());
     ORCHESTRATOR.executeBuild(build);
@@ -122,14 +122,14 @@ public class MavenTest extends AbstractMavenTest {
    * See MSONAR-164
    */
   @Test
-  public void flatStructure() {
+  void flatStructure() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-flat-layout/parent"))
       .setGoals(cleanSonarGoal());
     ORCHESTRATOR.executeBuild(build);
   }
 
   @Test
-  public void aggregatorInheritParent() {
+  void aggregatorInheritParent() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/aggregator-inherit-parent"))
       .setGoals(cleanSonarGoal());
     ORCHESTRATOR.executeBuild(build);
@@ -137,7 +137,7 @@ public class MavenTest extends AbstractMavenTest {
   }
 
   @Test
-  public void aggregatorInheritParentAndSonarAttachedToPhase() {
+  void aggregatorInheritParentAndSonarAttachedToPhase() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/aggregator-inherit-parent-and-bind-to-verify"))
       .setGoals("clean verify")
       .setProperty("sonar.maven.it.mojoVersion", mojoVersion().toString());
@@ -146,7 +146,7 @@ public class MavenTest extends AbstractMavenTest {
   }
 
   @Test
-  public void shouldSupportJarWithoutSources() {
+  void shouldSupportJarWithoutSources() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/project-with-module-without-sources"))
       .setGoals(cleanSonarGoal());
     ORCHESTRATOR.executeBuild(build);
@@ -163,7 +163,7 @@ public class MavenTest extends AbstractMavenTest {
    * See SONAR-594
    */
   @Test
-  public void shouldSupportJeeProjects() {
+  void shouldSupportJeeProjects() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/jee"))
       .setGoals(cleanInstallSonarGoal());
     ORCHESTRATOR.executeBuild(build);
@@ -182,7 +182,7 @@ public class MavenTest extends AbstractMavenTest {
    * See SONAR-222
    */
   @Test
-  public void shouldSupportMavenExtensions() {
+  void shouldSupportMavenExtensions() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-extensions"))
       .setGoals(cleanSonarGoal());
     ORCHESTRATOR.executeBuild(build);
@@ -194,7 +194,7 @@ public class MavenTest extends AbstractMavenTest {
    * This test should be splitted. It checks multiple use-cases at the same time : SONAR-518, SONAR-519 and SONAR-593
    */
   @Test
-  public void testBadMavenParameters() {
+  void testBadMavenParameters() {
     // should not fail
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-bad-parameters"))
       .setGoals(cleanSonarGoal());
@@ -204,7 +204,7 @@ public class MavenTest extends AbstractMavenTest {
   }
 
   @Test
-  public void shouldAnalyzeMultiModules() {
+  void shouldAnalyzeMultiModules() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/modules-order"))
       .setGoals(cleanSonarGoal());
     ORCHESTRATOR.executeBuild(build);
@@ -232,7 +232,7 @@ public class MavenTest extends AbstractMavenTest {
   }
 
   @Test
-  public void shouldEvaluateSourceVersionOnEachModule() {
+  void shouldEvaluateSourceVersionOnEachModule() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/modules-source-versions"))
       .setGoals(cleanSonarGoal());
     BuildResult buildResult = ORCHESTRATOR.executeBuild(build);
@@ -254,7 +254,7 @@ public class MavenTest extends AbstractMavenTest {
 
   // MSONAR-158
   @Test
-  public void shouldAnalyzeMultiModulesAttachedToPhase() {
+  void shouldAnalyzeMultiModulesAttachedToPhase() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/attach-sonar-to-verify"))
       .setGoals("clean verify")
       .setProperty("sonar.maven.it.mojoVersion", mojoVersion().toString());
@@ -273,7 +273,7 @@ public class MavenTest extends AbstractMavenTest {
    * See SONAR-2735
    */
   @Test
-  public void shouldSupportDifferentDeclarationsForModules() {
+  void shouldSupportDifferentDeclarationsForModules() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/modules-declaration"))
       .setGoals(cleanSonarGoal());
     ORCHESTRATOR.executeBuild(build);
@@ -312,7 +312,7 @@ public class MavenTest extends AbstractMavenTest {
    * See SONAR-3843
    */
   @Test
-  public void should_support_shade_with_dependency_reduced_pom_with_clean_install_sonar_goals() {
+  void should_support_shade_with_dependency_reduced_pom_with_clean_install_sonar_goals() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/shade-with-dependency-reduced-pom"))
       .setGoals(cleanInstallSonarGoal());
     BuildResult result = ORCHESTRATOR.executeBuildQuietly(build);
@@ -325,7 +325,7 @@ public class MavenTest extends AbstractMavenTest {
    * src/main/java is missing
    */
   @Test
-  public void maven_project_with_only_test_dir() {
+  void maven_project_with_only_test_dir() {
     // Need package to have test execution
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir")).setGoals(cleanPackageSonarGoal());
     ORCHESTRATOR.executeBuild(build);
@@ -338,7 +338,7 @@ public class MavenTest extends AbstractMavenTest {
    * The property sonar.sources overrides the source dirs as declared in Maven
    */
   @Test
-  public void override_sources() {
+  void override_sources() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-override-sources")).setGoals(sonarGoal());
     ORCHESTRATOR.executeBuild(build);
 
@@ -350,7 +350,7 @@ public class MavenTest extends AbstractMavenTest {
    * The property sonar.sources overrides the source dirs as declared in Maven
    */
   @Test
-  public void override_sources_in_multi_module() {
+  void override_sources_in_multi_module() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/multi-modules-override-sources")).setGoals(sonarGoal());
     ORCHESTRATOR.executeBuild(build);
 
@@ -365,7 +365,7 @@ public class MavenTest extends AbstractMavenTest {
    * The property sonar.sources overrides the source dirs as declared in Maven
    */
   @Test
-  public void override_sources_in_multi_module_aggregator() {
+  void override_sources_in_multi_module_aggregator() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/multi-module-aggregator"))
       .setGoals(sonarGoal());
     ORCHESTRATOR.executeBuild(build);
@@ -381,7 +381,7 @@ public class MavenTest extends AbstractMavenTest {
    * The property sonar.inclusions overrides the property sonar.sources
    */
   @Test
-  public void inclusions_apply_to_source_dirs() {
+  void inclusions_apply_to_source_dirs() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/inclusions_apply_to_source_dirs")).setGoals(sonarGoal());
     ORCHESTRATOR.executeBuild(build);
 
@@ -393,7 +393,7 @@ public class MavenTest extends AbstractMavenTest {
    * The property sonar.sources has a typo -> fail, like in sonar-runner
    */
   @Test
-  public void fail_if_bad_value_of_sonar_sources_property() {
+  void fail_if_bad_value_of_sonar_sources_property() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-bad-sources-property")).setGoals(sonarGoal());
     BuildResult result = ORCHESTRATOR.executeBuildQuietly(build);
     assertThat(result.getLastStatus()).isNotEqualTo(0);
@@ -405,7 +405,7 @@ public class MavenTest extends AbstractMavenTest {
    * The property sonar.sources has a typo -> fail, like in sonar-runner
    */
   @Test
-  public void fail_if_bad_value_of_sonar_tests_property() {
+  void fail_if_bad_value_of_sonar_tests_property() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-bad-tests-property")).setGoals(sonarGoal());
     BuildResult result = ORCHESTRATOR.executeBuildQuietly(build);
     assertThat(result.getLastStatus()).isNotEqualTo(0);
@@ -415,7 +415,7 @@ public class MavenTest extends AbstractMavenTest {
 
   // MSONAR-91
   @Test
-  public void shouldSkipModules() {
+  void shouldSkipModules() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("exclusions/skip-one-module"))
       .setGoals(cleanSonarGoal());
     ORCHESTRATOR.executeBuild(build);
@@ -433,7 +433,7 @@ public class MavenTest extends AbstractMavenTest {
 
   // MSONAR-150
   @Test
-  public void shouldSkipWithEnvVar() {
+  void shouldSkipWithEnvVar() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
       .setGoals(cleanSonarGoal())
       .setProperties("sonar.host.url", "invalid")
@@ -446,7 +446,7 @@ public class MavenTest extends AbstractMavenTest {
    * MSONAR-141
    */
   @Test
-  public void supportMavenEncryption() throws Exception {
+  void supportMavenEncryption() throws Exception {
     wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("true"));
     wsClient.users().create(new CreateRequest().setLogin("julien").setName("Julien").setPassword("123abc"));
 

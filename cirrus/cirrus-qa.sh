@@ -12,4 +12,6 @@ cp -f ~/.m2/settings.xml $MAVEN_HOME_IT/conf/
 
 # Run ITs.
 cd its
-mvn -B -e -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$MAVEN_HOME_IT verify
+mvn -B -e -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$MAVEN_HOME_IT verify -Dscan.tag.$SQ_VERSION -Dscan.tag.$MAVEN_VERSION
+mvn gradle-enterprise:build-scan-publish-previous -Dgradle.scan.termsOfService.url=https://gradle.com/terms-of-service -Dgradle.scan.termsOfService.accept=true
+```

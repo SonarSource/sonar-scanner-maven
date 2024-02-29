@@ -32,10 +32,12 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -49,6 +51,7 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -277,44 +280,44 @@ class ScannerBootstrapperTest {
 
   @Nested
   class EnvironmentInformation {
-    @Test
-    void maven_opts_is_logged_at_info_level_when_present_in_environment_variables() {
-      try (MockedStatic<SystemEnvironment> mockedSystem = mockStatic(SystemEnvironment.class)) {
-        mockedSystem.when(() -> SystemEnvironment.getenv("MAVEN_OPTS")).thenReturn("-XX:NotAnActualOption=42");
-        scannerBootstrapper.logEnvironmentInformation();
-        verify(log, times(1)).info("MAVEN_OPTS=-XX:NotAnActualOption=42");
-      }
+    MockedStatic<SystemEnvironment> mockedSystem;
+
+    @BeforeEach
+    void before() {
+      when(scanner.serverVersion()).thenReturn("9.9");
+      mockedSystem = mockStatic(SystemEnvironment.class);
+    }
+
+    @AfterEach
+    void after() {
+      mockedSystem.close();
     }
 
     @Test
-    void maven_opts_is_not_logged_at_info_level_when_not_absent_from_environment_variables() {
-      try (MockedStatic<SystemEnvironment> mockedSystem = mockStatic(SystemEnvironment.class)) {
-        mockedSystem.when(() -> SystemEnvironment.getenv("MAVEN_OPTS")).thenReturn(null);
-        scannerBootstrapper.logEnvironmentInformation();
-        verify(log, never()).info(contains("MAVEN_OPTS"));
-      }
+    void environment_information_is_logged_at_info_level() throws MojoExecutionException {
+      mockedSystem.when(() -> SystemEnvironment.getProperty("os.name")).thenReturn("Solaris");
+      mockedSystem.when(() -> SystemEnvironment.getProperty("os.version")).thenReturn("42.1");
+      mockedSystem.when(() -> SystemEnvironment.getProperty("os.arch")).thenReturn("x16");
+
+      mockedSystem.when(() -> SystemEnvironment.getProperty("java.vm.vendor")).thenReturn("Artisanal Distribution");
+      mockedSystem.when(() -> SystemEnvironment.getProperty("java.version")).thenReturn("4.2.0");
+      mockedSystem.when(() -> SystemEnvironment.getProperty("sun.arch.data.model")).thenReturn("16");
+
+      mockedSystem.when(() -> SystemEnvironment.getenv("MAVEN_OPTS")).thenReturn("-XX:NotAnActualOption=42");
+
+      scannerBootstrapper.execute();
+      InOrder inOrderVerifier = inOrder(log);
+
+      inOrderVerifier.verify(log, times(1)).info("Java 4.2.0 Artisanal Distribution (16-bit)");
+      inOrderVerifier.verify(log, times(1)).info("Solaris 42.1 (x16)");
+      inOrderVerifier.verify(log, times(1)).info("MAVEN_OPTS=-XX:NotAnActualOption=42");
     }
 
     @Test
-    void os_information_is_always_logged() {
-      try (MockedStatic<SystemEnvironment> mockedSystem = mockStatic(SystemEnvironment.class)) {
-        mockedSystem.when(() -> SystemEnvironment.getProperty("os.name")).thenReturn("Solaris");
-        mockedSystem.when(() -> SystemEnvironment.getProperty("os.version")).thenReturn("42.1");
-        mockedSystem.when(() -> SystemEnvironment.getProperty("os.arch")).thenReturn("x16");
-        scannerBootstrapper.logEnvironmentInformation();
-        verify(log, times(1)).info("Solaris 42.1 (x16)");
-      }
-    }
-
-    @Test
-    void jvm_information_is_logged_at_info_level() {
-      try (MockedStatic<SystemEnvironment> mockedSystem = mockStatic(SystemEnvironment.class)) {
-        mockedSystem.when(() -> SystemEnvironment.getProperty("java.vm.vendor")).thenReturn("Artisanal Distribution");
-        mockedSystem.when(() -> SystemEnvironment.getProperty("java.version")).thenReturn("4.2.0");
-        mockedSystem.when(() -> SystemEnvironment.getProperty("sun.arch.data.model")).thenReturn("16");
-        scannerBootstrapper.logEnvironmentInformation();
-        verify(log, times(1)).info("Java 4.2.0 Artisanal Distribution (16-bit)");
-      }
+    void maven_opts_is_not_logged_at_info_level_when_not_absent_from_environment_variables() throws MojoExecutionException {
+      mockedSystem.when(() -> SystemEnvironment.getenv("MAVEN_OPTS")).thenReturn(null);
+      scannerBootstrapper.execute();
+      verify(log, never()).info(contains("MAVEN_OPTS="));
     }
   }
 

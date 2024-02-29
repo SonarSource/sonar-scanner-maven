@@ -183,8 +183,7 @@ public class ScannerBootstrapper {
     return new ComparableVersion(serverVersion).compareTo(new ComparableVersion(version)) < 0;
   }
 
-  @VisibleForTesting
-  void logEnvironmentInformation() {
+  private void logEnvironmentInformation() {
     String vmInformation = String.format(
       "Java %s %s (%s-bit)",
       SystemEnvironment.getProperty("java.version"),

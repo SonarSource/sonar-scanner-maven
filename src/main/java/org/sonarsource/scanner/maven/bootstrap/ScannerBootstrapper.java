@@ -20,7 +20,6 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,7 +31,6 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -185,11 +183,15 @@ public class ScannerBootstrapper {
     return new ComparableVersion(serverVersion).compareTo(new ComparableVersion(version)) < 0;
   }
 
+  @VisibleForTesting
   void logEnvironmentInformation() {
-    String mavenOptions = SystemEnvironment.getenv("MAVEN_OPTS");
-    if (mavenOptions != null) {
-      log.info(String.format("MAVEN_OPTS=%s", mavenOptions));
-    }
+    String vmInformation = String.format(
+      "Java %s %s (%s-bit)",
+      SystemEnvironment.getProperty("java.version"),
+      SystemEnvironment.getProperty("java.specification.vendor"),
+      SystemEnvironment.getProperty("sun.arch.data.model")
+    );
+    log.info(vmInformation);
     String operatingSystem = String.format(
       "%s %s (%s)",
       SystemEnvironment.getProperty("os.name"),
@@ -197,6 +199,10 @@ public class ScannerBootstrapper {
       SystemEnvironment.getProperty("os.arch")
     );
     log.info(operatingSystem);
+    String mavenOptions = SystemEnvironment.getenv("MAVEN_OPTS");
+    if (mavenOptions != null) {
+      log.info(String.format("MAVEN_OPTS=%s", mavenOptions));
+    }
   }
 
 }

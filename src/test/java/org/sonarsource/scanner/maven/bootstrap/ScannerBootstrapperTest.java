@@ -300,9 +300,20 @@ class ScannerBootstrapperTest {
       try (MockedStatic<SystemEnvironment> mockedSystem = mockStatic(SystemEnvironment.class)) {
         mockedSystem.when(() -> SystemEnvironment.getProperty("os.name")).thenReturn("Solaris");
         mockedSystem.when(() -> SystemEnvironment.getProperty("os.version")).thenReturn("42.1");
-        mockedSystem.when(() -> SystemEnvironment.getProperty("os.arch")).thenReturn("x68");
+        mockedSystem.when(() -> SystemEnvironment.getProperty("os.arch")).thenReturn("x16");
         scannerBootstrapper.logEnvironmentInformation();
-        verify(log, times(1)).info("Solaris 42.1 (x68)");
+        verify(log, times(1)).info("Solaris 42.1 (x16)");
+      }
+    }
+
+    @Test
+    void jvm_information_is_logged_at_info_level() {
+      try (MockedStatic<SystemEnvironment> mockedSystem = mockStatic(SystemEnvironment.class)) {
+        mockedSystem.when(() -> SystemEnvironment.getProperty("java.specification.vendor")).thenReturn("Some Corporation");
+        mockedSystem.when(() -> SystemEnvironment.getProperty("java.version")).thenReturn("4.2.0");
+        mockedSystem.when(() -> SystemEnvironment.getProperty("sun.arch.data.model")).thenReturn("16");
+        scannerBootstrapper.logEnvironmentInformation();
+        verify(log, times(1)).info("Java 4.2.0 Some Corporation (16-bit)");
       }
     }
   }

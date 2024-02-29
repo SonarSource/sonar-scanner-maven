@@ -141,6 +141,10 @@ public class MavenProjectConverter {
     return sourceDirsIsOverridden;
   }
 
+  public Properties getEnvProperties() {
+    return new Properties(envProperties);
+  }
+
   Map<String, String> configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties) throws MojoExecutionException {
     this.userProperties = userProperties;
     this.specifiedProjectKey = specifiedProjectKey(userProperties, root);
@@ -545,8 +549,7 @@ public class MavenProjectConverter {
     boolean userDefined = false;
 
 
-    String prop = StringUtils.defaultIfEmpty(userProperties.getProperty(propertyKey), envProperties.getProperty(propertyKey));
-    prop = StringUtils.defaultIfEmpty(prop, pom.getProperties().getProperty(propertyKey));
+    String prop = getPropertyByKey(propertyKey, pom);
 
     if (prop != null) {
       List<String> paths = Arrays.asList(StringUtils.split(prop, ","));
@@ -566,6 +569,16 @@ public class MavenProjectConverter {
       // can be defined only to be inherited by children
       return removeNested(keepExistingPaths(filesOrDirs));
     }
+  }
+
+  private String getPropertyByKey(String propertyKey, MavenProject pom) {
+    return getPropertyByKey(propertyKey, pom, userProperties, envProperties);
+  }
+
+  public static String getPropertyByKey(String propertyKey, MavenProject pom, Properties userProperties, Properties envProperties) {
+    String prop = StringUtils.defaultIfEmpty(userProperties.getProperty(propertyKey), envProperties.getProperty(propertyKey));
+    prop = StringUtils.defaultIfEmpty(prop, pom.getProperties().getProperty(propertyKey));
+    return prop;
   }
 
   private static List<File> existingPathsOrFail(List<File> dirs, MavenProject pom, String propertyKey)

@@ -105,6 +105,8 @@ class ScannerBootstrapperTest {
 
 
     when(mavenProjectConverter.configure(any(), any(), any())).thenReturn(projectProperties);
+    when(mavenProjectConverter.getEnvProperties()).thenReturn(new Properties());
+    when(rootProject.getProperties()).thenReturn(new Properties());
 
     when(scanner.mask(anyString())).thenReturn(scanner);
     when(scanner.unmask(anyString())).thenReturn(scanner);
@@ -247,6 +249,28 @@ class ScannerBootstrapperTest {
     assertThat(collectedProperties).containsKey(ScanProperties.PROJECT_SOURCE_DIRS);
     List<String> values = MavenUtils.splitAsCsv(collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS));
     assertThat(values).hasSize(4);
+  }
+
+  @Test
+  void test_logging_SQ_version() throws MojoExecutionException {
+    when(scanner.serverVersion()).thenReturn("10.5");
+    scannerBootstrapper.execute();
+
+    verify(log).info("Communicating with SonarQube Server 10.5");
+  }
+
+  @Test
+  void test_not_logging_the_version_when_sonarcloud_is_used() throws MojoExecutionException {
+    // if SC is the server this property value should be ignored
+    when(scanner.serverVersion()).thenReturn("8.0");
+
+    Properties withSonarCloudHost = new Properties();
+    withSonarCloudHost.put("sonar.host.url", "https://sonarcloud.io");
+    when(session.getUserProperties()).thenReturn(withSonarCloudHost);
+    scannerBootstrapper.execute();
+
+    verify(log).info("Communicating with SonarCloud");
+    verify(log, never()).info("Communicating with SonarQube Server 8.0");
   }
 
   private void verifyCommonCalls() {

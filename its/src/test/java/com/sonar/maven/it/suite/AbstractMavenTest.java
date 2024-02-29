@@ -65,7 +65,7 @@ public abstract class AbstractMavenTest {
   public static final OrchestratorExtension ORCHESTRATOR = OrchestratorExtension.builderEnv()
           .setSonarVersion(getSonarVersion())
           .useDefaultAdminCredentialsForBuilds(true)
-          .keepBundledPlugins()
+          //.keepBundledPlugins()
           .build();
 
   protected HttpConnector wsConnector;

@@ -25,14 +25,12 @@ import com.sonar.orchestrator.build.BuildRunner;
 import com.sonar.orchestrator.build.MavenBuild;
 import java.io.File;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.sonarqube.ws.Components.Component;
 import org.sonarqube.ws.client.settings.SetRequest;
 import org.sonarqube.ws.client.users.CreateRequest;
 
@@ -40,8 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class MavenTest extends AbstractMavenTest {
 
-  private static final String MODULE_START_7_6 = "------------- Run sensors on module ";
-  private static final String MODULE_START = "-------------  Scan ";
+  private static final String MODULE_START = "------------- Run sensors on module ";
 
   @TempDir
   public Path temp;
@@ -152,11 +149,7 @@ class MavenTest extends AbstractMavenTest {
     ORCHESTRATOR.executeBuild(build);
 
     assertThat(getMeasureAsInteger("com.sonarsource.it.samples.project-with-module-without-sources:parent", "files")).isEqualTo(4);
-    if (hasModules()) {
-      assertThat(getComponent("com.sonarsource.it.samples.project-with-module-without-sources:without-sources")).isNotNull();
-    } else {
-      assertThat(getComponent("com.sonarsource.it.samples.project-with-module-without-sources:parent:without-sources")).isNotNull();
-    }
+    assertThat(getComponent("com.sonarsource.it.samples.project-with-module-without-sources:parent:without-sources")).isNotNull();
   }
 
   /**
@@ -171,11 +164,6 @@ class MavenTest extends AbstractMavenTest {
     // src/main/webapp is analyzed by web and xml plugin
     // including resources, so one more file (ejb-module/src/main/resources/META-INF/ejb-jar.xml)
     assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(9);
-
-    if (hasModules()) {
-      List<Component> modules = getModules("com.sonarsource.it.samples.jee:parent");
-      assertThat(modules).hasSize(4);
-    }
   }
 
   /**
@@ -200,7 +188,7 @@ class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
     ORCHESTRATOR.executeBuild(build);
 
-    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.maven-bad-parameters:parent", "files")).isGreaterThan(0);
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.maven-bad-parameters:parent", "files")).isPositive();
   }
 
   @Test
@@ -211,24 +199,13 @@ class MavenTest extends AbstractMavenTest {
 
     assertThat(getComponent("org.sonar.tests.modules-order:root").getName()).isEqualTo("Sonar tests - modules order");
 
-    if (hasModules()) {
-      assertThat(getComponent("org.sonar.tests.modules-order:parent").getName()).isEqualTo("Parent");
+    assertThat(getComponent("org.sonar.tests.modules-order:root:parent").getName()).isEqualTo("parent");
 
-      assertThat(getComponent("org.sonar.tests.modules-order:module_a").getName()).isEqualTo("Module A");
-      assertThat(getComponent("org.sonar.tests.modules-order:module_b").getName()).isEqualTo("Module B");
+    assertThat(getComponent("org.sonar.tests.modules-order:root:module_a").getName()).isEqualTo("module_a");
+    assertThat(getComponent("org.sonar.tests.modules-order:root:module_b").getName()).isEqualTo("module_b");
 
-      assertThat(getComponent("org.sonar.tests.modules-order:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
-      assertThat(getComponent("org.sonar.tests.modules-order:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
-    } else {
-
-      assertThat(getComponent("org.sonar.tests.modules-order:root:parent").getName()).isEqualTo("parent");
-
-      assertThat(getComponent("org.sonar.tests.modules-order:root:module_a").getName()).isEqualTo("module_a");
-      assertThat(getComponent("org.sonar.tests.modules-order:root:module_b").getName()).isEqualTo("module_b");
-
-      assertThat(getComponent("org.sonar.tests.modules-order:root:module_a/src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
-      assertThat(getComponent("org.sonar.tests.modules-order:root:module_b/src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
-    }
+    assertThat(getComponent("org.sonar.tests.modules-order:root:module_a/src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
+    assertThat(getComponent("org.sonar.tests.modules-order:root:module_b/src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
   }
 
   @Test
@@ -242,7 +219,7 @@ class MavenTest extends AbstractMavenTest {
   }
 
   private String findScanSectionOfModule(String logs, String moduleName) {
-    String start = hasModules() ? MODULE_START : MODULE_START_7_6;
+    String start = MODULE_START;
     int startSection = logs.indexOf(start + moduleName);
     assertThat(startSection).isNotEqualTo(-1);
     // This will match either a next section or the end of a maven plugin execution
@@ -262,11 +239,6 @@ class MavenTest extends AbstractMavenTest {
 
     assertThat(getComponent("com.sonarsource.it.samples:attach-sonar-to-verify")).isNotNull();
     assertThat(getMeasureAsInteger("com.sonarsource.it.samples:attach-sonar-to-verify", "files")).isEqualTo(11);
-
-    if (hasModules()) {
-      List<Component> modules = getModules("com.sonarsource.it.samples:attach-sonar-to-verify");
-      assertThat(modules).hasSize(6);
-    }
   }
 
   /**
@@ -280,32 +252,18 @@ class MavenTest extends AbstractMavenTest {
 
     assertThat(getComponent("org.sonar.tests.modules-declaration:root").getName()).isEqualTo("Root");
 
-    if (hasModules()) {
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_a").getName()).isEqualTo("Module A");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_b").getName()).isEqualTo("Module B");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_c").getName()).isEqualTo("Module C");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_d").getName()).isEqualTo("Module D");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_e").getName()).isEqualTo("Module E");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_a").getName()).isEqualTo("module_a");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_b").getName()).isEqualTo("module_b");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_c").getName()).isEqualTo("module_c");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_d").getName()).isEqualTo("module_d");
+    // directories get collapsed
+    assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_e/src/main/java").getName()).isEqualTo("module_e/src/main/java");
 
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_a:src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_b:src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_c:src/main/java/HelloC.java").getName()).isEqualTo("HelloC.java");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_d:src/main/java/HelloD.java").getName()).isEqualTo("HelloD.java");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:module_e:src/main/java/HelloE.java").getName()).isEqualTo("HelloE.java");
-    } else {
-      assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_a").getName()).isEqualTo("module_a");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_b").getName()).isEqualTo("module_b");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_c").getName()).isEqualTo("module_c");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_d").getName()).isEqualTo("module_d");
-      // directories get collapsed
-      assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_e/src/main/java").getName()).isEqualTo("module_e/src/main/java");
-
-      assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_a/src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_b/src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_c/src/main/java/HelloC.java").getName()).isEqualTo("HelloC.java");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_d/src/main/java/HelloD.java").getName()).isEqualTo("HelloD.java");
-      assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_e/src/main/java/HelloE.java").getName()).isEqualTo("HelloE.java");
-    }
+    assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_a/src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_b/src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_c/src/main/java/HelloC.java").getName()).isEqualTo("HelloC.java");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_d/src/main/java/HelloD.java").getName()).isEqualTo("HelloD.java");
+    assertThat(getComponent("org.sonar.tests.modules-declaration:root:module_e/src/main/java/HelloE.java").getName()).isEqualTo("HelloE.java");
   }
 
   /**
@@ -316,7 +274,7 @@ class MavenTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/shade-with-dependency-reduced-pom"))
       .setGoals(cleanInstallSonarGoal());
     BuildResult result = ORCHESTRATOR.executeBuildQuietly(build);
-    assertThat(result.getLastStatus()).isEqualTo(0);
+    assertThat(result.getLastStatus()).isZero();
     assertThat(result.getLogs()).doesNotContain(
       "Unable to determine structure of project. Probably you use Maven Advanced Reactor Options, which is not supported by Sonar and should not be used.");
   }
@@ -354,11 +312,8 @@ class MavenTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/multi-modules-override-sources")).setGoals(sonarGoal());
     ORCHESTRATOR.executeBuild(build);
 
-    if (hasModules()) {
-      assertThat(getMeasureAsInteger("com.sonarsource.it.samples:module_a1", "files")).isEqualTo(1);
-    } else {
-      assertThat(getMeasureAsInteger("com.sonarsource.it.samples:multi-modules-sample:module_a", "files")).isEqualTo(2);
-    }
+
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples:multi-modules-sample:module_a", "files")).isEqualTo(2);
   }
 
   /**
@@ -370,11 +325,7 @@ class MavenTest extends AbstractMavenTest {
       .setGoals(sonarGoal());
     ORCHESTRATOR.executeBuild(build);
 
-    if (hasModules()) {
-      assertThat(getMeasureAsInteger("edu.marcelo:module-web", "files")).isEqualTo(2);
-    } else {
-      assertThat(getMeasureAsInteger("edu.marcelo:multi-module-aggregator:module-web/src/main/webapp", "files")).isEqualTo(2);
-    }
+    assertThat(getMeasureAsInteger("edu.marcelo:multi-module-aggregator:module-web/src/main/webapp", "files")).isEqualTo(2);
   }
 
   /**
@@ -396,7 +347,7 @@ class MavenTest extends AbstractMavenTest {
   void fail_if_bad_value_of_sonar_sources_property() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-bad-sources-property")).setGoals(sonarGoal());
     BuildResult result = ORCHESTRATOR.executeBuildQuietly(build);
-    assertThat(result.getLastStatus()).isNotEqualTo(0);
+    assertThat(result.getLastStatus()).isNotZero();
     assertThat(result.getLogs()).contains(
       "java2' does not exist for Maven module com.sonarsource.it.samples:maven-bad-sources-property:jar:1.0-SNAPSHOT. Please check the property sonar.sources");
   }
@@ -408,7 +359,7 @@ class MavenTest extends AbstractMavenTest {
   void fail_if_bad_value_of_sonar_tests_property() {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-bad-tests-property")).setGoals(sonarGoal());
     BuildResult result = ORCHESTRATOR.executeBuildQuietly(build);
-    assertThat(result.getLastStatus()).isNotEqualTo(0);
+    assertThat(result.getLastStatus()).isNotZero();
     assertThat(result.getLogs()).contains(
       "java2' does not exist for Maven module com.sonarsource.it.samples:maven-bad-tests-property:jar:1.0-SNAPSHOT. Please check the property sonar.tests");
   }
@@ -420,15 +371,9 @@ class MavenTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
     ORCHESTRATOR.executeBuild(build);
 
-    if (hasModules()) {
-      assertThat(getComponent("com.sonarsource.it.samples:module_a1")).isNull();
-      assertThat(getComponent("com.sonarsource.it.samples:module_a2").getName()).isEqualTo("Sub-module A2");
-      assertThat(getComponent("com.sonarsource.it.samples:module_b").getName()).isEqualTo("Module B");
-    } else {
-      assertThat(getComponent("com.sonarsource.it.samples:multi-modules-sample:module_a/module_a1")).isNull();
-      assertThat(getComponent("com.sonarsource.it.samples:multi-modules-sample:module_a/module_a2").getName()).isEqualTo("module_a2");
-      assertThat(getComponent("com.sonarsource.it.samples:multi-modules-sample:module_b").getName()).isEqualTo("module_b");
-    }
+    assertThat(getComponent("com.sonarsource.it.samples:multi-modules-sample:module_a/module_a1")).isNull();
+    assertThat(getComponent("com.sonarsource.it.samples:multi-modules-sample:module_a/module_a2").getName()).isEqualTo("module_a2");
+    assertThat(getComponent("com.sonarsource.it.samples:multi-modules-sample:module_b").getName()).isEqualTo("module_b");
   }
 
   // MSONAR-150
@@ -462,10 +407,6 @@ class MavenTest extends AbstractMavenTest {
     build.setProperty("sonar.login", "julien");
     build.addArgument("-Psonar-password");
     ORCHESTRATOR.executeBuild(build);
-  }
-
-  private boolean hasModules() {
-    return !ORCHESTRATOR.getServer().version().isGreaterThanOrEquals(7, 6);
   }
 
 }

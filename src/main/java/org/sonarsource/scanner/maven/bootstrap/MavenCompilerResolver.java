@@ -42,7 +42,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
-import org.apache.maven.toolchain.java.DefaultJavaToolChain;
+import org.apache.maven.toolchain.java.JavaToolchainImpl;
 import org.codehaus.plexus.component.configurator.ComponentConfigurationException;
 import org.codehaus.plexus.component.configurator.converters.basic.StringConverter;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluator;
@@ -232,8 +232,8 @@ public class MavenCompilerResolver {
       tc = toolchainManager.getToolchainFromBuildContext("jdk", session);
     }
 
-    if (tc instanceof DefaultJavaToolChain) {
-      return Optional.of(((DefaultJavaToolChain) tc).getJavaHome());
+    if (tc instanceof JavaToolchainImpl) {
+      return Optional.of(((JavaToolchainImpl) tc).getJavaHome());
     }
 
     // Like m-compiler-p, last fallback is to compile with the runtime JDK

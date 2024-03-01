@@ -42,6 +42,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
+import org.apache.maven.toolchain.java.DefaultJavaToolChain;
 import org.apache.maven.toolchain.java.JavaToolchainImpl;
 import org.codehaus.plexus.component.configurator.ComponentConfigurationException;
 import org.codehaus.plexus.component.configurator.converters.basic.StringConverter;
@@ -230,6 +231,10 @@ public class MavenCompilerResolver {
     // Fallback on the global jdk toolchain
     if (tc == null) {
       tc = toolchainManager.getToolchainFromBuildContext("jdk", session);
+    }
+
+    if (tc instanceof DefaultJavaToolChain && !(tc instanceof JavaToolchainImpl)) {
+      log.info("TA-DA!");
     }
 
     if (tc instanceof JavaToolchainImpl) {

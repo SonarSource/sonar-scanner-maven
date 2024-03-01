@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-public class JavaTest extends AbstractMavenTest {
+class JavaTest extends AbstractMavenTest {
 
   @TempDir
   public Path temp;
@@ -50,7 +50,7 @@ public class JavaTest extends AbstractMavenTest {
 
   // MSONAR-83
   @Test
-  public void shouldPopulateLibraries() throws IOException {
+  void shouldPopulateLibraries() throws IOException {
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
 
@@ -75,7 +75,7 @@ public class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  public void read_default_from_plugins_config() throws Exception {
+  void read_default_from_plugins_config() throws Exception {
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
 
@@ -96,7 +96,7 @@ public class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  public void setJavaVersionCompilerConfiguration() throws IOException {
+  void setJavaVersionCompilerConfiguration() throws IOException {
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
 
@@ -113,7 +113,7 @@ public class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  public void setJavaVersionProperties() throws IOException {
+  void setJavaVersionProperties() throws IOException {
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
 
@@ -130,7 +130,7 @@ public class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  public void setJdkHomeFromCompilerExecutableConfiguration() throws IOException {
+  void setJdkHomeFromCompilerExecutableConfiguration() throws IOException {
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
 
@@ -145,7 +145,7 @@ public class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  public void setJdkHomeFromGlobalToolchainsPlugin() throws IOException {
+  void setJdkHomeFromGlobalToolchainsPlugin() throws IOException {
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
 
@@ -163,7 +163,7 @@ public class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  public void setJdkHomeFromCompilerToolchainsConfiguration() throws IOException {
+  void setJdkHomeFromCompilerToolchainsConfiguration() throws IOException {
     // https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#jdkToolchain requires Maven 3.3.1+
     assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
 
@@ -183,7 +183,7 @@ public class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  public void takeFirstToolchainIfMultipleExecutions() throws IOException {
+  void takeFirstToolchainIfMultipleExecutions() throws IOException {
     // https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#jdkToolchain requires Maven 3.3.1+
     assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
 

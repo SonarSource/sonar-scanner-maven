@@ -39,7 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-public class ProxyTest extends AbstractMavenTest {
+class ProxyTest extends AbstractMavenTest {
   private Proxy proxy;
   @TempDir
   public Path temp;
@@ -58,7 +58,7 @@ public class ProxyTest extends AbstractMavenTest {
   }
 
   @Test
-  public void useActiveProxyInSettings() throws IOException, URISyntaxException, InterruptedException {
+  void useActiveProxyInSettings() throws IOException, URISyntaxException, InterruptedException {
     Thread.sleep(2000);
     Path proxyXml = Paths.get(this.getClass().getResource("/proxy-settings.xml").toURI());
     Path proxyXmlPatched = temp.resolve("settings.xml");

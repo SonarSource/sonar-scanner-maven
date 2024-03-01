@@ -280,12 +280,12 @@ class ScannerBootstrapperTest {
 
   @Nested
   class EnvironmentInformation {
-    MockedStatic<SystemEnvironment> mockedSystem;
+    MockedStatic<SystemWrapper> mockedSystem;
 
     @BeforeEach
     void before() {
       when(scanner.serverVersion()).thenReturn("9.9");
-      mockedSystem = mockStatic(SystemEnvironment.class);
+      mockedSystem = mockStatic(SystemWrapper.class);
     }
 
     @AfterEach
@@ -295,15 +295,15 @@ class ScannerBootstrapperTest {
 
     @Test
     void environment_information_is_logged_at_info_level() throws MojoExecutionException {
-      mockedSystem.when(() -> SystemEnvironment.getProperty("os.name")).thenReturn("Solaris");
-      mockedSystem.when(() -> SystemEnvironment.getProperty("os.version")).thenReturn("42.1");
-      mockedSystem.when(() -> SystemEnvironment.getProperty("os.arch")).thenReturn("x16");
+      mockedSystem.when(() -> SystemWrapper.getProperty("os.name")).thenReturn("Solaris");
+      mockedSystem.when(() -> SystemWrapper.getProperty("os.version")).thenReturn("42.1");
+      mockedSystem.when(() -> SystemWrapper.getProperty("os.arch")).thenReturn("x16");
 
-      mockedSystem.when(() -> SystemEnvironment.getProperty("java.vm.vendor")).thenReturn("Artisanal Distribution");
-      mockedSystem.when(() -> SystemEnvironment.getProperty("java.version")).thenReturn("4.2.0");
-      mockedSystem.when(() -> SystemEnvironment.getProperty("sun.arch.data.model")).thenReturn("16");
+      mockedSystem.when(() -> SystemWrapper.getProperty("java.vm.vendor")).thenReturn("Artisanal Distribution");
+      mockedSystem.when(() -> SystemWrapper.getProperty("java.version")).thenReturn("4.2.0");
+      mockedSystem.when(() -> SystemWrapper.getProperty("sun.arch.data.model")).thenReturn("16");
 
-      mockedSystem.when(() -> SystemEnvironment.getenv("MAVEN_OPTS")).thenReturn("-XX:NotAnActualOption=42");
+      mockedSystem.when(() -> SystemWrapper.getenv("MAVEN_OPTS")).thenReturn("-XX:NotAnActualOption=42");
 
       scannerBootstrapper.execute();
       InOrder inOrderVerifier = inOrder(log);
@@ -315,7 +315,7 @@ class ScannerBootstrapperTest {
 
     @Test
     void maven_opts_is_not_logged_at_info_level_when_not_absent_from_environment_variables() throws MojoExecutionException {
-      mockedSystem.when(() -> SystemEnvironment.getenv("MAVEN_OPTS")).thenReturn(null);
+      mockedSystem.when(() -> SystemWrapper.getenv("MAVEN_OPTS")).thenReturn(null);
       scannerBootstrapper.execute();
       verify(log, never()).info(contains("MAVEN_OPTS="));
     }

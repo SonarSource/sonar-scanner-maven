@@ -20,10 +20,11 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 /**
- * A wrapper around System.getenv(String) to work around the limitations of access on JVM 16+.
+ * A wrapper around some java.lang.System methods that allows us to mock and work around the default access limitations
+ * enforced in Java 16+.
  */
-class SystemEnvironment {
-  private SystemEnvironment() {
+class SystemWrapper {
+  private SystemWrapper() {
     /* Nothing done here */
   }
   static String getenv(String name) {

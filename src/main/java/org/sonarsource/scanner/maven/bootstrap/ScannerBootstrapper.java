@@ -186,19 +186,19 @@ public class ScannerBootstrapper {
   private void logEnvironmentInformation() {
     String vmInformation = String.format(
       "Java %s %s (%s-bit)",
-      SystemEnvironment.getProperty("java.version"),
-      SystemEnvironment.getProperty("java.vm.vendor"),
-      SystemEnvironment.getProperty("sun.arch.data.model")
+      SystemWrapper.getProperty("java.version"),
+      SystemWrapper.getProperty("java.vm.vendor"),
+      SystemWrapper.getProperty("sun.arch.data.model")
     );
     log.info(vmInformation);
     String operatingSystem = String.format(
       "%s %s (%s)",
-      SystemEnvironment.getProperty("os.name"),
-      SystemEnvironment.getProperty("os.version"),
-      SystemEnvironment.getProperty("os.arch")
+      SystemWrapper.getProperty("os.name"),
+      SystemWrapper.getProperty("os.version"),
+      SystemWrapper.getProperty("os.arch")
     );
     log.info(operatingSystem);
-    String mavenOptions = SystemEnvironment.getenv("MAVEN_OPTS");
+    String mavenOptions = SystemWrapper.getenv("MAVEN_OPTS");
     if (mavenOptions != null) {
       log.info(String.format("MAVEN_OPTS=%s", mavenOptions));
     }

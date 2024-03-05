@@ -235,12 +235,7 @@ public class MavenProjectConverter {
     if (canonical.isDirectory()) {
       File pom = new File(canonical, "pom.xml");
       for (MavenProject module : modules) {
-        if (module.getFile().getCanonicalFile().equals(pom)) {
-          return module;
-        }
-      }
-      for (MavenProject module : modules) {
-        if (module.getBasedir().equals(canonical)) {
+        if (module.getFile().getCanonicalFile().equals(pom) || module.getBasedir().equals(canonical)) {
           return module;
         }
       }

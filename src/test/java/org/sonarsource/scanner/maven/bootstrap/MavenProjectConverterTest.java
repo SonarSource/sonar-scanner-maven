@@ -144,11 +144,12 @@ class MavenProjectConverterTest {
     Path fooBarPath = Paths.get("foo", "bar");
     assertThat(MavenProjectConverter.findCommonParentDir(temp, temp.resolve(fooBarPath))).isEqualTo(temp);
     assertThat(MavenProjectConverter.findCommonParentDir(temp.resolve(fooBarPath), temp)).isEqualTo(temp);
-    assertThat(MavenProjectConverter.findCommonParentDir(temp.resolve(fooBarPath), temp.resolve(Paths.get("foo2", "bar2"))))
+    Path dir2 = Paths.get("foo2", "bar2");
+    assertThat(MavenProjectConverter.findCommonParentDir(temp.resolve(fooBarPath), temp.resolve(dir2)))
       .isEqualTo(temp);
 
     IllegalStateException exception = assertThrows(IllegalStateException.class,
-      () -> MavenProjectConverter.findCommonParentDir(fooBarPath, Paths.get("foo2", "bar2"))
+      () -> MavenProjectConverter.findCommonParentDir(fooBarPath, dir2)
     );
 
     assertThat(exception).hasMessageMatching("Unable to find a common parent between two modules baseDir: 'foo.bar' and 'foo2.bar2'");

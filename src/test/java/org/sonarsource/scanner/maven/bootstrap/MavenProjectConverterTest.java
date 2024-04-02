@@ -649,24 +649,9 @@ class MavenProjectConverterTest {
     File module1BaseDir = temp.resolve("module1").toFile();
     module1BaseDir.mkdirs();
     File module1Pom = new File(module1BaseDir, "pom.xml");
-    MavenProject module1 = new MavenProject();
-    File target = new File(module1Pom.getParentFile(), "target");
-    File classes = new File(target, "classes");
-    File testClasses = new File(target, "test-classes");
-    classes.mkdirs();
-    testClasses.mkdirs();
+    MavenProject module1 = createProject(module1Pom, new Properties(), "jar");
 
-    module1.getModel().setGroupId("org.example");
-    module1.getModel().setArtifactId("module1");
-    module1.getModel().setName("My Project");
-    module1.getModel().setDescription("My sample module1");
-    module1.getModel().setVersion("2.1");
-    module1.getModel().setPackaging("jar");
-    module1.getBuild().setOutputDirectory(classes.getAbsolutePath());
-    module1.getBuild().setTestOutputDirectory(testClasses.getAbsolutePath());
-    module1.getModel().setProperties(rootPomProperties);
-    module1.getBuild().setDirectory(new File(module1Pom.getParentFile(), "target").getAbsolutePath());
-    module1.setFile(module1Pom);
+    // Link the 2 modules
     module1.setParent(root);
     root.getModules().add("module1");
 
@@ -681,6 +666,33 @@ class MavenProjectConverterTest {
       .isEqualTo("the_greatest_project_key_there_ever_was");
     String keyPrefixForModule1 = module1.getGroupId() + ":" + module1.getArtifactId() + ".";
     assertThat(properties).doesNotContainKey(keyPrefixForModule1 + ScanProperties.PROJECT_KEY);
+  }
+
+  @Test
+  void getAbsolutePathToOriginalPom_returns_the_original_pom_when_available() throws IOException {
+    Path baseDirectory = temp;
+    File originalPom = baseDirectory.resolve("pom.xml").toFile();
+    originalPom.createNewFile();
+    File dependencyReducedPom = baseDirectory.resolve("dependency-reduced-pom.xml").toFile();
+    dependencyReducedPom.createNewFile();
+    MavenProject project = createProject(dependencyReducedPom, new Properties(), "jar");
+
+    // The entrypoint pom and original pom are returned by default when available
+    assertThat(MavenProjectConverter.getPathsToPoms(project))
+      .hasSize(2)
+      .containsOnly(dependencyReducedPom.getAbsolutePath(), originalPom.getAbsolutePath());
+
+    // The entrypoint pom is returned alone when the original pom file is not available
+    project.getModel().setPomFile(null);
+    assertThat(MavenProjectConverter.getPathsToPoms(project))
+      .hasSize(1)
+      .containsOnly(dependencyReducedPom.getAbsolutePath());
+
+    // The original pom is returned only once when it is provided as the entrypoint and the original pom file
+    MavenProject originalPomProject = createProject(originalPom, new Properties(), "jar");
+    assertThat(MavenProjectConverter.getPathsToPoms(originalPomProject))
+      .hasSize(1)
+      .containsOnly(originalPom.getAbsolutePath());
   }
 
   private MavenProject createProject(Properties pomProps, String packaging) throws IOException {
@@ -708,6 +720,12 @@ class MavenProjectConverterTest {
     project.getModel().setProperties(pomProps);
     project.getBuild().setDirectory(new File(pom.getParentFile(), "target").getAbsolutePath());
     project.setFile(pom);
+    File originalPom = pom.getParentFile().toPath().resolve("pom.xml").toFile();
+    if (!pom.equals(originalPom) && originalPom.exists()) {
+      project.getModel().setPomFile(originalPom);
+    } else {
+      project.getModel().setPomFile(pom);
+    }
     return project;
   }
 }

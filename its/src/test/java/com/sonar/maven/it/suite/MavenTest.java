@@ -27,10 +27,12 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.sonarqube.ws.Components;
+import org.sonarqube.ws.client.components.ComponentsService;
+import org.sonarqube.ws.client.components.ShowRequest;
 import org.sonarqube.ws.client.settings.SetRequest;
 import org.sonarqube.ws.client.users.CreateRequest;
 
@@ -267,16 +269,47 @@ class MavenTest extends AbstractMavenTest {
   }
 
   /**
-   * See SONAR-3843
+   * Original ticket, see SONAR-3843
+   * For MSONAR-218, we ensure that the dependency-reduced-pom.xml file is generated and not committed.
+   * This allows to test that the original pom is indexed along with the generated one.
    */
   @Test
-  void should_support_shade_with_dependency_reduced_pom_with_clean_install_sonar_goals() {
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/shade-with-dependency-reduced-pom"))
-      .setGoals(cleanInstallSonarGoal());
+  void should_support_shade_with_dependency_reduced_pom_with_clean_package_sonar_goals() {
+    File projectLocation = ItUtils.locateProjectPom("maven/shade-with-dependency-reduced-pom");
+
+    // Set up: make sure to delete left over dependency reduced pom from previous executions
+    File dependencyReducedPom = projectLocation.getParentFile().toPath().resolve("child2").resolve("dependency-reduced-pom.xml").toFile();
+    if (dependencyReducedPom.exists()) {
+      dependencyReducedPom.delete();
+    }
+    assertThat(dependencyReducedPom).doesNotExist();
+
+    MavenBuild build = MavenBuild.create(projectLocation)
+      .setGoals(cleanPackageSonarGoal());
     BuildResult result = ORCHESTRATOR.executeBuildQuietly(build);
+
+    // Test a reduced pom has peen produced as a result of clean package
+    assertThat(dependencyReducedPom).exists();
+
+    // Test that the structure of the project could be understood from the dependency-reduced-pom.xml
     assertThat(result.getLastStatus()).isZero();
     assertThat(result.getLogs()).doesNotContain(
       "Unable to determine structure of project. Probably you use Maven Advanced Reactor Options, which is not supported by Sonar and should not be used.");
+
+    // Test that pom.xml was indexed
+    ShowRequest requestForPom = new ShowRequest();
+    requestForPom.setComponent("org.foo.bar:parent:child2/pom.xml");
+    Components.ShowWsResponse show = wsClient.components().show(requestForPom);
+    assertThat(show.getComponent()).isNotNull();
+
+    // Test that dependency-reduced-pom.xml was indexed
+    ShowRequest requestForReducedPom = new ShowRequest();
+    requestForReducedPom.setComponent("org.foo.bar:parent:child2/dependency-reduced-pom.xml");
+    ComponentsService components = wsClient.components();
+    assertThat(components.show(requestForReducedPom)).isNotNull();
+
+    // Clean up
+    dependencyReducedPom.delete();
   }
 
   /**

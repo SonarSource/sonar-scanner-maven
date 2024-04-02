@@ -19,6 +19,7 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -542,7 +543,7 @@ public class MavenProjectConverter {
         new File(pom.getBasedir().getAbsolutePath(), "src/main/webapp").getAbsolutePath()));
     }
 
-    sources.add(pom.getFile().getAbsolutePath());
+    sources.addAll(getPathsToPoms(pom));
     if (!MAVEN_PACKAGING_POM.equals(pom.getModel().getPackaging())) {
       pom.getCompileSourceRoots().stream()
         .map(Paths::get)
@@ -552,6 +553,20 @@ public class MavenProjectConverter {
     }
 
     return sourcePaths(pom, ScanProperties.PROJECT_SOURCE_DIRS, sources);
+  }
+
+  /**
+   * Returns the paths to the generated and original pom, when available.
+   */
+  @VisibleForTesting
+  static Collection<String> getPathsToPoms(MavenProject project) {
+    Set<String> paths = new LinkedHashSet<>(2);
+    paths.add(project.getFile().getAbsolutePath());
+    File pomFile = project.getModel().getPomFile();
+    if (pomFile != null) {
+      paths.add(pomFile.getAbsolutePath());
+    }
+    return paths;
   }
 
   private List<File> testSources(MavenProject pom) throws MojoExecutionException {

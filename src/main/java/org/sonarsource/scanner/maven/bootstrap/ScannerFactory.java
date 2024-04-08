@@ -87,6 +87,11 @@ public class ScannerFactory {
       System.setProperty("http.proxyUser", StringUtils.defaultString(activeProxy.getUsername(), ""));
       System.setProperty("http.proxyPassword", StringUtils.defaultString(activeProxy.getPassword(), ""));
       System.setProperty("http.nonProxyHosts", StringUtils.defaultString(activeProxy.getNonProxyHosts(), ""));
+      System.setProperty("https.proxyHost", activeProxy.getHost());
+      System.setProperty("https.proxyPort", String.valueOf(activeProxy.getPort()));
+      System.setProperty("https.proxyUser", StringUtils.defaultString(activeProxy.getUsername(), ""));
+      System.setProperty("https.proxyPassword", StringUtils.defaultString(activeProxy.getPassword(), ""));
+      System.setProperty("https.nonProxyHosts", StringUtils.defaultString(activeProxy.getNonProxyHosts(), ""));
     }
   }
 }

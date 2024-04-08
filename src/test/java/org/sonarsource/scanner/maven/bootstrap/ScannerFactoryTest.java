@@ -85,13 +85,18 @@ class ScannerFactoryTest {
     System.clearProperty("http.proxyUser");
     System.clearProperty("http.proxyPassword");
     System.clearProperty("http.nonProxyHosts");
+    System.clearProperty("https.proxyHost");
+    System.clearProperty("https.proxyPort");
+    System.clearProperty("https.proxyUser");
+    System.clearProperty("https.proxyPassword");
+    System.clearProperty("https.nonProxyHosts");
   }
 
   @Test
   void testProxy() {
     Proxy proxy = new Proxy();
     proxy.setActive(true);
-    proxy.setProtocol("https");
+    proxy.setProtocol("http");
     proxy.setHost("myhost");
     Settings settings = new Settings();
     settings.setProxies(Collections.singletonList(proxy));
@@ -101,6 +106,7 @@ class ScannerFactoryTest {
     ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     factory.create();
     assertThat(System.getProperty("http.proxyHost")).isEqualTo("myhost");
+    assertThat(System.getProperty("https.proxyHost")).isEqualTo("myhost");
   }
 
   @Test

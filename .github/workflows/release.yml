@@ -10,7 +10,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@5.2.1
+    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@v5
     with:
       publishToBinaries: true
       mavenCentralSync: true
@@ -59,7 +59,7 @@ jobs:
           GPG_PRIVATE_KEY_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).sign_passphrase }}
       - name: Maven Central Sync
         id: maven-central-sync
-        uses: SonarSource/gh-action_release/maven-central-sync@5.2.1
+        uses: SonarSource/gh-action_release/maven-central-sync@v5
         with:
           local-repo-dir: relocation/local_repo/
           nexus-url: https://oss.sonatype.org/

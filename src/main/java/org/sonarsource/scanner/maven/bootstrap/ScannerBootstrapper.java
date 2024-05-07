@@ -62,7 +62,7 @@ public class ScannerBootstrapper {
     this.propertyDecryptor = propertyDecryptor;
   }
 
-  public void execute() throws MojoExecutionException {
+  public boolean execute() throws MojoExecutionException {
     logEnvironmentInformation();
     try (ScannerEngineFacade engineFacade = bootstrapper.bootstrap()) {
 
@@ -74,7 +74,7 @@ public class ScannerBootstrapper {
         checkSQVersion();
       }
 
-      engineFacade.analyze(collectProperties());
+      return engineFacade.analyze(collectProperties());
     } catch (Exception e) {
       throw new MojoExecutionException(e.getMessage(), e);
     }

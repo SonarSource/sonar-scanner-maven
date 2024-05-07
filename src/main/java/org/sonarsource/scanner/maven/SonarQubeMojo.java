@@ -79,8 +79,6 @@ public class SonarQubeMojo extends AbstractMojo {
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
-    setLog(new TimestampLogger(getLog()));
-
     if (shouldDelayExecution()) {
       getLog().info("Delaying SonarQube Scanner to the end of multi-module project");
       return;
@@ -100,7 +98,10 @@ public class SonarQubeMojo extends AbstractMojo {
     }
 
     ScannerEngineBootstrapper bootstrapper = bootstrapperFactory.create();
-    new ScannerBootstrapper(getLog(), session, bootstrapper, mavenProjectConverter, propertyDecryptor).execute();
+    boolean success = new ScannerBootstrapper(getLog(), session, bootstrapper, mavenProjectConverter, propertyDecryptor).execute();
+    if (!success) {
+      throw new MojoFailureException("Analysis failed");
+    }
   }
 
   /**

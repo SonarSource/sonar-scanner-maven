@@ -27,7 +27,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,11 +35,9 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.sonarsource.scanner.api.EmbeddedScanner;
-import org.sonarsource.scanner.api.ScanProperties;
-import org.sonarsource.scanner.api.ScannerProperties;
-
-import static org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter.getPropertyByKey;
+import org.sonarsource.scanner.lib.AnalysisProperties;
+import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
+import org.sonarsource.scanner.lib.ScannerEngineFacade;
 
 /**
  * Configure properties and bootstrap using SonarQube scanner API
@@ -48,61 +45,39 @@ import static org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter.getP
 public class ScannerBootstrapper {
 
   static final String UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE = "With SonarQube server prior to 5.6, use sonar-maven-plugin <= 3.3";
-  private static final String SONARCLOUD_HOST_URL = "https://sonarcloud.io";
 
   private final Log log;
   private final MavenSession session;
-  private final EmbeddedScanner scanner;
+  private final ScannerEngineBootstrapper bootstrapper;
   private final MavenProjectConverter mavenProjectConverter;
   private String serverVersion;
-  private PropertyDecryptor propertyDecryptor;
+  private final PropertyDecryptor propertyDecryptor;
 
-  public ScannerBootstrapper(Log log, MavenSession session, EmbeddedScanner scanner, MavenProjectConverter mavenProjectConverter, PropertyDecryptor propertyDecryptor) {
+  public ScannerBootstrapper(Log log, MavenSession session, ScannerEngineBootstrapper bootstrapper, MavenProjectConverter mavenProjectConverter,
+    PropertyDecryptor propertyDecryptor) {
     this.log = log;
     this.session = session;
-    this.scanner = scanner;
+    this.bootstrapper = bootstrapper;
     this.mavenProjectConverter = mavenProjectConverter;
     this.propertyDecryptor = propertyDecryptor;
   }
 
   public void execute() throws MojoExecutionException {
-    try {
-      logEnvironmentInformation();
-      scanner.start();
-      serverVersion = scanner.serverVersion();
+    logEnvironmentInformation();
+    try (ScannerEngineFacade engineFacade = bootstrapper.bootstrap()) {
 
-      if (isSonarCloudUsed()) {
+      if (engineFacade.isSonarCloud()) {
         log.info("Communicating with SonarCloud");
       } else {
-        if (serverVersion != null) {
-          log.info("Communicating with SonarQube Server " + serverVersion);
-        }
+        serverVersion = engineFacade.getServerVersion();
+        log.info("Communicating with SonarQube Server " + serverVersion);
         checkSQVersion();
       }
 
-
-      if (log.isDebugEnabled()) {
-        scanner.setGlobalProperty("sonar.verbose", "true");
-      }
-
-      scanner.execute(collectProperties());
+      engineFacade.analyze(collectProperties());
     } catch (Exception e) {
       throw new MojoExecutionException(e.getMessage(), e);
     }
-  }
-
-
-  // TODO remove this workaround when discovering if the sevrer is SC or SQ is available through the API
-  private boolean isSonarCloudUsed() {
-    return session.getProjects().stream()
-      // We can use EnvProperties from MavenProjectConverter as they are initialized at construction time,
-      // but we can't use UserProperties from the MavenProjectConverter as they are only initialized
-      // in the "collectProperties" method.
-      .map(project ->
-        getPropertyByKey(ScannerProperties.HOST_URL, project, session.getUserProperties(), mavenProjectConverter.getEnvProperties())
-      )
-      .filter(Objects::nonNull)
-      .anyMatch(hostUrl -> hostUrl.startsWith(SONARCLOUD_HOST_URL));
   }
 
   @VisibleForTesting
@@ -141,11 +116,11 @@ public class ScannerBootstrapper {
   }
 
   private void collectAllSources(Map<String, String> props) {
-    String projectBasedir = props.get(ScanProperties.PROJECT_BASEDIR);
+    String projectBasedir = props.get(AnalysisProperties.PROJECT_BASEDIR);
     // Exclude the files and folders covered by sonar.sources and sonar.tests (and sonar.exclusions) as computed by the MavenConverter
     // Combine all the sonar.sources at the top-level and by module
     List<String> coveredSources = props.entrySet().stream()
-      .filter(k -> k.getKey().endsWith(ScanProperties.PROJECT_SOURCE_DIRS) || k.getKey().endsWith(ScanProperties.PROJECT_TEST_DIRS))
+      .filter(k -> k.getKey().endsWith(AnalysisProperties.PROJECT_SOURCE_DIRS) || k.getKey().endsWith(AnalysisProperties.PROJECT_TEST_DIRS))
       .map(Map.Entry::getValue)
       .filter(value -> !value.isEmpty())
       .flatMap(value -> MavenUtils.splitAsCsv(value).stream())
@@ -162,9 +137,9 @@ public class ScannerBootstrapper {
         .map(file -> file.toAbsolutePath().toString())
         .collect(Collectors.toList());
       List<String> mergedSources = new ArrayList<>();
-      mergedSources.addAll(MavenUtils.splitAsCsv(props.get(ScanProperties.PROJECT_SOURCE_DIRS)));
+      mergedSources.addAll(MavenUtils.splitAsCsv(props.get(AnalysisProperties.PROJECT_SOURCE_DIRS)));
       mergedSources.addAll(collectedSources);
-      props.put(ScanProperties.PROJECT_SOURCE_DIRS, MavenUtils.joinAsCsv(mergedSources));
+      props.put(AnalysisProperties.PROJECT_SOURCE_DIRS, MavenUtils.joinAsCsv(mergedSources));
     } catch (IOException e) {
       log.warn(e);
     }

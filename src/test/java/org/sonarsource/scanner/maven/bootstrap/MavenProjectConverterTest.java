@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -35,7 +36,7 @@ import org.apache.maven.project.MavenProject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.sonarsource.scanner.api.ScanProperties;
+import org.sonarsource.scanner.lib.AnalysisProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
@@ -51,7 +52,7 @@ class MavenProjectConverterTest {
 
   private Log log;
 
-  private Properties env;
+  private final Map<String, String> env = new HashMap<>();
 
   private MavenProjectConverter projectConverter;
 
@@ -60,7 +61,6 @@ class MavenProjectConverterTest {
     log = mock(Log.class);
     MavenCompilerResolver mavenCompilerResolver = mock(MavenCompilerResolver.class);
     when(mavenCompilerResolver.extractConfiguration(any())).thenReturn(Optional.empty());
-    env = new Properties();
     projectConverter = new MavenProjectConverter(log, mavenCompilerResolver, env);
   }
 
@@ -221,14 +221,14 @@ class MavenProjectConverterTest {
 
     Properties userProperties = new Properties();
     String userProjectKey = "user-project-key";
-    userProperties.put(ScanProperties.PROJECT_KEY, userProjectKey);
+    userProperties.put(AnalysisProperties.PROJECT_KEY, userProjectKey);
     Map<String, String> propsWithUserProjectKey = projectConverter.configure(Arrays.asList(module12, module11, module1, module2, root),
       root, userProperties);
 
     assertThat(propsWithUserProjectKey).containsEntry("sonar.projectKey", userProjectKey);
 
     String customProjectKey = "custom-project-key";
-    root.getModel().getProperties().setProperty(ScanProperties.PROJECT_KEY, customProjectKey);
+    root.getModel().getProperties().setProperty(AnalysisProperties.PROJECT_KEY, customProjectKey);
     Map<String, String> propsWithCustomProjectKey = projectConverter.configure(Arrays.asList(module12, module11, module1, module2, root),
       root, new Properties());
 
@@ -640,7 +640,7 @@ class MavenProjectConverterTest {
   @Test
   void submodules_are_not_assigned_user_provided_project_key_from_parent() throws MojoExecutionException, IOException {
     Properties rootPomProperties = new Properties();
-    rootPomProperties.put(ScanProperties.PROJECT_KEY, "the_greatest_project_key_there_ever_was");
+    rootPomProperties.put(AnalysisProperties.PROJECT_KEY, "the_greatest_project_key_there_ever_was");
     File baseDir = temp.toFile();
     baseDir.mkdirs();
     MavenProject root = createProject(rootPomProperties, "pom");
@@ -662,11 +662,11 @@ class MavenProjectConverterTest {
       new Properties()
     );
 
-    assertThat(properties.get(ScanProperties.PROJECT_KEY))
+    assertThat(properties.get(AnalysisProperties.PROJECT_KEY))
       .isNotNull()
       .isEqualTo("the_greatest_project_key_there_ever_was");
     String keyPrefixForModule1 = module1.getGroupId() + ":" + module1.getArtifactId() + ".";
-    assertThat(properties).doesNotContainKey(keyPrefixForModule1 + ScanProperties.PROJECT_KEY);
+    assertThat(properties).doesNotContainKey(keyPrefixForModule1 + AnalysisProperties.PROJECT_KEY);
   }
 
   @Test

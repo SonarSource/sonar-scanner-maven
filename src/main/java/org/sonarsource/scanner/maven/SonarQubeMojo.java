@@ -21,7 +21,6 @@ package org.sonarsource.scanner.maven;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.LifecycleExecutor;
 import org.apache.maven.plugin.AbstractMojo;
@@ -35,15 +34,14 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.toolchain.ToolchainManager;
-import org.sonarsource.scanner.api.EmbeddedScanner;
-import org.sonarsource.scanner.api.ScanProperties;
-import org.sonarsource.scanner.api.Utils;
+import org.sonarsource.scanner.lib.EnvironmentConfig;
+import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
+import org.sonarsource.scanner.lib.ScannerProperties;
 import org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver;
-import org.sonarsource.scanner.maven.bootstrap.LogHandler;
 import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
 import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
 import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper;
-import org.sonarsource.scanner.maven.bootstrap.ScannerFactory;
+import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapperFactory;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 /**
@@ -88,26 +86,26 @@ public class SonarQubeMojo extends AbstractMojo {
       return;
     }
 
-    Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
+    Map<String, String> envProps = EnvironmentConfig.load(System.getenv());
 
     MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), toolchainManager);
     MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), mavenCompilerResolver, envProps);
-    LogHandler logHandler = new LogHandler(getLog());
 
     PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
 
-    ScannerFactory runnerFactory = new ScannerFactory(logHandler, getLog(), runtimeInformation, mojoExecution, session, envProps, propertyDecryptor);
+    ScannerBootstrapperFactory bootstrapperFactory = new ScannerBootstrapperFactory(getLog(), runtimeInformation, mojoExecution, session, envProps, propertyDecryptor);
 
-    if (isSkip(runnerFactory.createGlobalProperties())) {
+    if (isSkip(bootstrapperFactory.createGlobalProperties())) {
       return;
     }
 
-    EmbeddedScanner runner = runnerFactory.create();
-    new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, propertyDecryptor).execute();
+    ScannerEngineBootstrapper bootstrapper = bootstrapperFactory.create();
+    new ScannerBootstrapper(getLog(), session, bootstrapper, mavenProjectConverter, propertyDecryptor).execute();
   }
 
   /**
    * Should scanner be delayed?
+   *
    * @return true if goal is attached to phase and not last in a multi-module project
    */
   private boolean shouldDelayExecution() {
@@ -116,9 +114,9 @@ public class SonarQubeMojo extends AbstractMojo {
 
   /**
    * Is this execution a 'detached' goal run from the cli.  e.g. mvn sonar:sonar
-   *
+   * <p>
    * See <a href="https://maven.apache.org/guides/mini/guide-default-execution-ids.html#Default_executionIds_for_Implied_Executions">
-      Default executionIds for Implied Executions</a>
+   * Default executionIds for Implied Executions</a>
    * for explanation of command line execution id.
    *
    * @return true if this execution is from the command line
@@ -153,7 +151,7 @@ public class SonarQubeMojo extends AbstractMojo {
       return true;
     }
 
-    if ("true".equalsIgnoreCase(properties.get(ScanProperties.SKIP))) {
+    if ("true".equalsIgnoreCase(properties.get(ScannerProperties.SKIP))) {
       getLog().info("SonarQube Scanner analysis skipped");
       return true;
     }

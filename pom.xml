@@ -124,9 +124,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.sonarsource.scanner.api</groupId>
-      <artifactId>sonar-scanner-api</artifactId>
-      <version>2.16.3.1081</version>
+      <groupId>org.sonarsource.scanner.lib</groupId>
+      <artifactId>sonar-scanner-java-library</artifactId>
+      <version>3.0.0.144</version>
     </dependency>
 
     <dependency>

@@ -47,8 +47,8 @@ import org.apache.maven.model.Scm;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.sonarsource.scanner.api.ScanProperties;
-import org.sonarsource.scanner.api.ScannerProperties;
+import org.sonarsource.scanner.lib.AnalysisProperties;
+import org.sonarsource.scanner.lib.ScannerProperties;
 import org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver.MavenCompilerConfiguration;
 
 public class MavenProjectConverter {
@@ -120,7 +120,7 @@ public class MavenProjectConverter {
   @Nullable
   private String specifiedProjectKey;
 
-  private final Properties envProperties;
+  private final Map<String, String> envProperties;
 
   private final MavenCompilerResolver mavenCompilerResolver;
 
@@ -134,7 +134,7 @@ public class MavenProjectConverter {
    */
   private MavenProject root;
 
-  public MavenProjectConverter(Log log, MavenCompilerResolver mavenCompilerResolver, Properties envProperties) {
+  public MavenProjectConverter(Log log, MavenCompilerResolver mavenCompilerResolver, Map<String, String> envProperties) {
     this.log = log;
     this.mavenCompilerResolver = mavenCompilerResolver;
     this.envProperties = envProperties;
@@ -148,8 +148,8 @@ public class MavenProjectConverter {
     return sourceDirsIsOverridden;
   }
 
-  public Properties getEnvProperties() {
-    return new Properties(envProperties);
+  public Map<String, String> getEnvProperties() {
+    return new HashMap<>(envProperties);
   }
 
   Map<String, String> configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties) throws MojoExecutionException {
@@ -161,9 +161,9 @@ public class MavenProjectConverter {
       this.root = root;
       configureModules(mavenProjects, propsByModule);
       Map<String, String> props = new HashMap<>();
-      props.put(ScanProperties.PROJECT_KEY, getArtifactKey(root));
+      props.put(AnalysisProperties.PROJECT_KEY, getArtifactKey(root));
       Path topLevelDir = rebuildModuleHierarchy(props, propsByModule, root, "");
-      props.put(ScanProperties.PROJECT_BASEDIR, topLevelDir.toString());
+      props.put(AnalysisProperties.PROJECT_BASEDIR, topLevelDir.toString());
       if (!propsByModule.isEmpty()) {
         throw new IllegalStateException(UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE + " \""
           + propsByModule.keySet().iterator().next().getName() + "\" is orphan");
@@ -263,11 +263,11 @@ public class MavenProjectConverter {
   private Map<String, String> computeSonarQubeProperties(MavenProject pom) throws MojoExecutionException {
     Map<String, String> props = new HashMap<>();
     defineModuleKey(pom, props);
-    props.put(ScanProperties.PROJECT_VERSION, pom.getVersion());
-    props.put(ScanProperties.PROJECT_NAME, pom.getName());
+    props.put(AnalysisProperties.PROJECT_VERSION, pom.getVersion());
+    props.put(AnalysisProperties.PROJECT_NAME, pom.getName());
     String description = pom.getDescription();
     if (description != null) {
-      props.put(ScanProperties.PROJECT_DESCRIPTION, description);
+      props.put(AnalysisProperties.PROJECT_DESCRIPTION, description);
     }
 
     populateJavaAnalyzerProperties(pom, props);
@@ -280,9 +280,9 @@ public class MavenProjectConverter {
 
   @CheckForNull
   private static String specifiedProjectKey(Properties userProperties, MavenProject root) {
-    String projectKey = userProperties.getProperty(ScanProperties.PROJECT_KEY);
+    String projectKey = userProperties.getProperty(AnalysisProperties.PROJECT_KEY);
     if (projectKey == null) {
-      projectKey = root.getModel().getProperties().getProperty(ScanProperties.PROJECT_KEY);
+      projectKey = root.getModel().getProperties().getProperty(AnalysisProperties.PROJECT_KEY);
     }
     if (projectKey == null || projectKey.isEmpty()) {
       return null;
@@ -296,7 +296,7 @@ public class MavenProjectConverter {
    * Otherwise, we use the artifact key ({@link MavenProjectConverter#getArtifactKey(MavenProject)}.
    *
    * @param project The maven submodule for which a key must be generated
-   * @param props The existing properties where the module key will be added
+   * @param props   The existing properties where the module key will be added
    * @return The generated module key
    */
   private String defineModuleKey(MavenProject project, Map<String, String> props) {
@@ -318,7 +318,7 @@ public class MavenProjectConverter {
     // See http://jira.codehaus.org/browse/SONAR-2151
     String encoding = MavenUtils.getSourceEncoding(pom);
     if (encoding != null) {
-      props.put(ScanProperties.PROJECT_SOURCE_ENCODING, encoding);
+      props.put(AnalysisProperties.PROJECT_SOURCE_ENCODING, encoding);
     }
   }
 
@@ -395,7 +395,7 @@ public class MavenProjectConverter {
 
   private void synchronizeFileSystemAndOtherProps(MavenProject pom, Map<String, String> props)
     throws MojoExecutionException {
-    props.put(ScanProperties.PROJECT_BASEDIR, pom.getBasedir().getAbsolutePath());
+    props.put(AnalysisProperties.PROJECT_BASEDIR, pom.getBasedir().getAbsolutePath());
     File buildDir = getBuildDir(pom);
     if (buildDir != null) {
       props.put(PROPERTY_PROJECT_BUILDDIR, buildDir.getAbsolutePath());
@@ -411,24 +411,24 @@ public class MavenProjectConverter {
     // IMPORTANT NOTE : reference on properties from POM model must not be saved,
     // instead they should be copied explicitly - see SONAR-2896
     for (String k : pom.getModel().getProperties().stringPropertyNames()) {
-      if (!ScanProperties.PROJECT_KEY.equals(k) || pom.equals(this.root)) {
+      if (!AnalysisProperties.PROJECT_KEY.equals(k) || pom.equals(this.root)) {
         props.put(k, pom.getModel().getProperties().getProperty(k));
       }
     }
 
-    MavenUtils.putAll(envProperties, props);
+    props.putAll(envProperties);
 
     // Add user properties (ie command line arguments -Dsonar.xxx=yyyy) in last position to
     // override all other
     MavenUtils.putAll(userProperties, props);
 
     List<File> mainDirs = mainSources(pom);
-    props.put(ScanProperties.PROJECT_SOURCE_DIRS, MavenUtils.joinAsCsv(toPaths(mainDirs)));
+    props.put(AnalysisProperties.PROJECT_SOURCE_DIRS, MavenUtils.joinAsCsv(toPaths(mainDirs)));
     List<File> testDirs = testSources(pom);
     if (!testDirs.isEmpty()) {
-      props.put(ScanProperties.PROJECT_TEST_DIRS, MavenUtils.joinAsCsv(toPaths(testDirs)));
+      props.put(AnalysisProperties.PROJECT_TEST_DIRS, MavenUtils.joinAsCsv(toPaths(testDirs)));
     } else {
-      props.remove(ScanProperties.PROJECT_TEST_DIRS);
+      props.remove(AnalysisProperties.PROJECT_TEST_DIRS);
     }
   }
 
@@ -552,7 +552,7 @@ public class MavenProjectConverter {
         .forEach(sources::add);
     }
 
-    return sourcePaths(pom, ScanProperties.PROJECT_SOURCE_DIRS, sources);
+    return sourcePaths(pom, AnalysisProperties.PROJECT_SOURCE_DIRS, sources);
   }
 
   /**
@@ -570,7 +570,7 @@ public class MavenProjectConverter {
   }
 
   private List<File> testSources(MavenProject pom) throws MojoExecutionException {
-    return sourcePaths(pom, ScanProperties.PROJECT_TEST_DIRS, pom.getTestCompileSourceRoots());
+    return sourcePaths(pom, AnalysisProperties.PROJECT_TEST_DIRS, pom.getTestCompileSourceRoots());
   }
 
   private List<File> sourcePaths(MavenProject pom, String propertyKey, Collection<String> mavenPaths) throws MojoExecutionException {
@@ -584,7 +584,7 @@ public class MavenProjectConverter {
       List<String> paths = Arrays.asList(StringUtils.split(prop, ","));
       filesOrDirs = resolvePaths(paths, pom.getBasedir());
       userDefined = true;
-      sourceDirsIsOverridden |= propertyKey.equals(ScanProperties.PROJECT_SOURCE_DIRS);
+      sourceDirsIsOverridden |= propertyKey.equals(AnalysisProperties.PROJECT_SOURCE_DIRS);
     } else {
       removeTarget(pom, mavenPaths);
       filesOrDirs = resolvePaths(mavenPaths, pom.getBasedir());
@@ -604,8 +604,8 @@ public class MavenProjectConverter {
     return getPropertyByKey(propertyKey, pom, userProperties, envProperties);
   }
 
-  public static String getPropertyByKey(String propertyKey, MavenProject pom, Properties userProperties, Properties envProperties) {
-    String prop = StringUtils.defaultIfEmpty(userProperties.getProperty(propertyKey), envProperties.getProperty(propertyKey));
+  public static String getPropertyByKey(String propertyKey, MavenProject pom, Properties userProperties, Map<String, String> envProperties) {
+    String prop = StringUtils.defaultIfEmpty(userProperties.getProperty(propertyKey), envProperties.get(propertyKey));
     prop = StringUtils.defaultIfEmpty(prop, pom.getProperties().getProperty(propertyKey));
     return prop;
   }

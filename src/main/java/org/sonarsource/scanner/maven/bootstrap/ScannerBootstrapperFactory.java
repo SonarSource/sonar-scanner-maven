@@ -21,56 +21,54 @@ package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.settings.Proxy;
-import org.sonarsource.scanner.api.EmbeddedScanner;
-import org.sonarsource.scanner.api.LogOutput;
+import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
 
-public class ScannerFactory {
+public class ScannerBootstrapperFactory {
 
-  private final LogOutput logOutput;
   private final RuntimeInformation runtimeInformation;
   private final MavenSession session;
-  private final boolean debugEnabled;
   private final PropertyDecryptor propertyDecryptor;
-  private final Properties envProps;
+  private final Map<String, String> envProps;
   private final Log log;
   private final MojoExecution mojoExecution;
 
-  public ScannerFactory(LogOutput logOutput, Log log, RuntimeInformation runtimeInformation, MojoExecution mojoExecution, MavenSession session,
-    Properties envProps, PropertyDecryptor propertyDecryptor) {
-    this.logOutput = logOutput;
+  public ScannerBootstrapperFactory(Log log, RuntimeInformation runtimeInformation, MojoExecution mojoExecution, MavenSession session,
+    Map<String, String> envProps, PropertyDecryptor propertyDecryptor) {
     this.log = log;
     this.runtimeInformation = runtimeInformation;
     this.mojoExecution = mojoExecution;
     this.session = session;
-    this.debugEnabled = log.isDebugEnabled();
     this.envProps = envProps;
     this.propertyDecryptor = propertyDecryptor;
   }
 
-  public EmbeddedScanner create() {
+  public ScannerEngineBootstrapper create() {
     setProxySystemProperties();
-    EmbeddedScanner scanner = EmbeddedScanner.create("ScannerMaven", mojoExecution.getVersion() + "/" + runtimeInformation.getMavenVersion(), logOutput);
+    ScannerEngineBootstrapper scanner = createScannerEngineBootstrapper("ScannerMaven", mojoExecution.getVersion() + "/" + runtimeInformation.getMavenVersion());
 
-    scanner.addGlobalProperties(createGlobalProperties());
+    scanner.addBootstrapProperties(createGlobalProperties());
 
-    if (debugEnabled) {
-      scanner.setGlobalProperty("sonar.verbose", "true");
+    if (log.isDebugEnabled()) {
+      scanner.setBootstrapProperty("sonar.verbose", "true");
     }
 
     return scanner;
   }
 
+  ScannerEngineBootstrapper createScannerEngineBootstrapper(String app, String version) {
+    return ScannerEngineBootstrapper.create(app, version);
+  }
+
   public Map<String, String> createGlobalProperties() {
     Map<String, String> p = new HashMap<>();
     MavenUtils.putAll(session.getCurrentProject().getProperties(), p);
-    MavenUtils.putAll(envProps, p);
+    p.putAll(envProps);
     MavenUtils.putAll(session.getSystemProperties(), p);
     MavenUtils.putAll(session.getUserProperties(), p);
     p.putAll(propertyDecryptor.decryptProperties(p));

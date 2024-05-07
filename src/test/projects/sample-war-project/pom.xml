@@ -10,8 +10,8 @@
   <packaging>war</packaging>
   
   <properties>
-    <sonar.scanner.dumpToFile>target/dump.properties</sonar.scanner.dumpToFile>
-    <sonar.scanner.versionSimulation>5.6</sonar.scanner.versionSimulation>
+    <sonar.scanner.internal.dumpToFile>target/dump.properties</sonar.scanner.internal.dumpToFile>
+    <sonar.scanner.internal.sqVersion>5.6</sonar.scanner.internal.sqVersion>
   </properties>
   
 

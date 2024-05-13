@@ -112,21 +112,22 @@ public class ScannerBootstrapper {
         break;
       }
     }
+
     if (topLevelProject == null) {
       throw new IllegalStateException("Maven session does not declare a top level project");
     }
+
     Properties userProperties = session.getUserProperties();
     Map<String, String> props = mavenProjectConverter.configure(sortedProjects, topLevelProject, userProperties);
     props.putAll(propertyDecryptor.decryptProperties(props));
     if (shouldCollectAllSources(userProperties)) {
       log.info("Parameter " + MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES + " is enabled. The scanner will attempt to collect additional sources.");
-      if (!mavenProjectConverter.isSourceDirsOverridden() && !mavenProjectConverter.isTestDirsOverridden()) {
-        collectAllSources(props);
+      if (mavenProjectConverter.isSourceDirsOverridden()) {
+        log.warn(notCollectingAdditionalSourcesBecauseOf(ScanProperties.PROJECT_SOURCE_DIRS));
+      } else if (mavenProjectConverter.isTestDirsOverridden()) {
+        log.warn(notCollectingAdditionalSourcesBecauseOf(ScanProperties.PROJECT_TEST_DIRS));
       } else {
-        String overriddenProperty = mavenProjectConverter.isSourceDirsOverridden() ? ScanProperties.PROJECT_SOURCE_DIRS : ScanProperties.PROJECT_TEST_DIRS;
-        String warning = "Parameter " + MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES + " is enabled but " +
-          "the scanner will not collect additional sources because " + overriddenProperty + " has been overridden.";
-        log.warn(warning);
+        collectAllSources(props);
       }
     }
 
@@ -135,6 +136,11 @@ public class ScannerBootstrapper {
 
   private static boolean shouldCollectAllSources(Properties userProperties) {
     return Boolean.TRUE.equals(Boolean.parseBoolean(userProperties.getProperty(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES)));
+  }
+
+  private static String notCollectingAdditionalSourcesBecauseOf(String overriddenProperty) {
+    return "Parameter " + MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES + " is enabled but " +
+      "the scanner will not collect additional sources because " + overriddenProperty + " has been overridden.";
   }
 
   @VisibleForTesting

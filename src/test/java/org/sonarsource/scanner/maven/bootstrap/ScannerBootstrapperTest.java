@@ -154,7 +154,6 @@ class ScannerBootstrapperTest {
 
   @Test
   void scanAll_property_is_detected_and_applied() throws MojoExecutionException {
-
     // When sonar.scanner.scanAll is not set
     Map<String, String> collectedProperties = scannerBootstrapperSpy.collectProperties();
     assertThat(collectedProperties).containsKey(ScanProperties.PROJECT_SOURCE_DIRS);

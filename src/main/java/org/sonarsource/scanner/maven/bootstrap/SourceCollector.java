@@ -79,6 +79,7 @@ public class SourceCollector implements FileVisitor<Path> {
   );
   private final Set<Path> existingSources;
   private final Set<Path> directoriesToIgnore;
+  private final Set<Path> excludedFiles;
 
   public Set<Path> getCollectedSources() {
     return collectedSources;
@@ -86,9 +87,10 @@ public class SourceCollector implements FileVisitor<Path> {
 
   private final Set<Path> collectedSources = new HashSet<>();
 
-  public SourceCollector(Set<Path> existingSources, Set<Path> directoriesToIgnore) {
+  public SourceCollector(Set<Path> existingSources, Set<Path> directoriesToIgnore, Set<Path> excludedFiles) {
     this.existingSources = existingSources;
     this.directoriesToIgnore = directoriesToIgnore;
+    this.excludedFiles = excludedFiles;
   }
   @Override
   public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
@@ -119,6 +121,7 @@ public class SourceCollector implements FileVisitor<Path> {
   @Override
   public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) {
     if (
+      !excludedFiles.contains(path) &&
       EXCLUDED_EXTENSIONS.stream().noneMatch(ext -> path.toString().endsWith(ext)) &&
       existingSources.stream().noneMatch(path::equals)
     ) {

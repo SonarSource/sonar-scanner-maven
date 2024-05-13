@@ -1,0 +1,17 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.codehaus.sonar</groupId>
+  <artifactId>project-with-external-reports</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <properties>
+    <sonar.scanner.dumpToFile>target/dump.properties</sonar.scanner.dumpToFile>
+    <sonar.foo.reportPath>src/test/projects/project-with-external-reports/report1.xml</sonar.foo.reportPath>
+    <sonar.foo.xmlReportPaths>src/test/projects/project-with-external-reports/report2.xml</sonar.foo.xmlReportPaths>
+    <sonar.java.checkstyle.reportPaths>src/test/projects/project-with-external-reports/report3.xml,src/test/projects/project-with-external-reports/subdir/report4.xml</sonar.java.checkstyle.reportPaths>
+  </properties>
+
+</project>

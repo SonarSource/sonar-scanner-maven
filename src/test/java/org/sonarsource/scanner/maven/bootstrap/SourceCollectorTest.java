@@ -55,7 +55,7 @@ class SourceCollectorTest {
   void testPrevisitDirectories() throws IOException {
     Path srcMainJava = Paths.get("src", "main", "java");
     Set<Path> existingSources = Collections.singleton(srcMainJava);
-    FileVisitor<Path> visitor = new SourceCollector(existingSources, Collections.emptySet());
+    FileVisitor<Path> visitor = new SourceCollector(existingSources, Collections.emptySet(), Collections.emptySet());
 
 
     Path gitFolder = Paths.get(".git");
@@ -82,15 +82,15 @@ class SourceCollectorTest {
   @Test
   void visitorCollectsConsistently() throws IOException {
     // File in the existing source is not repeated in the collected files
-    SourceCollector visitor = new SourceCollector(Collections.emptySet(), Collections.emptySet());
+    SourceCollector visitor = new SourceCollector(Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
     Files.walkFileTree(emptyProjectBasedir, visitor);
     assertThat(visitor.getCollectedSources()).isEmpty();
 
-    SourceCollector otherVisitor = new SourceCollector(Collections.emptySet(), Collections.emptySet());
+    SourceCollector otherVisitor = new SourceCollector(Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
     Files.walkFileTree(singleFileProjectBaseDir, otherVisitor);
     assertThat(otherVisitor.getCollectedSources()).containsOnly(singleFileProjectBaseDir.resolve("pom.xml"));
 
-    SourceCollector visitorAvoidingPomXml = new SourceCollector(Collections.singleton(singleFileProjectBaseDir.resolve("pom.xml")), Collections.emptySet());
+    SourceCollector visitorAvoidingPomXml = new SourceCollector(Collections.singleton(singleFileProjectBaseDir.resolve("pom.xml")), Collections.emptySet(), Collections.emptySet());
     Files.walkFileTree(singleFileProjectBaseDir, visitorAvoidingPomXml);
     assertThat(visitorAvoidingPomXml.getCollectedSources()).isEmpty();
   }
@@ -104,7 +104,7 @@ class SourceCollectorTest {
     Path fileInSubModule = subModule.resolve("ignore-me.php");
     fileInSubModule.toFile().createNewFile();
 
-    SourceCollector visitor = new SourceCollector(Collections.emptySet(), Collections.singleton(subModule));
+    SourceCollector visitor = new SourceCollector(Collections.emptySet(), Collections.singleton(subModule), Collections.emptySet());
     Files.walkFileTree(simpleProjectBasedDir, visitor);
     assertThat(visitor.getCollectedSources()).doesNotContain(fileInSubModule);
   }

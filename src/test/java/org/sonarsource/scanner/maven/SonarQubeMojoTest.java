@@ -23,8 +23,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.execution.ProjectDependencyGraph;
 import org.apache.maven.graph.GraphBuilder;
@@ -122,6 +125,25 @@ public class SonarQubeMojoTest {
   public void reuse_findbugs_exclusions_from_reporting() throws IOException, Exception {
     File baseDir = executeProject("project-with-findbugs-reporting");
     assertPropsContains(entry("sonar.findbugs.excludeFilters", new File(baseDir, "findbugs-exclude.xml").getAbsolutePath()));
+  }
+
+  @Test
+  public void exclude_report_paths_from_scanAll() throws Exception {
+    File projectBarDir = executeProject("project-with-external-reports", "sonar.maven.scanAll", "true");
+
+    String sources = readProps("target/dump.properties")
+      .entrySet()
+      .stream()
+      .filter(e -> e.getKey().toString().equals("sonar.sources"))
+      .map(Map.Entry::getValue)
+      .findFirst()
+      .orElse(null);
+
+    Set<String> actualListOfSources = Arrays.stream(sources.split(","))
+      .map(file -> file.replace(projectBarDir.toString(), "").replace("\\", "/"))
+      .collect(Collectors.toSet());
+
+    assertThat(actualListOfSources).containsExactlyInAnyOrder("/other.xml", "/pom.xml");
   }
 
   @Test

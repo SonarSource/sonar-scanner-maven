@@ -127,6 +127,7 @@ public class MavenProjectConverter {
   private final Set<Path> skippedBasedDirs = new HashSet<>();
 
   private boolean sourceDirsIsOverridden = false;
+  private boolean testDirsIsOverridden = false;
 
   /**
    * This field is introduced to keep track of the root project in multi-module projects and can be used to decide
@@ -146,6 +147,10 @@ public class MavenProjectConverter {
 
   public boolean isSourceDirsOverridden() {
     return sourceDirsIsOverridden;
+  }
+
+  public boolean isTestDirsOverridden() {
+    return testDirsIsOverridden;
   }
 
   public Properties getEnvProperties() {
@@ -585,6 +590,7 @@ public class MavenProjectConverter {
       filesOrDirs = resolvePaths(paths, pom.getBasedir());
       userDefined = true;
       sourceDirsIsOverridden |= propertyKey.equals(ScanProperties.PROJECT_SOURCE_DIRS);
+      testDirsIsOverridden |= propertyKey.equals(ScanProperties.PROJECT_TEST_DIRS);
     } else {
       removeTarget(pom, mavenPaths);
       filesOrDirs = resolvePaths(mavenPaths, pom.getBasedir());

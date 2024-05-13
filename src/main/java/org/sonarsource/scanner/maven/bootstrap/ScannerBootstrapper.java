@@ -80,7 +80,6 @@ public class ScannerBootstrapper {
         checkSQVersion();
       }
 
-
       if (log.isDebugEnabled()) {
         scanner.setGlobalProperty("sonar.verbose", "true");
       }
@@ -91,16 +90,13 @@ public class ScannerBootstrapper {
     }
   }
 
-
   // TODO remove this workaround when discovering if the sevrer is SC or SQ is available through the API
   private boolean isSonarCloudUsed() {
     return session.getProjects().stream()
       // We can use EnvProperties from MavenProjectConverter as they are initialized at construction time,
       // but we can't use UserProperties from the MavenProjectConverter as they are only initialized
       // in the "collectProperties" method.
-      .map(project ->
-        getPropertyByKey(ScannerProperties.HOST_URL, project, session.getUserProperties(), mavenProjectConverter.getEnvProperties())
-      )
+      .map(project -> getPropertyByKey(ScannerProperties.HOST_URL, project, session.getUserProperties(), mavenProjectConverter.getEnvProperties()))
       .filter(Objects::nonNull)
       .anyMatch(hostUrl -> hostUrl.startsWith(SONARCLOUD_HOST_URL));
   }
@@ -124,11 +120,12 @@ public class ScannerBootstrapper {
     props.putAll(propertyDecryptor.decryptProperties(props));
     if (shouldCollectAllSources(userProperties)) {
       log.info("Parameter " + MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES + " is enabled. The scanner will attempt to collect additional sources.");
-      if (!mavenProjectConverter.isSourceDirsOverridden()) {
+      if (!mavenProjectConverter.isSourceDirsOverridden() && !mavenProjectConverter.isTestDirsOverridden()) {
         collectAllSources(props);
       } else {
+        String overriddenProperty = mavenProjectConverter.isSourceDirsOverridden() ? ScanProperties.PROJECT_SOURCE_DIRS : ScanProperties.PROJECT_TEST_DIRS;
         String warning = "Parameter " + MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES + " is enabled but " +
-          "the scanner will not collect additional sources because sonar.sources has been overridden.";
+          "the scanner will not collect additional sources because " + overriddenProperty + " has been overridden.";
         log.warn(warning);
       }
     }
@@ -140,7 +137,8 @@ public class ScannerBootstrapper {
     return Boolean.TRUE.equals(Boolean.parseBoolean(userProperties.getProperty(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES)));
   }
 
-  private void collectAllSources(Map<String, String> props) {
+  @VisibleForTesting
+  void collectAllSources(Map<String, String> props) {
     String projectBasedir = props.get(ScanProperties.PROJECT_BASEDIR);
     // Exclude the files and folders covered by sonar.sources and sonar.tests (and sonar.exclusions) as computed by the MavenConverter
     // Combine all the sonar.sources at the top-level and by module
@@ -188,15 +186,13 @@ public class ScannerBootstrapper {
       "Java %s %s (%s-bit)",
       SystemWrapper.getProperty("java.version"),
       SystemWrapper.getProperty("java.vm.vendor"),
-      SystemWrapper.getProperty("sun.arch.data.model")
-    );
+      SystemWrapper.getProperty("sun.arch.data.model"));
     log.info(vmInformation);
     String operatingSystem = String.format(
       "%s %s (%s)",
       SystemWrapper.getProperty("os.name"),
       SystemWrapper.getProperty("os.version"),
-      SystemWrapper.getProperty("os.arch")
-    );
+      SystemWrapper.getProperty("os.arch"));
     log.info(operatingSystem);
     String mavenOptions = SystemWrapper.getenv("MAVEN_OPTS");
     if (mavenOptions != null) {

@@ -9,4 +9,4 @@ def sources = 'sonar.sources'
 def module1Sources = "org.codehaus.sonar:sample-project-module1.$sources"
 
 assert properties."$module1Sources" == properties."$projectBaseDir" + "/module1/pom.xml"
-assert properties."$sources" == properties."$projectBaseDir" + "/pom.xml"
+assert properties."$sources" == properties."$projectBaseDir" + "/pom.xml" + "," + properties."$projectBaseDir" + "/verify.groovy"

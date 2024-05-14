@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Consumer;
+
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -111,11 +113,11 @@ class ScannerBootstrapperTest {
     when(scanner.serverVersion()).thenReturn("5.1");
 
     MojoExecutionException exception = assertThrows(MojoExecutionException.class,
-            () -> scannerBootstrapper.execute());
+      () -> scannerBootstrapper.execute());
 
     assertThat(exception)
-            .hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
-            .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
+      .hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
+      .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
   }
 
   @Test
@@ -145,68 +147,68 @@ class ScannerBootstrapperTest {
     when(scanner.serverVersion()).thenReturn(null);
 
     MojoExecutionException exception = assertThrows(MojoExecutionException.class,
-            () -> scannerBootstrapper.execute());
+      () -> scannerBootstrapper.execute());
 
     assertThat(exception)
-            .hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
-            .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
+      .hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
+      .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
   }
 
   @Test
-  void scanAll_property_is_detected_and_applied() throws MojoExecutionException {
+  void scanAll_property_is_applied_by_default() throws MojoExecutionException {
     // When sonar.scanner.scanAll is not set
-    Map<String, String> collectedProperties = scannerBootstrapper.collectProperties();
-    assertThat(collectedProperties).containsKey(ScanProperties.PROJECT_SOURCE_DIRS);
-    String[] sourceDirs = collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS).split(",");
-    assertThat(sourceDirs).hasSize(2);
-    assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
-    assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
+    verifyCollectedSources(sourceDirs -> {
+      assertThat(sourceDirs).hasSize(3);
+      assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
+      assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
+      assertThat(sourceDirs[2]).endsWith(Paths.get("src", "main", "resources", "index.js").toString());
+    });
+
+    verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
+    verify(scannerBootstrapper, times(1)).collectAllSources(any());
+  }
+
+  @Test
+  void scanAll_property_is_not_applied_when_set_explicitly() throws MojoExecutionException {
+    setSonarScannerScanAllTo("false");
+
+    verifyCollectedSources(sourceDirs -> {
+      assertThat(sourceDirs).hasSize(2);
+      assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
+      assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
+    });
+
     verify(log, never()).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
     verify(scannerBootstrapper, never()).collectAllSources(any());
+  }
 
-    // When sonar.scanner.scanAll is set explicitly to false
-    Properties withScanAllSetToFalse = new Properties();
-    withScanAllSetToFalse.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "false");
-    when(session.getUserProperties()).thenReturn(withScanAllSetToFalse);
-    collectedProperties = scannerBootstrapper.collectProperties();
-    assertThat(collectedProperties).containsKey(ScanProperties.PROJECT_SOURCE_DIRS);
-    sourceDirs = collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS).split(",");
-    assertThat(sourceDirs).hasSize(2);
-    assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
-    assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
-    verify(log, never()).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
-    verify(scannerBootstrapper, never()).collectAllSources(any());
+  @Test
+  void scanAll_property_is_applied_when_set_explicitly() throws MojoExecutionException {
+    setSonarScannerScanAllTo("true");
 
-    // When sonar.scanner.scanAll is set explicitly to true
-    Properties withScanAllSetToTrue = new Properties();
-    withScanAllSetToTrue.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "true");
-    when(session.getUserProperties()).thenReturn(withScanAllSetToTrue);
-    collectedProperties = scannerBootstrapper.collectProperties();
-    assertThat(collectedProperties).containsKey(ScanProperties.PROJECT_SOURCE_DIRS);
-    sourceDirs = collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS).split(",");
-    assertThat(sourceDirs).hasSize(3);
-    assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
-    assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
-    assertThat(sourceDirs[2]).endsWith(Paths.get("src", "main", "resources", "index.js").toString());
+    verifyCollectedSources(sourceDirs -> {
+      assertThat(sourceDirs).hasSize(3);
+      assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
+      assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
+      assertThat(sourceDirs[2]).endsWith(Paths.get("src", "main", "resources", "index.js").toString());
+    });
+
     verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
     verify(scannerBootstrapper, times(1)).collectAllSources(any());
   }
 
   @Test
   void should_not_collect_all_sources_when_sonar_sources_is_overridden() throws MojoExecutionException {
-    // When sonar.scanner.scanAll is set explicitly to true
-    Properties withScanAllSetToTrue = new Properties();
-    withScanAllSetToTrue.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "true");
-    when(session.getUserProperties()).thenReturn(withScanAllSetToTrue);
+    setSonarScannerScanAllTo("true");
+
     // Return the expected directory and notify of overriding
     projectProperties.put(ScanProperties.PROJECT_SOURCE_DIRS, Paths.get("src", "main", "resources").toFile().toString());
     when(mavenProjectConverter.isSourceDirsOverridden()).thenReturn(true);
 
-    Map<String, String> collectedProperties = scannerBootstrapper.collectProperties();
-    assertThat(collectedProperties).containsKey(ScanProperties.PROJECT_SOURCE_DIRS);
-    String[] sourceDirs = collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS).split(",");
-    assertThat(sourceDirs).hasSize(1);
-    assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "resources").toString());
+    verifyCollectedSources(sourceDirs -> {
+      assertThat(sourceDirs).hasSize(1);
+      assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "resources").toString());
+    });
 
     verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
     verify(log, times(1)).warn("Parameter sonar.maven.scanAll is enabled but the scanner will not collect additional sources because sonar.sources has been overridden.");
@@ -215,10 +217,8 @@ class ScannerBootstrapperTest {
 
   @Test
   void should_not_collect_all_sources_when_sonar_tests_is_overridden() throws MojoExecutionException {
-    // When sonar.scanner.scanAll is set explicitly to true
-    Properties withScanAllSetToTrue = new Properties();
-    withScanAllSetToTrue.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "true");
-    when(session.getUserProperties()).thenReturn(withScanAllSetToTrue);
+    setSonarScannerScanAllTo("true");
+
     // Return the expected directory and notify of overriding
     projectProperties.put(ScanProperties.PROJECT_TEST_DIRS, Paths.get("src", "test", "resources").toFile().toString());
     when(mavenProjectConverter.isTestDirsOverridden()).thenReturn(true);
@@ -236,10 +236,7 @@ class ScannerBootstrapperTest {
 
   @Test
   void an_exception_is_logged_at_warning_level_when_failing_to_crawl_the_filesystem_to_scan_all_sources() throws MojoExecutionException, IOException {
-    // Enabling the scanAll option explicitly as a scanner option
-    Properties withScanAllSetToTrue = new Properties();
-    withScanAllSetToTrue.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "true");
-    when(session.getUserProperties()).thenReturn(withScanAllSetToTrue);
+    setSonarScannerScanAllTo("true");
 
     IOException expectedException = new IOException("This is what we expected");
     try (MockedStatic<Files> mockedFiles = Mockito.mockStatic(Files.class)) {
@@ -251,9 +248,7 @@ class ScannerBootstrapperTest {
 
   @Test
   void can_collect_sources_with_commas_in_paths() throws MojoExecutionException, IOException {
-    Properties withScanAllSetToTrue = new Properties();
-    withScanAllSetToTrue.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "true");
-    when(session.getUserProperties()).thenReturn(withScanAllSetToTrue);
+    setSonarScannerScanAllTo("true");
 
     // Create paths with commas in them
     Path root = tmpFolder.toAbsolutePath();
@@ -331,6 +326,19 @@ class ScannerBootstrapperTest {
       scannerBootstrapper.execute();
       verify(log, never()).info(contains("MAVEN_OPTS="));
     }
+  }
+
+  private void setSonarScannerScanAllTo(String value) {
+    Properties withScanAllSet = new Properties();
+    withScanAllSet.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, value);
+    when(session.getUserProperties()).thenReturn(withScanAllSet);
+  }
+
+  private void verifyCollectedSources(Consumer<String[]> sourceDirsAssertions) throws MojoExecutionException {
+    Map<String, String> collectedProperties = scannerBootstrapper.collectProperties();
+    assertThat(collectedProperties).containsKey(ScanProperties.PROJECT_SOURCE_DIRS);
+    String[] sourceDirs = collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS).split(",");
+    sourceDirsAssertions.accept(sourceDirs);
   }
 
   private void verifyCommonCalls() {

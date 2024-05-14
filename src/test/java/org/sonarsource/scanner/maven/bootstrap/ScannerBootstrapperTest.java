@@ -153,8 +153,26 @@ class ScannerBootstrapperTest {
   }
 
   @Test
-  void scanAll_property_is_detected_and_applied() throws MojoExecutionException {
+  void scanAll_property_is_applied_by_default() throws MojoExecutionException {
     // When sonar.scanner.scanAll is not set
+    Map<String, String> collectedProperties = scannerBootstrapper.collectProperties();
+    assertThat(collectedProperties).containsKey(ScanProperties.PROJECT_SOURCE_DIRS);
+    String[] sourceDirs = collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS).split(",");
+    assertThat(sourceDirs).hasSize(3);
+    assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
+    assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
+    assertThat(sourceDirs[2]).endsWith(Paths.get("src", "main", "resources", "index.js").toString());
+    verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
+    verify(scannerBootstrapper, times(1)).collectAllSources(any());
+  }
+
+  @Test
+  void scanAll_property_is_not_applied_when_set_explicitly() throws MojoExecutionException {
+    // When sonar.scanner.scanAll is set explicitly to false
+    Properties withScanAllSetToFalse = new Properties();
+    withScanAllSetToFalse.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "false");
+    when(session.getUserProperties()).thenReturn(withScanAllSetToFalse);
+
     Map<String, String> collectedProperties = scannerBootstrapper.collectProperties();
     assertThat(collectedProperties).containsKey(ScanProperties.PROJECT_SOURCE_DIRS);
     String[] sourceDirs = collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS).split(",");
@@ -163,27 +181,18 @@ class ScannerBootstrapperTest {
     assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
     verify(log, never()).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
     verify(scannerBootstrapper, never()).collectAllSources(any());
+  }
 
-    // When sonar.scanner.scanAll is set explicitly to false
-    Properties withScanAllSetToFalse = new Properties();
-    withScanAllSetToFalse.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "false");
-    when(session.getUserProperties()).thenReturn(withScanAllSetToFalse);
-    collectedProperties = scannerBootstrapper.collectProperties();
-    assertThat(collectedProperties).containsKey(ScanProperties.PROJECT_SOURCE_DIRS);
-    sourceDirs = collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS).split(",");
-    assertThat(sourceDirs).hasSize(2);
-    assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
-    assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
-    verify(log, never()).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
-    verify(scannerBootstrapper, never()).collectAllSources(any());
-
+  @Test
+  void scanAll_property_is_applied_when_set_explicitly() throws MojoExecutionException {
     // When sonar.scanner.scanAll is set explicitly to true
     Properties withScanAllSetToTrue = new Properties();
     withScanAllSetToTrue.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "true");
     when(session.getUserProperties()).thenReturn(withScanAllSetToTrue);
-    collectedProperties = scannerBootstrapper.collectProperties();
+
+    Map<String, String> collectedProperties = scannerBootstrapper.collectProperties();
     assertThat(collectedProperties).containsKey(ScanProperties.PROJECT_SOURCE_DIRS);
-    sourceDirs = collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS).split(",");
+    String[] sourceDirs = collectedProperties.get(ScanProperties.PROJECT_SOURCE_DIRS).split(",");
     assertThat(sourceDirs).hasSize(3);
     assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
     assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
@@ -198,6 +207,7 @@ class ScannerBootstrapperTest {
     Properties withScanAllSetToTrue = new Properties();
     withScanAllSetToTrue.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "true");
     when(session.getUserProperties()).thenReturn(withScanAllSetToTrue);
+
     // Return the expected directory and notify of overriding
     projectProperties.put(ScanProperties.PROJECT_SOURCE_DIRS, Paths.get("src", "main", "resources").toFile().toString());
     when(mavenProjectConverter.isSourceDirsOverridden()).thenReturn(true);

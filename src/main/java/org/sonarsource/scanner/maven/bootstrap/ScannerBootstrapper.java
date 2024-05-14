@@ -122,6 +122,7 @@ public class ScannerBootstrapper {
     Properties userProperties = session.getUserProperties();
     Map<String, String> props = mavenProjectConverter.configure(sortedProjects, topLevelProject, userProperties);
     props.putAll(propertyDecryptor.decryptProperties(props));
+
     if (shouldCollectAllSources(userProperties)) {
       log.info("Parameter " + MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES + " is enabled. The scanner will attempt to collect additional sources.");
       if (mavenProjectConverter.isSourceDirsOverridden()) {
@@ -137,7 +138,8 @@ public class ScannerBootstrapper {
   }
 
   private static boolean shouldCollectAllSources(Properties userProperties) {
-    return Boolean.TRUE.equals(Boolean.parseBoolean(userProperties.getProperty(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES)));
+    String sonarScanAll = userProperties.getProperty(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, Boolean.TRUE.toString());
+    return Boolean.TRUE.equals(Boolean.parseBoolean(sonarScanAll));
   }
 
   private static String notCollectingAdditionalSourcesBecauseOf(String overriddenProperty) {

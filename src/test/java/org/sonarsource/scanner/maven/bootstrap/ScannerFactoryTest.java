@@ -165,12 +165,13 @@ class ScannerFactoryTest {
     mavenProxy.setUsername("toto");
     mavenProxy.setPassword("some-secret");
     mavenProxy.setNonProxyHosts("sonarcloud.io|*.sonarsource.com");
+    mavenProxy.setId("unrecognizable-protocol-proxy");
 
     Settings settings = new Settings();
     settings.setProxies(Collections.singletonList(mavenProxy));
     when(mavenSession.getSettings()).thenReturn(settings);
 
-    Log log = Mockito.spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "no-proxy")));
+    Log log = Mockito.spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "unrecognizable-protocol")));
     ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     factory.create();
 
@@ -182,7 +183,7 @@ class ScannerFactoryTest {
     assertThat(System.getProperty("http.proxyHost")).isNull();
     assertThat(System.getProperty("http.proxyPort")).isNull();
 
-    verify(log, times(1)).warn("Skipping proxy settings: an active proxy was detected but the protocol was not recognized (notRecognized).");
+    verify(log, times(1)).warn("Skipping proxy settings: an active proxy was detected (id: unrecognizable-protocol-proxy) but the protocol was not recognized (protocol: notRecognized).");
   }
 
   @Test
@@ -195,12 +196,13 @@ class ScannerFactoryTest {
     mavenProxy.setUsername("toto");
     mavenProxy.setPassword("some-secret");
     mavenProxy.setNonProxyHosts("sonarcloud.io|*.sonarsource.com");
+    mavenProxy.setId("null-protocol-proxy");
 
     Settings settings = new Settings();
     settings.setProxies(Collections.singletonList(mavenProxy));
     when(mavenSession.getSettings()).thenReturn(settings);
 
-    Log log = Mockito.spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "no-proxy")));
+    Log log = Mockito.spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "null-protocol-proxy")));
     ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     factory.create();
 
@@ -212,7 +214,7 @@ class ScannerFactoryTest {
     assertThat(System.getProperty("http.proxyHost")).isNull();
     assertThat(System.getProperty("http.proxyPort")).isNull();
 
-    verify(log, times(1)).warn("Skipping proxy settings: an active proxy was detected but the protocol was not recognized (null).");
+    verify(log, times(1)).warn("Skipping proxy settings: an active proxy was detected (id: null-protocol-proxy) but the protocol was not recognized (protocol: null).");
   }
 
   @Test

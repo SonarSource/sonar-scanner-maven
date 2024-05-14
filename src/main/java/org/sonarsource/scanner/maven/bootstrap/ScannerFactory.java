@@ -98,7 +98,7 @@ public class ScannerFactory {
       System.setProperty("https.proxyHost", activeProxy.getHost());
       System.setProperty("https.proxyPort", String.valueOf(activeProxy.getPort()));
     } else {
-      log.warn("Skipping proxy settings: an active proxy was detected but the protocol was not recognized (" + protocol + ").");
+      log.warn("Skipping proxy settings: an active proxy was detected (id: " + activeProxy.getId() + ") but the protocol was not recognized (protocol: " + protocol + ").");
       return;
     }
 

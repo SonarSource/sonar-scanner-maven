@@ -54,6 +54,8 @@ class ScannerFactoryTest {
   private PropertyDecryptor propertyDecryptor;
   private Properties envProps;
 
+  private Proxy httpsProxy;
+
   @BeforeEach
   public void setUp() {
     logOutput = mock(LogOutput.class);
@@ -78,6 +80,16 @@ class ScannerFactoryTest {
     when(rootProject.getProperties()).thenReturn(root);
     when(mavenSession.getCurrentProject()).thenReturn(rootProject);
     propertyDecryptor = new PropertyDecryptor(mock(Log.class), mock(SecDispatcher.class));
+
+    // Set up default proxies
+    httpsProxy = new Proxy();
+    httpsProxy.setActive(true);
+    httpsProxy.setProtocol("https");
+    httpsProxy.setPort(443);
+    httpsProxy.setHost("myhost");
+    httpsProxy.setUsername("toto");
+    httpsProxy.setPassword("some-secret");
+    httpsProxy.setNonProxyHosts("sonarcloud.io|*.sonarsource.com");
   }
 
   @AfterEach
@@ -93,7 +105,7 @@ class ScannerFactoryTest {
   }
 
   @Test
-  void testProxy() {
+  void http_proxy_properties_are_derived_from_maven_settings() {
     Proxy proxy = new Proxy();
     proxy.setActive(true);
     proxy.setProtocol("http");
@@ -106,20 +118,13 @@ class ScannerFactoryTest {
     ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     factory.create();
     assertThat(System.getProperty("http.proxyHost")).isEqualTo("myhost");
+    assertThat(System.getProperty("https.proxyHost")).isNull();
   }
 
   @Test
-  void proxy_properties_are_derived_from_maven_settings() {
-    Proxy mavenProxy = new Proxy();
-    mavenProxy.setActive(true);
-    mavenProxy.setProtocol("https");
-    mavenProxy.setPort(443);
-    mavenProxy.setHost("myhost");
-    mavenProxy.setUsername("toto");
-    mavenProxy.setPassword("some-secret");
-    mavenProxy.setNonProxyHosts("sonarcloud.io|*.sonarsource.com");
+  void https_proxy_properties_are_derived_from_maven_settings() {
     Settings settings = new Settings();
-    settings.setProxies(Collections.singletonList(mavenProxy));
+    settings.setProxies(Collections.singletonList(httpsProxy));
     when(mavenSession.getSettings()).thenReturn(settings);
 
     Log log = mock(Log.class);
@@ -144,75 +149,44 @@ class ScannerFactoryTest {
     ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     factory.create();
 
-    assertThat(System.getProperty("https.proxyHost")).isNull();
-    assertThat(System.getProperty("https.proxyPort")).isNull();
-    assertThat(System.getProperty("http.proxyUser")).isNull();
-    assertThat(System.getProperty("http.proxyPassword")).isNull();
-    assertThat(System.getProperty("http.nonProxyHosts")).isNull();
-    assertThat(System.getProperty("http.proxyHost")).isNull();
-    assertThat(System.getProperty("http.proxyPort")).isNull();
+    assertProxySettingsAreNotSet();
 
     verify(log, times(1)).debug("Skipping proxy settings: No active proxy detected.");
   }
 
   @Test
   void proxy_properties_are_not_set_when_protocol_is_not_recognized() {
-    Proxy mavenProxy = new Proxy();
-    mavenProxy.setActive(true);
-    mavenProxy.setProtocol("notRecognized");
-    mavenProxy.setPort(443);
-    mavenProxy.setHost("myhost");
-    mavenProxy.setUsername("toto");
-    mavenProxy.setPassword("some-secret");
-    mavenProxy.setNonProxyHosts("sonarcloud.io|*.sonarsource.com");
-    mavenProxy.setId("unrecognizable-protocol-proxy");
-
     Settings settings = new Settings();
-    settings.setProxies(Collections.singletonList(mavenProxy));
+    Proxy proxyWithUnrecognizableProtocol = httpsProxy.clone();
+    proxyWithUnrecognizableProtocol.setId("unrecognizable-protocol-proxy");
+    proxyWithUnrecognizableProtocol.setProtocol("notRecognized");
+    settings.setProxies(Collections.singletonList(proxyWithUnrecognizableProtocol));
     when(mavenSession.getSettings()).thenReturn(settings);
 
     Log log = Mockito.spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "unrecognizable-protocol")));
     ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     factory.create();
 
-    assertThat(System.getProperty("https.proxyHost")).isNull();
-    assertThat(System.getProperty("https.proxyPort")).isNull();
-    assertThat(System.getProperty("http.proxyUser")).isNull();
-    assertThat(System.getProperty("http.proxyPassword")).isNull();
-    assertThat(System.getProperty("http.nonProxyHosts")).isNull();
-    assertThat(System.getProperty("http.proxyHost")).isNull();
-    assertThat(System.getProperty("http.proxyPort")).isNull();
+    assertProxySettingsAreNotSet();
 
     verify(log, times(1)).warn("Skipping proxy settings: an active proxy was detected (id: unrecognizable-protocol-proxy) but the protocol was not recognized (protocol: notRecognized).");
   }
 
   @Test
   void proxy_properties_are_not_set_when_protocol_is_null() {
-    Proxy mavenProxy = new Proxy();
-    mavenProxy.setActive(true);
-    mavenProxy.setPort(443);
-    mavenProxy.setProtocol(null);
-    mavenProxy.setHost("myhost");
-    mavenProxy.setUsername("toto");
-    mavenProxy.setPassword("some-secret");
-    mavenProxy.setNonProxyHosts("sonarcloud.io|*.sonarsource.com");
-    mavenProxy.setId("null-protocol-proxy");
+    Proxy proxyWithNullProtocol = httpsProxy.clone();
+    proxyWithNullProtocol.setProtocol(null);
+    proxyWithNullProtocol.setId("null-protocol-proxy");
 
     Settings settings = new Settings();
-    settings.setProxies(Collections.singletonList(mavenProxy));
+    settings.setProxies(Collections.singletonList(proxyWithNullProtocol));
     when(mavenSession.getSettings()).thenReturn(settings);
 
     Log log = Mockito.spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "null-protocol-proxy")));
     ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     factory.create();
 
-    assertThat(System.getProperty("https.proxyHost")).isNull();
-    assertThat(System.getProperty("https.proxyPort")).isNull();
-    assertThat(System.getProperty("http.proxyUser")).isNull();
-    assertThat(System.getProperty("http.proxyPassword")).isNull();
-    assertThat(System.getProperty("http.nonProxyHosts")).isNull();
-    assertThat(System.getProperty("http.proxyHost")).isNull();
-    assertThat(System.getProperty("http.proxyPort")).isNull();
+    assertProxySettingsAreNotSet();
 
     verify(log, times(1)).warn("Skipping proxy settings: an active proxy was detected (id: null-protocol-proxy) but the protocol was not recognized (protocol: null).");
   }
@@ -243,5 +217,15 @@ class ScannerFactoryTest {
 
     assertThat(scannerDebug.globalProperties()).contains(entry("sonar.verbose", "true"));
     assertThat(scanner.globalProperties()).doesNotContain(entry("sonar.verbose", "true"));
+  }
+
+  static void assertProxySettingsAreNotSet() {
+    assertThat(System.getProperty("https.proxyHost")).isNull();
+    assertThat(System.getProperty("https.proxyPort")).isNull();
+    assertThat(System.getProperty("http.proxyUser")).isNull();
+    assertThat(System.getProperty("http.proxyPassword")).isNull();
+    assertThat(System.getProperty("http.nonProxyHosts")).isNull();
+    assertThat(System.getProperty("http.proxyHost")).isNull();
+    assertThat(System.getProperty("http.proxyPort")).isNull();
   }
 }

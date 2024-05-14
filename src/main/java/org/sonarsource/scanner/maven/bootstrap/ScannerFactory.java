@@ -77,16 +77,33 @@ public class ScannerFactory {
     return p;
   }
 
+  /**
+   * Set proxy properties from Maven settings
+   */
   public void setProxySystemProperties() {
     Proxy activeProxy = session.getSettings().getActiveProxy();
+    if (activeProxy == null) {
+      log.debug("Skipping proxy settings: No active proxy detected.");
+      return;
+    }
 
-    if (activeProxy != null && activeProxy.getProtocol() != null && activeProxy.getProtocol().contains("http")) {
+    String protocol = activeProxy.getProtocol();
+
+    if ("http".equals(protocol)) {
       log.debug("Setting proxy properties");
       System.setProperty("http.proxyHost", activeProxy.getHost());
       System.setProperty("http.proxyPort", String.valueOf(activeProxy.getPort()));
-      System.setProperty("http.proxyUser", StringUtils.defaultString(activeProxy.getUsername(), ""));
-      System.setProperty("http.proxyPassword", StringUtils.defaultString(activeProxy.getPassword(), ""));
-      System.setProperty("http.nonProxyHosts", StringUtils.defaultString(activeProxy.getNonProxyHosts(), ""));
+    } else if ("https".equals(protocol)) {
+      log.debug("Setting proxy properties");
+      System.setProperty("https.proxyHost", activeProxy.getHost());
+      System.setProperty("https.proxyPort", String.valueOf(activeProxy.getPort()));
+    } else {
+      log.warn("Skipping proxy settings: an active proxy was detected but the protocol was not recognized (" + protocol + ").");
+      return;
     }
+
+    System.setProperty("http.proxyUser", StringUtils.defaultString(activeProxy.getUsername(), ""));
+    System.setProperty("http.proxyPassword", StringUtils.defaultString(activeProxy.getPassword(), ""));
+    System.setProperty("http.nonProxyHosts", StringUtils.defaultString(activeProxy.getNonProxyHosts(), ""));
   }
 }

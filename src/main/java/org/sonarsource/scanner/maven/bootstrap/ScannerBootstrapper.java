@@ -80,7 +80,6 @@ public class ScannerBootstrapper {
         checkSQVersion();
       }
 
-
       if (log.isDebugEnabled()) {
         scanner.setGlobalProperty("sonar.verbose", "true");
       }
@@ -90,7 +89,6 @@ public class ScannerBootstrapper {
       throw new MojoExecutionException(e.getMessage(), e);
     }
   }
-
 
   // TODO remove this workaround when discovering if the sevrer is SC or SQ is available through the API
   private boolean isSonarCloudUsed() {
@@ -116,20 +114,22 @@ public class ScannerBootstrapper {
         break;
       }
     }
+
     if (topLevelProject == null) {
       throw new IllegalStateException("Maven session does not declare a top level project");
     }
+
     Properties userProperties = session.getUserProperties();
     Map<String, String> props = mavenProjectConverter.configure(sortedProjects, topLevelProject, userProperties);
     props.putAll(propertyDecryptor.decryptProperties(props));
     if (shouldCollectAllSources(userProperties)) {
       log.info("Parameter " + MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES + " is enabled. The scanner will attempt to collect additional sources.");
-      if (!mavenProjectConverter.isSourceDirsOverridden()) {
-        collectAllSources(props);
+      if (mavenProjectConverter.isSourceDirsOverridden()) {
+        log.warn(notCollectingAdditionalSourcesBecauseOf(ScanProperties.PROJECT_SOURCE_DIRS));
+      } else if (mavenProjectConverter.isTestDirsOverridden()) {
+        log.warn(notCollectingAdditionalSourcesBecauseOf(ScanProperties.PROJECT_TEST_DIRS));
       } else {
-        String warning = "Parameter " + MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES + " is enabled but " +
-          "the scanner will not collect additional sources because sonar.sources has been overridden.";
-        log.warn(warning);
+        collectAllSources(props);
       }
     }
 
@@ -140,7 +140,13 @@ public class ScannerBootstrapper {
     return Boolean.TRUE.equals(Boolean.parseBoolean(userProperties.getProperty(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES)));
   }
 
-  private void collectAllSources(Map<String, String> props) {
+  private static String notCollectingAdditionalSourcesBecauseOf(String overriddenProperty) {
+    return "Parameter " + MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES + " is enabled but " +
+      "the scanner will not collect additional sources because " + overriddenProperty + " has been overridden.";
+  }
+
+  @VisibleForTesting
+  void collectAllSources(Map<String, String> props) {
     String projectBasedir = props.get(ScanProperties.PROJECT_BASEDIR);
     // Exclude the files and folders covered by sonar.sources and sonar.tests (and sonar.exclusions) as computed by the MavenConverter
     // Combine all the sonar.sources at the top-level and by module

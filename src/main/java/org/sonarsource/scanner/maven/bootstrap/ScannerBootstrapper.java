@@ -96,7 +96,9 @@ public class ScannerBootstrapper {
       // We can use EnvProperties from MavenProjectConverter as they are initialized at construction time,
       // but we can't use UserProperties from the MavenProjectConverter as they are only initialized
       // in the "collectProperties" method.
-      .map(project -> getPropertyByKey(ScannerProperties.HOST_URL, project, session.getUserProperties(), mavenProjectConverter.getEnvProperties()))
+      .map(project ->
+        getPropertyByKey(ScannerProperties.HOST_URL, project, session.getUserProperties(), mavenProjectConverter.getEnvProperties())
+      )
       .filter(Objects::nonNull)
       .anyMatch(hostUrl -> hostUrl.startsWith(SONARCLOUD_HOST_URL));
   }
@@ -192,13 +194,15 @@ public class ScannerBootstrapper {
       "Java %s %s (%s-bit)",
       SystemWrapper.getProperty("java.version"),
       SystemWrapper.getProperty("java.vm.vendor"),
-      SystemWrapper.getProperty("sun.arch.data.model"));
+      SystemWrapper.getProperty("sun.arch.data.model")
+    );
     log.info(vmInformation);
     String operatingSystem = String.format(
       "%s %s (%s)",
       SystemWrapper.getProperty("os.name"),
       SystemWrapper.getProperty("os.version"),
-      SystemWrapper.getProperty("os.arch"));
+      SystemWrapper.getProperty("os.arch")
+    );
     log.info(operatingSystem);
     String mavenOptions = SystemWrapper.getenv("MAVEN_OPTS");
     if (mavenOptions != null) {

@@ -41,6 +41,7 @@ import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -81,7 +82,7 @@ class ScannerFactoryTest {
     when(mavenSession.getCurrentProject()).thenReturn(rootProject);
     propertyDecryptor = new PropertyDecryptor(mock(Log.class), mock(SecDispatcher.class));
 
-    // Set up default proxies
+    // Set up default proxy
     httpsProxy = new Proxy();
     httpsProxy.setActive(true);
     httpsProxy.setProtocol("https");
@@ -145,7 +146,7 @@ class ScannerFactoryTest {
     Settings settings = new Settings();
     when(mavenSession.getSettings()).thenReturn(settings);
 
-    Log log = Mockito.spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "no-proxy")));
+    Log log = spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "no-proxy")));
     ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     factory.create();
 
@@ -163,7 +164,7 @@ class ScannerFactoryTest {
     settings.setProxies(Collections.singletonList(proxyWithUnrecognizableProtocol));
     when(mavenSession.getSettings()).thenReturn(settings);
 
-    Log log = Mockito.spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "unrecognizable-protocol")));
+    Log log = spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "unrecognizable-protocol")));
     ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     factory.create();
 
@@ -182,7 +183,7 @@ class ScannerFactoryTest {
     settings.setProxies(Collections.singletonList(proxyWithNullProtocol));
     when(mavenSession.getSettings()).thenReturn(settings);
 
-    Log log = Mockito.spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "null-protocol-proxy")));
+    Log log = spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "null-protocol-proxy")));
     ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
     factory.create();
 

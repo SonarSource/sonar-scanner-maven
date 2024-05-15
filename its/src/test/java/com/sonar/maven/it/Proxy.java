@@ -85,6 +85,7 @@ public class Proxy {
     // HTTP Configuration
     HttpConfiguration httpConfig = new HttpConfiguration();
     httpConfig.setSecureScheme("https");
+    httpConfig.setSecurePort(443);
     httpConfig.setSendServerVersion(true);
     httpConfig.setSendDateHeader(false);
 

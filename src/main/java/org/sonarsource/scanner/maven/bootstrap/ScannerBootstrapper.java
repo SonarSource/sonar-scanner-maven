@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.execution.MavenSession;
@@ -49,6 +50,7 @@ public class ScannerBootstrapper {
 
   static final String UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE = "With SonarQube server prior to 5.6, use sonar-maven-plugin <= 3.3";
   private static final String SONARCLOUD_HOST_URL = "https://sonarcloud.io";
+  private static final Pattern REPORT_PROPERTY_PATTERN = Pattern.compile("^sonar\\..*[rR]eportPaths?$");
 
   private final Log log;
   private final MavenSession session;
@@ -147,6 +149,18 @@ public class ScannerBootstrapper {
       "the scanner will not collect additional sources because " + overriddenProperty + " has been overridden.";
   }
 
+  private static Set<Path> excludedReportFiles(Map<String, String> props) {
+    return props.keySet().stream()
+      .filter(key -> REPORT_PROPERTY_PATTERN.matcher(key).matches())
+      .map(props::get)
+      .map(MavenUtils::splitAsCsv)
+      .flatMap(List::stream)
+      .map(Paths::get)
+      .map(Path::toAbsolutePath)
+      .map(Path::normalize)
+      .collect(Collectors.toSet());
+  }
+
   @VisibleForTesting
   void collectAllSources(Map<String, String> props) {
     String projectBasedir = props.get(ScanProperties.PROJECT_BASEDIR);
@@ -164,7 +178,9 @@ public class ScannerBootstrapper {
       Set<Path> existingSources = coveredSources.stream()
         .map(Paths::get)
         .collect(Collectors.toSet());
-      SourceCollector visitor = new SourceCollector(existingSources, mavenProjectConverter.getSkippedBasedDirs());
+      Set<Path> excludedFiles = excludedReportFiles(props);
+
+      SourceCollector visitor = new SourceCollector(existingSources, mavenProjectConverter.getSkippedBasedDirs(), excludedFiles);
       Files.walkFileTree(Paths.get(projectBasedir), visitor);
       collectedSources = visitor.getCollectedSources().stream()
         .map(file -> file.toAbsolutePath().toString())

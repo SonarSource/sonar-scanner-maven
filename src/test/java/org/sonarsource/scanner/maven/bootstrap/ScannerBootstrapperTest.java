@@ -165,7 +165,7 @@ class ScannerBootstrapperTest {
     });
 
     verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
-    verify(scannerBootstrapper, times(1)).collectAllSources(any());
+    verify(scannerBootstrapper, times(1)).collectAllSources(any(), any());
   }
 
   @Test
@@ -179,7 +179,7 @@ class ScannerBootstrapperTest {
     });
 
     verify(log, never()).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
-    verify(scannerBootstrapper, never()).collectAllSources(any());
+    verify(scannerBootstrapper, never()).collectAllSources(any(), any());
   }
 
   @Test
@@ -194,7 +194,7 @@ class ScannerBootstrapperTest {
     });
 
     verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
-    verify(scannerBootstrapper, times(1)).collectAllSources(any());
+    verify(scannerBootstrapper, times(1)).collectAllSources(any(), any());
   }
 
   @Test
@@ -212,7 +212,7 @@ class ScannerBootstrapperTest {
 
     verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
     verify(log, times(1)).warn("Parameter sonar.maven.scanAll is enabled but the scanner will not collect additional sources because sonar.sources has been overridden.");
-    verify(scannerBootstrapper, never()).collectAllSources(any());
+    verify(scannerBootstrapper, never()).collectAllSources(any(), any());
   }
 
   @Test
@@ -231,7 +231,7 @@ class ScannerBootstrapperTest {
 
     verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
     verify(log, times(1)).warn("Parameter sonar.maven.scanAll is enabled but the scanner will not collect additional sources because sonar.tests has been overridden.");
-    verify(scannerBootstrapper, never()).collectAllSources(any());
+    verify(scannerBootstrapper, never()).collectAllSources(any(), any());
   }
 
   @Test

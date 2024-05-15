@@ -132,7 +132,7 @@ public class ScannerBootstrapper {
       } else if (mavenProjectConverter.isTestDirsOverridden()) {
         log.warn(notCollectingAdditionalSourcesBecauseOf(ScanProperties.PROJECT_TEST_DIRS));
       } else {
-        collectAllSources(props);
+        collectAllSources(props, userProperties);
       }
     }
 
@@ -162,7 +162,7 @@ public class ScannerBootstrapper {
   }
 
   @VisibleForTesting
-  void collectAllSources(Map<String, String> props) {
+  void collectAllSources(Map<String, String> props, Properties userProperties) {
     String projectBasedir = props.get(ScanProperties.PROJECT_BASEDIR);
     // Exclude the files and folders covered by sonar.sources and sonar.tests (and sonar.exclusions) as computed by the MavenConverter
     // Combine all the sonar.sources at the top-level and by module
@@ -178,9 +178,8 @@ public class ScannerBootstrapper {
       Set<Path> existingSources = coveredSources.stream()
         .map(Paths::get)
         .collect(Collectors.toSet());
-      Set<Path> excludedFiles = excludedReportFiles(props);
-
-      SourceCollector visitor = new SourceCollector(existingSources, mavenProjectConverter.getSkippedBasedDirs(), excludedFiles);
+      SourceCollector visitor = new SourceCollector(existingSources, mavenProjectConverter.getSkippedBasedDirs(),
+        excludedReportFiles(props), isUserDefinedJavaBinaries(userProperties));
       Files.walkFileTree(Paths.get(projectBasedir), visitor);
       collectedSources = visitor.getCollectedSources().stream()
         .map(file -> file.toAbsolutePath().toString())
@@ -192,6 +191,11 @@ public class ScannerBootstrapper {
     } catch (IOException e) {
       log.warn(e);
     }
+  }
+
+  private static boolean isUserDefinedJavaBinaries(Properties userProperties) {
+    return userProperties.containsKey(MavenProjectConverter.JAVA_PROJECT_MAIN_LIBRARIES) &&
+      userProperties.containsKey(MavenProjectConverter.JAVA_PROJECT_MAIN_BINARY_DIRS);
   }
 
   private void checkSQVersion() {

@@ -19,9 +19,13 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecution;
@@ -32,6 +36,7 @@ import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.api.LogOutput;
 
 public class ScannerFactory {
+  private static final String PROXY_PROTOCOL_MESSAGE = "Setting proxy properties: one or multiple protocols of the active proxy (id: %s) are not supported (protocols: %s).";
 
   private final LogOutput logOutput;
   private final RuntimeInformation runtimeInformation;
@@ -88,22 +93,42 @@ public class ScannerFactory {
     }
 
     String protocol = activeProxy.getProtocol();
-
-    if ("http".equals(protocol)) {
-      log.debug("Setting proxy properties");
-      System.setProperty("http.proxyHost", activeProxy.getHost());
-      System.setProperty("http.proxyPort", String.valueOf(activeProxy.getPort()));
-    } else if ("https".equals(protocol)) {
-      log.debug("Setting proxy properties");
-      System.setProperty("https.proxyHost", activeProxy.getHost());
-      System.setProperty("https.proxyPort", String.valueOf(activeProxy.getPort()));
-    } else {
-      log.warn("Skipping proxy settings: an active proxy was detected (id: " + activeProxy.getId() + ") but the protocol was not recognized (protocol: " + protocol + ").");
+    if (protocol == null) {
+      log.warn("Skipping proxy settings: an active proxy was detected (id: " + activeProxy.getId() + ") but the protocol is null.");
       return;
     }
 
-    System.setProperty("http.proxyUser", StringUtils.defaultString(activeProxy.getUsername(), ""));
-    System.setProperty("http.proxyPassword", StringUtils.defaultString(activeProxy.getPassword(), ""));
-    System.setProperty("http.nonProxyHosts", StringUtils.defaultString(activeProxy.getNonProxyHosts(), ""));
+    Set<String> protocols = Arrays.stream(activeProxy.getProtocol().trim().split("\\|"))
+      .map(proto -> proto.trim().toLowerCase(Locale.getDefault()))
+      .filter(proto -> !proto.isEmpty())
+      .collect(Collectors.toSet());
+
+    if (protocols.isEmpty()) {
+      log.warn("Skipping proxy settings: an active proxy was detected (id: " + activeProxy.getId() + ") but the protocol was not recognized.");
+      return;
+    }
+
+    log.debug("Setting proxy properties");
+    if (protocols.remove("http")) {
+      System.setProperty("http.proxyHost", activeProxy.getHost());
+      System.setProperty("http.proxyPort", String.valueOf(activeProxy.getPort()));
+      setCommonHttpProperties(activeProxy);
+    }
+    if (protocols.remove("https")) {
+      System.setProperty("https.proxyHost", activeProxy.getHost());
+      System.setProperty("https.proxyPort", String.valueOf(activeProxy.getPort()));
+      setCommonHttpProperties(activeProxy);
+    }
+
+    if (!protocols.isEmpty()) {
+      String remainingProtocols = String.join(", ", protocols);
+      log.warn(String.format(PROXY_PROTOCOL_MESSAGE, activeProxy.getId(), remainingProtocols));
+    }
+  }
+
+  private static void setCommonHttpProperties(Proxy proxy) {
+    System.setProperty("http.proxyUser", StringUtils.defaultString(proxy.getUsername(), ""));
+    System.setProperty("http.proxyPassword", StringUtils.defaultString(proxy.getPassword(), ""));
+    System.setProperty("http.nonProxyHosts", StringUtils.defaultString(proxy.getNonProxyHosts(), ""));
   }
 }

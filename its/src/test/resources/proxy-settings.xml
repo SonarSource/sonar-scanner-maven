@@ -13,7 +13,7 @@
     <proxy>
       <id>example-proxy</id>
       <active>true</active>
-      <protocol>https</protocol>
+      <protocol>http|https</protocol>
       <host>localhost</host>
       <port>8080</port>
       <username>scott</username>

@@ -36,7 +36,8 @@ import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.api.LogOutput;
 
 public class ScannerFactory {
-  private static final String PROXY_PROTOCOL_MESSAGE = "Setting proxy properties: one or multiple protocols of the active proxy (id: %s) are not supported (protocols: %s).";
+  private static final String UNKNOWN_PROXY_PROTOCOL_MESSAGE = "Setting proxy properties:" +
+    " one or multiple protocols of the active proxy (id: %s) are not supported (protocols: %s).";
 
   private final LogOutput logOutput;
   private final RuntimeInformation runtimeInformation;
@@ -99,7 +100,7 @@ public class ScannerFactory {
     }
 
     Set<String> protocols = Arrays.stream(activeProxy.getProtocol().trim().split("\\|"))
-      .map(proto -> proto.trim().toLowerCase(Locale.getDefault()))
+      .map(proto -> proto.trim().toLowerCase(Locale.ROOT))
       .filter(proto -> !proto.isEmpty())
       .collect(Collectors.toSet());
 
@@ -122,7 +123,7 @@ public class ScannerFactory {
 
     if (!protocols.isEmpty()) {
       String remainingProtocols = String.join(", ", protocols);
-      log.warn(String.format(PROXY_PROTOCOL_MESSAGE, activeProxy.getId(), remainingProtocols));
+      log.warn(String.format(UNKNOWN_PROXY_PROTOCOL_MESSAGE, activeProxy.getId(), remainingProtocols));
     }
   }
 

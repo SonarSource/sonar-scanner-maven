@@ -24,10 +24,13 @@ import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.BuildRunner;
 import com.sonar.orchestrator.build.MavenBuild;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.sonarqube.ws.Components;
@@ -425,21 +428,64 @@ class MavenTest extends AbstractMavenTest {
    */
   @Test
   void supportMavenEncryption() throws Exception {
-    wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("true"));
-    wsClient.users().create(new CreateRequest().setLogin("julien").setName("Julien").setPassword("123abc"));
+    Assertions.assertDoesNotThrow(() -> {
+      wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("true"));
+      wsClient.users().create(new CreateRequest().setLogin("julien").setName("Julien").setPassword("123abc"));
 
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-      .setGoals(cleanSonarGoal());
+      MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
+              .setGoals(cleanSonarGoal());
 
-    File securityXml = new File(this.getClass().getResource("/security-settings.xml").toURI());
-    File settingsXml = new File(this.getClass().getResource("/settings-with-encrypted-sonar-password.xml").toURI());
+      File securityXml = new File(this.getClass().getResource("/security-settings.xml").toURI());
+      File settingsXml = new File(this.getClass().getResource("/settings-with-encrypted-sonar-password.xml").toURI());
 
-    build.addArgument("--settings=" + settingsXml.getAbsolutePath());
-    // MNG-4853
-    build.addArgument("-Dsettings.security=" + securityXml.getAbsolutePath());
-    build.setProperty("sonar.login", "julien");
-    build.addArgument("-Psonar-password");
-    ORCHESTRATOR.executeBuild(build);
+      build.addArgument("--settings=" + settingsXml.getAbsolutePath());
+      // MNG-4853
+      build.addArgument("-Dsettings.security=" + securityXml.getAbsolutePath());
+      build.setProperty("sonar.login", "julien");
+      build.addArgument("-Psonar-password");
+      ORCHESTRATOR.executeBuild(build);
+    });
   }
 
+  @Test
+  void supportMavenEncryptionWithDefaultSecuritySettings() throws Exception {
+    // Should fail because settings-security.xml is missing
+    Assertions.assertThrows(Exception.class, () -> {
+      wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("true"));
+      wsClient.users().create(new CreateRequest().setLogin("julien3").setName("Julien3").setPassword("123abc"));
+
+      MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
+              .setGoals(cleanSonarGoal());
+
+      File settingsXml = new File(this.getClass().getResource("/settings-with-encrypted-sonar-password.xml").toURI());
+
+      build.addArgument("--settings=" + settingsXml.getAbsolutePath());
+
+      build.setProperty("sonar.login", "julien3");
+      build.addArgument("-Psonar-password");
+      ORCHESTRATOR.executeBuild(build);
+    });
+
+    Assertions.assertDoesNotThrow(() -> {
+      wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("true"));
+      wsClient.users().create(new CreateRequest().setLogin("julien2").setName("Julien2").setPassword("123abc"));
+
+      MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
+              .setGoals(cleanSonarGoal());
+
+      File securityXml = new File(this.getClass().getResource("/security-settings.xml").toURI());
+      File settingsXml = new File(this.getClass().getResource("/settings-with-encrypted-sonar-password.xml").toURI());
+
+      // Adding ~/.m2/settings-security.xml
+      String userHomeDir = System.getProperty("user.home");
+      Path defaultPath = Paths.get(userHomeDir, ".m2", "settings-security.xml");
+      Files.copy(securityXml.toPath(), defaultPath);
+
+      build.addArgument("--settings=" + settingsXml.getAbsolutePath());
+
+      build.setProperty("sonar.login", "julien2");
+      build.addArgument("-Psonar-password");
+      ORCHESTRATOR.executeBuild(build);
+    });
+  }
 }

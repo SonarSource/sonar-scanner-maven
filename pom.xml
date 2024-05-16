@@ -78,7 +78,11 @@
   </distributionManagement>
 
   <properties>
-    <mavenVersion>3.9.4</mavenVersion>
+    <!--
+      We can't update the Maven core dependencies unless we remove the dependency on SecDispatcher
+      For more details see this ticket https://sonarsource.atlassian.net/browse/SCANMAVEN-222
+    -->
+    <mavenVersion>3.6.3</mavenVersion>
     <mojo.java.target>11</mojo.java.target>
     <maven.compiler.release>11</maven.compiler.release>
     <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*</sonar.exclusions>
@@ -111,9 +115,9 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.codehaus.plexus</groupId>
+      <groupId>org.sonatype.plexus</groupId>
       <artifactId>plexus-sec-dispatcher</artifactId>
-      <version>2.0</version>
+      <version>1.4</version>
     </dependency>
 
     <dependency>
@@ -180,12 +184,6 @@
     </dependency>
     <dependency>
       <!-- Needed for the maven-plugin-testing-harness -->
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-compat</artifactId>
-      <version>${mavenVersion}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-compat</artifactId>
       <version>${mavenVersion}</version>

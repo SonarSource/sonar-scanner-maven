@@ -106,7 +106,7 @@ public class SonarQubeMojoTest {
   }
 
   @Test
-  public void project_with_java_files_not_in_src() throws Exception {
+  public void project_with_java_files_not_in_src_should_not_be_collected() throws Exception {
     File baseDir = executeProject(
       "project-with-java-files-not-in-src",
       "sonar.maven.scanAll", "true");
@@ -116,7 +116,7 @@ public class SonarQubeMojoTest {
   }
 
   @Test
-  public void project_with_java_files_not_in_src_and_user_defined_binaries() throws Exception {
+  public void project_with_java_files_not_in_src_should_be_collected_when_user_define_binaries_and_libraries() throws Exception {
     File baseDir = executeProject(
       "project-with-java-files-not-in-src",
       "sonar.maven.scanAll", "true",
@@ -128,7 +128,7 @@ public class SonarQubeMojoTest {
   }
 
   @Test
-  public void project_with_java_files_not_in_src_and_incomplete_user_defined_libraries() throws Exception {
+  public void project_with_java_files_not_in_src_should_not_be_collected_when_user_define_only_binaries() throws Exception {
     File baseDir = executeProject(
       "project-with-java-files-not-in-src",
       "sonar.maven.scanAll", "true",
@@ -139,7 +139,7 @@ public class SonarQubeMojoTest {
   }
 
   @Test
-  public void project_with_java_files_not_in_src_and_incomplete_user_defined_binaries() throws Exception {
+  public void project_with_java_files_not_in_src_should_not_be_collected_when_user_define_only_libraries() throws Exception {
     File baseDir = executeProject(
       "project-with-java-files-not-in-src",
       "sonar.maven.scanAll", "true",
@@ -247,7 +247,7 @@ public class SonarQubeMojoTest {
     String sources = readProps(propertiesPath)
       .entrySet()
       .stream()
-      .filter(e -> e.getKey().toString().equals("sonar.sources"))
+      .filter(e -> e.getKey().endsWith("sonar.sources"))
       .map(Map.Entry::getValue)
       .findFirst()
       .orElse(null);

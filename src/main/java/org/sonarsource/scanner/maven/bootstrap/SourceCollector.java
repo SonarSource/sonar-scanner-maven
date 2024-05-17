@@ -46,14 +46,14 @@ public class SourceCollector implements FileVisitor<Path> {
     )
   );
 
-  private static final Set<String> EXCLUDED_EXTENSIONS_WITH_BINARIES = Stream.of(
+  private static final Set<String> EXCLUDED_EXTENSIONS_WITH_JAVA_AND_KOTLIN = Stream.of(
     ".jar",
     ".war",
     ".class",
     ".ear",
     ".nar",
     // Archives
-    "..DS_Store",
+    ".DS_Store",
     ".zip",
     ".7z",
     ".rar",
@@ -75,7 +75,7 @@ public class SourceCollector implements FileVisitor<Path> {
     .map(ext -> ext.toLowerCase(Locale.ROOT))
     .collect(Collectors.toSet());
 
-  private static final Set<String> EXCLUDED_EXTENSIONS_WITHOUT_BINARIES = Stream.concat(EXCLUDED_EXTENSIONS_WITH_BINARIES.stream(), Stream.of(
+  private static final Set<String> EXCLUDED_EXTENSIONS_WITHOUT_JAVA_AND_KOTLIN = Stream.concat(EXCLUDED_EXTENSIONS_WITH_JAVA_AND_KOTLIN.stream(), Stream.of(
     ".java",
     ".jav",
     ".kt")).map(ext -> ext.toLowerCase(Locale.ROOT))
@@ -92,12 +92,11 @@ public class SourceCollector implements FileVisitor<Path> {
 
   private final Set<Path> collectedSources = new HashSet<>();
 
-  public SourceCollector(Set<Path> existingSources, Set<Path> directoriesToIgnore, Set<Path> excludedFiles,
-    boolean isUserDefinedJavaBinaries) {
+  public SourceCollector(Set<Path> existingSources, Set<Path> directoriesToIgnore, Set<Path> excludedFiles, boolean shouldCollectJavaAndKotlinSources) {
     this.existingSources = existingSources;
     this.directoriesToIgnore = directoriesToIgnore;
     this.excludedFiles = excludedFiles;
-    this.excludedExtensions = isUserDefinedJavaBinaries ? EXCLUDED_EXTENSIONS_WITH_BINARIES : EXCLUDED_EXTENSIONS_WITHOUT_BINARIES;
+    this.excludedExtensions = shouldCollectJavaAndKotlinSources ? EXCLUDED_EXTENSIONS_WITH_JAVA_AND_KOTLIN : EXCLUDED_EXTENSIONS_WITHOUT_JAVA_AND_KOTLIN;
   }
 
   @Override

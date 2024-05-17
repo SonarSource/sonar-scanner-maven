@@ -99,13 +99,34 @@ class SourceCollectorTest {
   void visitorIgnoresFilesInDirectoriesToIgnore() throws IOException {
     Path simpleProjectPom = simpleProjectBasedDir.resolve("pom.xml");
     simpleProjectPom.toFile().createNewFile();
+    Path rootJavaFile = simpleProjectBasedDir.resolve("ProjectRoot.java");
+    rootJavaFile.toFile().createNewFile();
     Path subModule = simpleProjectBasedDir.resolve("submodule");
     subModule.toFile().mkdirs();
     Path fileInSubModule = subModule.resolve("ignore-me.php");
     fileInSubModule.toFile().createNewFile();
 
-    SourceCollector visitor = new SourceCollector(Collections.emptySet(), Collections.singleton(subModule), Collections.emptySet(), false);
+    SourceCollector visitor = new SourceCollector(Collections.emptySet(), Collections.singleton(subModule), Collections.emptySet(), true);
     Files.walkFileTree(simpleProjectBasedDir, visitor);
-    assertThat(visitor.getCollectedSources()).doesNotContain(fileInSubModule);
+    assertThat(visitor.getCollectedSources())
+      .contains(rootJavaFile)
+      .doesNotContain(fileInSubModule);
+  }
+
+  @Test
+  void visitorIgnoresJavaAndKotlinFiles() throws IOException {
+    Path simpleProjectPom = simpleProjectBasedDir.resolve("pom.xml");
+    simpleProjectPom.toFile().createNewFile();
+    Path rootJavaFile = simpleProjectBasedDir.resolve("ProjectRoot.java");
+    rootJavaFile.toFile().createNewFile();
+    Path rootKotlinFile = simpleProjectBasedDir.resolve("ProjectRoot.kt");
+    rootKotlinFile.toFile().createNewFile();
+
+    SourceCollector visitor = new SourceCollector(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), false);
+    Files.walkFileTree(simpleProjectBasedDir, visitor);
+    assertThat(visitor.getCollectedSources())
+      .contains(simpleProjectPom)
+      .doesNotContain(rootJavaFile)
+      .doesNotContain(rootKotlinFile);
   }
 }

@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
@@ -104,6 +105,50 @@ public class SonarQubeMojoTest {
         + new File(baseDir, "src/main/java").getAbsolutePath()));
   }
 
+  @Test
+  public void project_with_java_files_not_in_src_should_not_be_collected() throws Exception {
+    File baseDir = executeProject(
+      "project-with-java-files-not-in-src",
+      "sonar.maven.scanAll", "true");
+    Set<String> actualListOfSources = extractSonarSources("target/dump.properties", baseDir.toPath());
+    assertThat(actualListOfSources).containsExactlyInAnyOrder(
+      "/pom.xml", "/src/main/java");
+  }
+
+  @Test
+  public void project_with_java_files_not_in_src_should_be_collected_when_user_define_binaries_and_libraries() throws Exception {
+    File baseDir = executeProject(
+      "project-with-java-files-not-in-src",
+      "sonar.maven.scanAll", "true",
+      "sonar.java.binaries", "target/classes",
+      "sonar.java.libraries", "target/lib/logger.jar");
+    Set<String> actualListOfSources = extractSonarSources("target/dump.properties", baseDir.toPath());
+    assertThat(actualListOfSources).containsExactlyInAnyOrder(
+      "/pom.xml", "/src/main/java", "/Hello.java", "/Hello.kt");
+  }
+
+  @Test
+  public void project_with_java_files_not_in_src_should_not_be_collected_when_user_define_only_binaries() throws Exception {
+    File baseDir = executeProject(
+      "project-with-java-files-not-in-src",
+      "sonar.maven.scanAll", "true",
+      "sonar.java.binaries", "target/classes");
+    Set<String> actualListOfSources = extractSonarSources("target/dump.properties", baseDir.toPath());
+    assertThat(actualListOfSources).containsExactlyInAnyOrder(
+      "/pom.xml", "/src/main/java");
+  }
+
+  @Test
+  public void project_with_java_files_not_in_src_should_not_be_collected_when_user_define_only_libraries() throws Exception {
+    File baseDir = executeProject(
+      "project-with-java-files-not-in-src",
+      "sonar.maven.scanAll", "true",
+      "sonar.java.libraries", "target/lib/logger.jar");
+    Set<String> actualListOfSources = extractSonarSources("target/dump.properties", baseDir.toPath());
+    assertThat(actualListOfSources).containsExactlyInAnyOrder(
+      "/pom.xml", "/src/main/java");
+  }
+
   // MSONAR-113
   @Test
   public void shouldExportSurefireReportsPath() throws Exception {
@@ -130,19 +175,7 @@ public class SonarQubeMojoTest {
   @Test
   public void exclude_report_paths_from_scanAll() throws Exception {
     File projectBarDir = executeProject("project-with-external-reports", "sonar.maven.scanAll", "true");
-
-    String sources = readProps("target/dump.properties")
-      .entrySet()
-      .stream()
-      .filter(e -> e.getKey().toString().equals("sonar.sources"))
-      .map(Map.Entry::getValue)
-      .findFirst()
-      .orElse(null);
-
-    Set<String> actualListOfSources = Arrays.stream(sources.split(","))
-      .map(file -> file.replace(projectBarDir.toString(), "").replace("\\", "/"))
-      .collect(Collectors.toSet());
-
+    Set<String> actualListOfSources = extractSonarSources("target/dump.properties", projectBarDir.toPath());
     assertThat(actualListOfSources).containsExactlyInAnyOrder("/other.xml", "/pom.xml");
   }
 
@@ -193,11 +226,11 @@ public class SonarQubeMojoTest {
   }
 
   @SafeVarargs
-  private final void assertPropsContains(MapEntry<String, String>... entries) throws FileNotFoundException, IOException {
+  private final void assertPropsContains(MapEntry<String, String>... entries) throws IOException {
     assertThat(readProps("target/dump.properties")).contains(entries);
   }
 
-  private Map<String, String> readProps(String filePath) throws FileNotFoundException, IOException {
+  private static Map<String, String> readProps(String filePath) throws IOException {
     FileInputStream fis = null;
     try {
       File dump = new File(filePath);
@@ -210,4 +243,17 @@ public class SonarQubeMojoTest {
     }
   }
 
+  private static Set<String> extractSonarSources(String propertiesPath, Path projectBarDir) throws IOException {
+    String sources = readProps(propertiesPath)
+      .entrySet()
+      .stream()
+      .filter(e -> e.getKey().endsWith("sonar.sources"))
+      .map(Map.Entry::getValue)
+      .findFirst()
+      .orElse(null);
+
+    return Arrays.stream(sources.split(","))
+      .map(file -> file.replace(projectBarDir.toString(), "").replace("\\", "/"))
+      .collect(Collectors.toSet());
+  }
 }

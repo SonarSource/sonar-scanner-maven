@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class SourceCollector implements FileVisitor<Path> {
@@ -44,42 +46,45 @@ public class SourceCollector implements FileVisitor<Path> {
     )
   );
 
-  private static final Set<String> EXCLUDED_EXTENSIONS = new HashSet<>(
-    Arrays.asList(
-      "jar",
-      "war",
-      "class",
-      "ear",
-      "nar",
-      // Archives
-      "DS_Store",
-      "zip",
-      "7z",
-      "rar",
-      "gz",
-      "tar",
-      "xz",
-      // log
-      "log",
-      // temp files
-      "bak",
-      "tmp",
-      "swp",
-      // ide files
-      "iml",
-      "ipr",
-      "iws",
-      "nib",
-      "log",
-      "java",
-      "jav",
-      "kt",
-      "scala"
-    )
-  );
+  private static final Set<String> EXCLUDED_EXTENSIONS_WITH_JAVA_AND_KOTLIN = Stream.of(
+    ".jar",
+    ".war",
+    ".class",
+    ".ear",
+    ".nar",
+    // Archives
+    ".DS_Store",
+    ".zip",
+    ".7z",
+    ".rar",
+    ".gz",
+    ".tar",
+    ".xz",
+    // log
+    ".log",
+    // temp files
+    ".bak",
+    ".tmp",
+    ".swp",
+    // ide files
+    ".iml",
+    ".ipr",
+    ".iws",
+    ".nib",
+    ".log")
+    .map(ext -> ext.toLowerCase(Locale.ROOT))
+    .collect(Collectors.toSet());
+
+  private static final Set<String> EXCLUDED_EXTENSIONS_WITHOUT_JAVA_AND_KOTLIN = Stream.concat(EXCLUDED_EXTENSIONS_WITH_JAVA_AND_KOTLIN.stream(), Stream.of(
+    ".java",
+    ".jav",
+    ".kt")).map(ext -> ext.toLowerCase(Locale.ROOT))
+    .collect(Collectors.toSet());
+
   private final Set<Path> existingSources;
   private final Set<Path> directoriesToIgnore;
   private final Set<Path> excludedFiles;
+  private final Set<String> excludedExtensions;
 
   public Set<Path> getCollectedSources() {
     return collectedSources;
@@ -87,11 +92,13 @@ public class SourceCollector implements FileVisitor<Path> {
 
   private final Set<Path> collectedSources = new HashSet<>();
 
-  public SourceCollector(Set<Path> existingSources, Set<Path> directoriesToIgnore, Set<Path> excludedFiles) {
+  public SourceCollector(Set<Path> existingSources, Set<Path> directoriesToIgnore, Set<Path> excludedFiles, boolean shouldCollectJavaAndKotlinSources) {
     this.existingSources = existingSources;
     this.directoriesToIgnore = directoriesToIgnore;
     this.excludedFiles = excludedFiles;
+    this.excludedExtensions = shouldCollectJavaAndKotlinSources ? EXCLUDED_EXTENSIONS_WITH_JAVA_AND_KOTLIN : EXCLUDED_EXTENSIONS_WITHOUT_JAVA_AND_KOTLIN;
   }
+
   @Override
   public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
     if (
@@ -120,12 +127,11 @@ public class SourceCollector implements FileVisitor<Path> {
 
   @Override
   public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) {
-    if (
-      !excludedFiles.contains(path) &&
-      EXCLUDED_EXTENSIONS.stream().noneMatch(ext -> path.toString().endsWith(ext)) &&
-      existingSources.stream().noneMatch(path::equals)
-    ) {
-      collectedSources.add(path);
+    if (!excludedFiles.contains(path) && existingSources.stream().noneMatch(path::equals)) {
+      String lowerCaseFileName = path.getFileName().toString().toLowerCase(Locale.ROOT);
+      if (excludedExtensions.stream().noneMatch(lowerCaseFileName::endsWith)) {
+        collectedSources.add(path);
+      }
     }
     return FileVisitResult.CONTINUE;
   }

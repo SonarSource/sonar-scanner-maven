@@ -89,9 +89,9 @@ public class MavenProjectConverter {
 
   public static final String FINDBUGS_EXCLUDE_FILTERS = "sonar.findbugs.excludeFilters";
 
-  private static final String JAVA_PROJECT_MAIN_BINARY_DIRS = "sonar.java.binaries";
+  public static final String JAVA_PROJECT_MAIN_BINARY_DIRS = "sonar.java.binaries";
 
-  private static final String JAVA_PROJECT_MAIN_LIBRARIES = "sonar.java.libraries";
+  public static final String JAVA_PROJECT_MAIN_LIBRARIES = "sonar.java.libraries";
 
   private static final String SONAR_JAVA_JDK_HOME_PROPERTY = "sonar.java.jdkHome";
 

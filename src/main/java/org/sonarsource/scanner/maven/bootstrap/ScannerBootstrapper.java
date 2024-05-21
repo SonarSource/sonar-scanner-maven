@@ -178,8 +178,7 @@ public class ScannerBootstrapper {
       Set<Path> existingSources = coveredSources.stream()
         .map(Paths::get)
         .collect(Collectors.toSet());
-      SourceCollector visitor = new SourceCollector(existingSources, mavenProjectConverter.getSkippedBasedDirs(),
-        excludedReportFiles(props), shouldCollectJavaAndKotlinSources);
+      SourceCollector visitor = new SourceCollector(existingSources, mavenProjectConverter.getSkippedBasedDirs(), excludedReportFiles(props), shouldCollectJavaAndKotlinSources);
       Files.walkFileTree(Paths.get(projectBasedir), visitor);
       collectedSources = visitor.getCollectedSources().stream()
         .map(file -> file.toAbsolutePath().toString())

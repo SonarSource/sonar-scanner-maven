@@ -198,7 +198,7 @@ class ScannerBootstrapperTest {
   }
 
   @Test
-  void scanAll_property_is_applied_when_set_explicitly_with_binaries_and_libraries() throws MojoExecutionException {
+  void scanAll_should_also_collect_java_and_kotlin_sources_when_binaries_and_libraries_are_explicitly_set() throws MojoExecutionException {
     setSonarScannerScanAllAndBinariesAndLibraries();
 
     verifyCollectedSources(sourceDirs -> {

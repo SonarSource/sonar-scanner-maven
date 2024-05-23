@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.maven.artifact.versioning.ComparableVersion;
@@ -187,9 +188,37 @@ public class ScannerBootstrapper {
       mergedSources.addAll(MavenUtils.splitAsCsv(props.get(ScanProperties.PROJECT_SOURCE_DIRS)));
       mergedSources.addAll(collectedSources);
       props.put(ScanProperties.PROJECT_SOURCE_DIRS, MavenUtils.joinAsCsv(mergedSources));
+
+      // Exclude the collected files from coverage
+      String newExclusions = computeCoverageExclusions(
+        projectBasedir,
+        props.getOrDefault("sonar.coverage.exclusions", ""),
+        collectedSources
+      );
+      props.put("sonar.coverage.exclusions", newExclusions);
     } catch (IOException e) {
       log.warn(e);
     }
+  }
+
+  private static String computeCoverageExclusions(String projectBasedir, String originalExclusions, List<String> collectedSources) {
+    List<String> originallyExcludedFromCoverage = MavenUtils.splitAsCsv(originalExclusions)
+      .stream()
+      .map(String::trim)
+      .filter(Predicate.not(String::isBlank))
+      .collect(Collectors.toList());
+
+
+    // Paths must be relative for the coverage exclusion to work
+    Path root = Path.of(projectBasedir);
+    List<String> collectedSourcesWithRelativePaths = collectedSources.stream()
+      .map(source -> root.relativize(Path.of(source)).toString())
+      .collect(Collectors.toList());
+
+    List<String> sourcesExcludedFromCoverage = new ArrayList<>(originallyExcludedFromCoverage);
+    sourcesExcludedFromCoverage.addAll(collectedSourcesWithRelativePaths);
+
+    return MavenUtils.joinAsCsv(sourcesExcludedFromCoverage);
   }
 
   private static boolean isUserDefinedJavaBinaries(Properties userProperties) {

@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
-
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -39,7 +38,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.*;
+import org.mockito.InOrder;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.sonarsource.scanner.api.EmbeddedScanner;
 import org.sonarsource.scanner.api.ScanProperties;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
@@ -49,7 +52,16 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 import static org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper.UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE;
 
 class ScannerBootstrapperTest {
@@ -156,29 +168,13 @@ class ScannerBootstrapperTest {
 
   @Test
   void scanAll_property_is_applied_by_default() throws MojoExecutionException {
-    // When sonar.scanner.scanAll is not set
-    Consumer<Map<String, String>> sourceVerifier = getSourceVerifier(sourceDirs -> {
-      assertThat(sourceDirs).hasSize(3);
-      assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
-      assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
-      assertThat(sourceDirs[2]).endsWith(Paths.get("src", "main", "resources", "index.js").toString());
-    });
-
-    String sourceOriginallyExcludedFromCoverage = Paths.get("src", "main", "not-a-real-file.js").toString();
-    projectProperties.put("sonar.coverage.exclusions", MavenUtils.joinAsCsv(List.of(sourceOriginallyExcludedFromCoverage)));
-
-    verifyCollectProperties(
-      sourceVerifier,
-      properties -> {
-        assertThat(properties).containsKey("sonar.coverage.exclusions");
-        List<String> sourcesExcludedFromCoverage = MavenUtils.splitAsCsv(properties.get("sonar.coverage.exclusions"));
-
-        String collectedSourceExcludedFromCoverage = Paths.get("src", "main", "resources", "index.js").toString();
-        assertThat(sourcesExcludedFromCoverage).containsExactly(
-          sourceOriginallyExcludedFromCoverage,
-          collectedSourceExcludedFromCoverage
-        );
-      }
+    // When sonar.scanner.scanAll is not set explicitly
+    verifyCollectProperties(getSourceVerifier(sourceDirs -> {
+        assertThat(sourceDirs).hasSize(3);
+        assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
+        assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
+        assertThat(sourceDirs[2]).endsWith(Paths.get("src", "main", "resources", "index.js").toString());
+      })
     );
 
     verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
@@ -281,6 +277,34 @@ class ScannerBootstrapperTest {
     verify(log, times(1)).warn("Parameter sonar.maven.scanAll is enabled but the scanner will not collect additional sources because sonar.tests has been overridden.");
     verify(scannerBootstrapper, never()).collectAllSources(any(), eq(false));
   }
+
+  @Test
+  void scanAll_adds_collected_sources_to_coverage_exclusion_when_none_provided() throws MojoExecutionException {
+    projectProperties.remove("sonar.coverage.exclusions");
+    String expectedSourceExcludedFromCoverage = Paths.get("src", "main", "resources", "index.js").toString();
+    verifyCollectProperties(properties -> {
+      assertThat(properties).containsKey("sonar.coverage.exclusions");
+      List<String> sourcesExcludedFromCoverage = MavenUtils.splitAsCsv(properties.get("sonar.coverage.exclusions"));
+      assertThat(sourcesExcludedFromCoverage).containsExactly(expectedSourceExcludedFromCoverage);
+    });
+    InOrder inOrder = inOrder(log);
+    inOrder.verify(log, times(1)).info("The additional sources collected will be excluded from coverage.");
+    inOrder.verify(log, times(1)).debug("Excluded from coverage: " + expectedSourceExcludedFromCoverage);
+  }
+
+  @Test
+  void scanAll_does_not_add_collected_sources_to_coverage_exclusion_when_some_provided() throws MojoExecutionException {
+    String fileToExcludeFromCoverage = Path.of("src", "main", "java", "DoNotCover.java").toString();
+    projectProperties.put("sonar.coverage.exclusions", fileToExcludeFromCoverage);
+    verifyCollectProperties(properties -> {
+      assertThat(properties).containsKey("sonar.coverage.exclusions");
+      List<String> sourcesExcludedFromCoverage = MavenUtils.splitAsCsv(properties.get("sonar.coverage.exclusions"));
+      assertThat(sourcesExcludedFromCoverage).containsExactly(fileToExcludeFromCoverage);
+    });
+    verify(log, times(1)).info("Additional sources were collected but will not be excluded from coverage because sonar.coverage.exclusions is already overridden.");
+  }
+
+
 
   @Test
   void an_exception_is_logged_at_warning_level_when_failing_to_crawl_the_filesystem_to_scan_all_sources() throws MojoExecutionException, IOException {

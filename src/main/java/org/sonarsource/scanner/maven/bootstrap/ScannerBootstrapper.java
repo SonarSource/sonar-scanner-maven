@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.maven.artifact.versioning.ComparableVersion;
@@ -190,35 +189,29 @@ public class ScannerBootstrapper {
       props.put(ScanProperties.PROJECT_SOURCE_DIRS, MavenUtils.joinAsCsv(mergedSources));
 
       // Exclude the collected files from coverage
-      String newExclusions = computeCoverageExclusions(
-        projectBasedir,
-        props.getOrDefault("sonar.coverage.exclusions", ""),
-        collectedSources
-      );
-      props.put("sonar.coverage.exclusions", newExclusions);
+      if (props.containsKey("sonar.coverage.exclusions")) {
+        log.info("Additional sources were collected but will not be excluded from coverage because sonar.coverage.exclusions is already overridden.");
+      } else {
+        String newExclusions = computeCoverageExclusions(
+          projectBasedir,
+          collectedSources
+        );
+        props.put("sonar.coverage.exclusions", newExclusions);
+        log.info("The additional sources collected will be excluded from coverage.");
+        log.debug("Excluded from coverage: " + newExclusions);
+      }
     } catch (IOException e) {
       log.warn(e);
     }
   }
 
-  private static String computeCoverageExclusions(String projectBasedir, String originalExclusions, List<String> collectedSources) {
-    List<String> originallyExcludedFromCoverage = MavenUtils.splitAsCsv(originalExclusions)
-      .stream()
-      .map(String::trim)
-      .filter(Predicate.not(String::isBlank))
-      .collect(Collectors.toList());
-
-
-    // Paths must be relative for the coverage exclusion to work
+  // Paths must be relative for the coverage exclusion to work
+  private static String computeCoverageExclusions(String projectBasedir,  List<String> collectedSources) {
     Path root = Path.of(projectBasedir);
     List<String> collectedSourcesWithRelativePaths = collectedSources.stream()
       .map(source -> root.relativize(Path.of(source)).toString())
       .collect(Collectors.toList());
-
-    List<String> sourcesExcludedFromCoverage = new ArrayList<>(originallyExcludedFromCoverage);
-    sourcesExcludedFromCoverage.addAll(collectedSourcesWithRelativePaths);
-
-    return MavenUtils.joinAsCsv(sourcesExcludedFromCoverage);
+    return MavenUtils.joinAsCsv(collectedSourcesWithRelativePaths);
   }
 
   private static boolean isUserDefinedJavaBinaries(Properties userProperties) {

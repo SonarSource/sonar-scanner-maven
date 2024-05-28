@@ -34,10 +34,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.*;
 import org.sonarsource.scanner.api.EmbeddedScanner;
@@ -155,17 +152,16 @@ class ScannerBootstrapperTest {
   }
 
   @Test
-  void scanAll_property_is_applied_by_default() throws MojoExecutionException {
+  void scanAll_property_is_not_applied_by_default() throws MojoExecutionException {
     // When sonar.scanner.scanAll is not set
     verifyCollectedSources(sourceDirs -> {
-      assertThat(sourceDirs).hasSize(3);
+      assertThat(sourceDirs).hasSize(2);
       assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
       assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
-      assertThat(sourceDirs[2]).endsWith(Paths.get("src", "main", "resources", "index.js").toString());
     });
 
-    verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
-    verify(scannerBootstrapper, times(1)).collectAllSources(any(), eq(false));
+    verify(log, never()).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
+    verify(scannerBootstrapper, never()).collectAllSources(any(), anyBoolean());
   }
 
   @Test

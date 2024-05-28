@@ -167,8 +167,8 @@ class MavenTest extends AbstractMavenTest {
     ORCHESTRATOR.executeBuild(build);
 
     // src/main/webapp is analyzed by web and xml plugin
-    // scanning all files, so 2 more files (ejb-module/src/main/resources/META-INF/ejb-jar.xml and web-module/src/main/webapp/index.jsp)
-    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(10);
+    // including resources, so one more file (ejb-module/src/main/resources/META-INF/ejb-jar.xml)
+    assertThat(getMeasureAsInteger("com.sonarsource.it.samples.jee:parent", "files")).isEqualTo(9);
   }
 
   /**

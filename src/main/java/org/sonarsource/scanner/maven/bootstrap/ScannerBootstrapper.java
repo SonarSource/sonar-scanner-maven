@@ -140,8 +140,7 @@ public class ScannerBootstrapper {
   }
 
   private static boolean shouldCollectAllSources(Properties userProperties) {
-    String sonarScanAll = userProperties.getProperty(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, Boolean.TRUE.toString());
-    return Boolean.TRUE.equals(Boolean.parseBoolean(sonarScanAll));
+    return Boolean.TRUE.equals(Boolean.parseBoolean(userProperties.getProperty(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES)));
   }
 
   private static String notCollectingAdditionalSourcesBecauseOf(String overriddenProperty) {

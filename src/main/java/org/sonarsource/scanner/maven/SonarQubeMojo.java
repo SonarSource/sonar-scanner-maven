@@ -128,8 +128,7 @@ public class SonarQubeMojo extends AbstractMojo {
     String configuredPluginVersion = plugin.getVersion();
     if ("LATEST".equals(configuredPluginVersion) || "RELEASE".equals(configuredPluginVersion)) {
       invalidPluginVersion = configuredPluginVersion;
-    }
-    if (!hasPluginVersionDefinedInTheProject(project, groupId, artifactId) && hasASonarGoalMissingVersion(goals, groupId, artifactId)) {
+    } else if (!hasPluginVersionDefinedInTheProject(project, groupId, artifactId) && hasASonarGoalMissingVersion(goals, groupId, artifactId)) {
       invalidPluginVersion = "an unspecified version";
     }
     if (invalidPluginVersion != null) {

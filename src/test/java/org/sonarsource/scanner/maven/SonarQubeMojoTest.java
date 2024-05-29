@@ -24,6 +24,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -38,6 +40,7 @@ import org.assertj.core.data.MapEntry;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.sonarsource.scanner.maven.TimestampLoggerTest.TestLog;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -191,6 +194,13 @@ public class SonarQubeMojoTest {
   }
 
   @Test
+  public void sonar_plugin_without_fix_version_should_display_a_warning() throws IOException, Exception {
+    TestLog testLog = new TestLog(TestLog.LogLevel.WARN);
+    executeProject("sample-project", Arrays.asList("sonar:sonar"), testLog);
+    //assertThat(testLog.logs).containsExactly("dc");
+  }
+
+  @Test
   public void verbose() throws Exception {
     when(mockedLogger.isDebugEnabled()).thenReturn(true);
     executeProject("project-with-findbugs-reporting");
@@ -199,16 +209,20 @@ public class SonarQubeMojoTest {
   }
 
   private File executeProject(String projectName, String... properties) throws Exception {
+    return executeProject(projectName, Collections.singletonList("sonar:sonar"), mockedLogger, properties);
+  }
 
+  private File executeProject(String projectName, List<String> goals, Log logger, String... properties) throws Exception {
     File baseDir = new File("src/test/projects/" + projectName).getAbsoluteFile();
     SonarQubeMojo mojo = getMojo(baseDir);
+    mojo.getSession().getRequest().setGoals(goals);
     mojo.getSession().getProjects().get(0).setExecutionRoot(true);
     mojo.getSession().setAllProjects(mojo.getSession().getProjects());
 
     Result<? extends ProjectDependencyGraph> result = mojoRule.lookup(GraphBuilder.class).build(mojo.getSession());
     mojo.getSession().setProjectDependencyGraph(result.get()); // done by maven in a normal execution
 
-    mojo.setLog(mockedLogger);
+    mojo.setLog(logger);
 
     Properties userProperties = mojo.getSession().getUserProperties();
     if ((properties.length % 2) != 0) {

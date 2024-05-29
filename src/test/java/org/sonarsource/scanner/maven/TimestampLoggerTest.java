@@ -101,16 +101,16 @@ class TimestampLoggerTest {
     assertThat(new TimestampLogger(errorLevelLog).isErrorEnabled()).isTrue();
   }
 
-  private static class TestLog implements Log {
-    private enum LogLevel {
+  public static class TestLog implements Log {
+    public enum LogLevel {
       DEBUG,
       INFO,
       WARN,
       ERROR,
     }
 
-    private final LogLevel logLevel;
-    private final List<String> logs = new ArrayList<>();
+    public final LogLevel logLevel;
+    public final List<String> logs = new ArrayList<>();
 
     public TestLog(LogLevel logLevel) {
       this.logLevel = logLevel;

@@ -252,12 +252,17 @@ public class SonarQubeMojoTest {
   }
 
   @Test
-  public void cover_corner_cases_for_hasPluginVersionDefinedInTheProject() throws Exception {
+  public void cover_corner_cases_for_hasPluginVersionDefinedInTheProject() {
     MavenProject project = new MavenProject();
     assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
 
     Plugin pluginDefinition = new Plugin();
     project.getBuild().getPlugins().add(pluginDefinition);
+
+    pluginDefinition.setGroupId(null);
+    pluginDefinition.setArtifactId("sonar-maven-plugin");
+    pluginDefinition.setVersion(null);
+    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
 
     pluginDefinition.setGroupId("org.sonarsource.scanner.maven");
     pluginDefinition.setArtifactId("sonar-maven-plugin");

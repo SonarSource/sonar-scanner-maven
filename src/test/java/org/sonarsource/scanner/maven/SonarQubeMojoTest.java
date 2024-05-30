@@ -252,6 +252,40 @@ public class SonarQubeMojoTest {
   }
 
   @Test
+  public void cover_corner_cases_for_hasPluginVersionDefinedInTheProject() throws Exception {
+    MavenProject project = new MavenProject();
+    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
+
+    Plugin pluginDefinition = new Plugin();
+    project.getBuild().getPlugins().add(pluginDefinition);
+
+    pluginDefinition.setGroupId("org.sonarsource.scanner.maven");
+    pluginDefinition.setArtifactId("sonar-maven-plugin");
+    pluginDefinition.setVersion(null);
+    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
+
+    pluginDefinition.setGroupId("org.sonarsource.scanner.maven");
+    pluginDefinition.setArtifactId("sonar-maven-plugin");
+    pluginDefinition.setVersion("  ");
+    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
+
+    pluginDefinition.setGroupId("org.sonarsource.scanner.maven");
+    pluginDefinition.setArtifactId("sonar-maven-plugin");
+    pluginDefinition.setVersion("1.2.3.4");
+    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isTrue();
+
+    pluginDefinition.setGroupId("org.other");
+    pluginDefinition.setArtifactId("sonar-maven-plugin");
+    pluginDefinition.setVersion("1.2.3.4");
+    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
+
+    pluginDefinition.setGroupId("org.sonarsource.scanner.maven");
+    pluginDefinition.setArtifactId("other-plugin");
+    pluginDefinition.setVersion("1.2.3.4");
+    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
+  }
+
+  @Test
   public void verbose() throws Exception {
     logger.setLogLevel(TestLog.LogLevel.DEBUG);
     executeProject("project-with-findbugs-reporting");

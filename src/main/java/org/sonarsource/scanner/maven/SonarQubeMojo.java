@@ -19,6 +19,7 @@
  */
 package org.sonarsource.scanner.maven;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -137,14 +138,14 @@ public class SonarQubeMojo extends AbstractMojo {
     }
   }
 
-  private static boolean hasPluginVersionDefinedInTheProject(MavenProject project, String groupId, String artifactId) {
+  @VisibleForTesting
+  static boolean hasPluginVersionDefinedInTheProject(MavenProject project, String groupId, String artifactId) {
     Stream<Plugin> pluginStream = project.getBuildPlugins().stream();
     PluginManagement pluginManagement = project.getPluginManagement();
     pluginStream = pluginManagement != null ? Stream.concat(pluginStream, pluginManagement.getPlugins().stream()) : pluginStream;
-    return pluginStream.anyMatch(plugin ->
-      (plugin.getGroupId() == null || groupId.equals(plugin.getGroupId())) &&
-        artifactId.equals(plugin.getArtifactId()) &&
-        plugin.getVersion() != null);
+    return pluginStream.anyMatch(plugin -> (plugin.getGroupId() == null || groupId.equals(plugin.getGroupId())) &&
+      artifactId.equals(plugin.getArtifactId()) &&
+      (plugin.getVersion() != null && !plugin.getVersion().isBlank()));
   }
 
   private static boolean hasASonarGoalMissingVersion(List<String> goals, String groupId, String artifactId) {

@@ -19,11 +19,16 @@
  */
 package org.sonarsource.scanner.maven;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.LifecycleExecutor;
+import org.apache.maven.model.Plugin;
+import org.apache.maven.model.PluginManagement;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -88,6 +93,8 @@ public class SonarQubeMojo extends AbstractMojo {
       return;
     }
 
+    warnAboutUnspecifiedSonarPluginVersion();
+
     Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
 
     MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), toolchainManager);
@@ -104,6 +111,44 @@ public class SonarQubeMojo extends AbstractMojo {
 
     EmbeddedScanner runner = runnerFactory.create();
     new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, propertyDecryptor).execute();
+  }
+
+  private void warnAboutUnspecifiedSonarPluginVersion() {
+    String effectivePluginVersion = mojoExecution.getVersion();
+    String groupId = mojoExecution.getGroupId();
+    String artifactId = mojoExecution.getArtifactId();
+    Plugin plugin = mojoExecution.getPlugin();
+    MavenProject project = session.getTopLevelProject();
+    List<String> goals = session.getGoals();
+    boolean requiredArgumentsAreNotNull = !Arrays.asList(effectivePluginVersion, groupId, artifactId, plugin, project, goals).contains(null);
+    if (requiredArgumentsAreNotNull) {
+      String invalidPluginVersion = null;
+      String configuredPluginVersion = plugin.getVersion();
+      if ("LATEST".equals(configuredPluginVersion) || "RELEASE".equals(configuredPluginVersion)) {
+        invalidPluginVersion = configuredPluginVersion;
+      } else if (!isPluginVersionDefinedInTheProject(project, groupId, artifactId) && isVersionMissingFromSonarGoal(goals, groupId, artifactId)) {
+        invalidPluginVersion = "an unspecified version";
+      }
+      if (invalidPluginVersion != null) {
+        getLog().warn(String.format("Using %s instead of an explicit plugin version may introduce breaking analysis changes at an unwanted time. " +
+          "It is highly recommended to use an explicit version, e.g. '%s:%s:%s'.", invalidPluginVersion, groupId, artifactId, effectivePluginVersion));
+      }
+    }
+  }
+
+  @VisibleForTesting
+  static boolean isPluginVersionDefinedInTheProject(MavenProject project, String groupId, String artifactId) {
+    Stream<Plugin> pluginStream = project.getBuildPlugins().stream();
+    PluginManagement pluginManagement = project.getPluginManagement();
+    pluginStream = pluginManagement != null ? Stream.concat(pluginStream, pluginManagement.getPlugins().stream()) : pluginStream;
+    return pluginStream.anyMatch(plugin -> (plugin.getGroupId() == null || groupId.equals(plugin.getGroupId())) &&
+      artifactId.equals(plugin.getArtifactId()) &&
+      (plugin.getVersion() != null && !plugin.getVersion().isBlank()));
+  }
+
+  private static boolean isVersionMissingFromSonarGoal(List<String> goals, String groupId, String artifactId) {
+    List<String> sonarGoalsWithoutVersion = Arrays.asList("sonar:sonar", groupId + ":" + artifactId + ":sonar");
+    return goals.stream().anyMatch(sonarGoalsWithoutVersion::contains);
   }
 
   /**
@@ -162,5 +207,9 @@ public class SonarQubeMojo extends AbstractMojo {
 
   MavenSession getSession() {
     return session;
+  }
+
+  MojoExecution getMojoExecution() {
+    return mojoExecution;
   }
 }

@@ -22,7 +22,6 @@ package org.sonarsource.scanner.maven;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 import org.apache.maven.plugin.logging.Log;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -101,18 +100,22 @@ class TimestampLoggerTest {
     assertThat(new TimestampLogger(errorLevelLog).isErrorEnabled()).isTrue();
   }
 
-  private static class TestLog implements Log {
-    private enum LogLevel {
+  public static class TestLog implements Log {
+    public enum LogLevel {
       DEBUG,
       INFO,
       WARN,
       ERROR,
     }
 
-    private final LogLevel logLevel;
-    private final List<String> logs = new ArrayList<>();
+    public LogLevel logLevel;
+    public final List<String> logs = new ArrayList<>();
 
     public TestLog(LogLevel logLevel) {
+      this.logLevel = logLevel;
+    }
+
+    public void setLogLevel(LogLevel logLevel) {
       this.logLevel = logLevel;
     }
 

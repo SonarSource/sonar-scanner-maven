@@ -121,20 +121,19 @@ public class SonarQubeMojo extends AbstractMojo {
     MavenProject project = session.getTopLevelProject();
     List<String> goals = session.getGoals();
     Log log = getLog();
-    boolean anyRequiredArgumentsIsNull = Arrays.asList(effectivePluginVersion, groupId, artifactId, plugin, log, project, goals).contains(null);
-    if (anyRequiredArgumentsIsNull) {
-      return;
-    }
-    String invalidPluginVersion = null;
-    String configuredPluginVersion = plugin.getVersion();
-    if ("LATEST".equals(configuredPluginVersion) || "RELEASE".equals(configuredPluginVersion)) {
-      invalidPluginVersion = configuredPluginVersion;
-    } else if (!hasPluginVersionDefinedInTheProject(project, groupId, artifactId) && hasASonarGoalMissingVersion(goals, groupId, artifactId)) {
-      invalidPluginVersion = "an unspecified version";
-    }
-    if (invalidPluginVersion != null) {
-      log.warn(String.format("Using %s instead of a fixed plugin version may introduce breaking analysis changes at an unwanted time. " +
-        "It is highly recommended to use a fixed version, e.g. '%s:%s:%s'.", invalidPluginVersion, groupId, artifactId, effectivePluginVersion));
+    boolean requiredArgumentsAreNotNull = !Arrays.asList(effectivePluginVersion, groupId, artifactId, plugin, log, project, goals).contains(null);
+    if (requiredArgumentsAreNotNull) {
+      String invalidPluginVersion = null;
+      String configuredPluginVersion = plugin.getVersion();
+      if ("LATEST".equals(configuredPluginVersion) || "RELEASE".equals(configuredPluginVersion)) {
+        invalidPluginVersion = configuredPluginVersion;
+      } else if (!hasPluginVersionDefinedInTheProject(project, groupId, artifactId) && hasASonarGoalMissingVersion(goals, groupId, artifactId)) {
+        invalidPluginVersion = "an unspecified version";
+      }
+      if (invalidPluginVersion != null) {
+        log.warn(String.format("Using %s instead of a fixed plugin version may introduce breaking analysis changes at an unwanted time. " +
+          "It is highly recommended to use a fixed version, e.g. '%s:%s:%s'.", invalidPluginVersion, groupId, artifactId, effectivePluginVersion));
+      }
     }
   }
 
@@ -145,7 +144,7 @@ public class SonarQubeMojo extends AbstractMojo {
     return pluginStream.anyMatch(plugin ->
       (plugin.getGroupId() == null || groupId.equals(plugin.getGroupId())) &&
         artifactId.equals(plugin.getArtifactId()) &&
-        (plugin.getVersion() != null && !plugin.getVersion().isBlank()));
+        plugin.getVersion() != null);
   }
 
   private static boolean hasASonarGoalMissingVersion(List<String> goals, String groupId, String artifactId) {

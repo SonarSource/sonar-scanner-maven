@@ -22,8 +22,6 @@ package org.sonarsource.scanner.maven;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.apache.maven.plugin.logging.Log;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -171,10 +169,6 @@ class TimestampLoggerTest {
       logs.add("[WARN] " + content);
     }
 
-    public List<String> warnings() {
-      return logs.stream().filter(log -> log.startsWith("[WARN] ")).collect(Collectors.toList());
-    }
-
     @Override
     public void warn(CharSequence content, Throwable error) {
       warn(content);
@@ -203,10 +197,6 @@ class TimestampLoggerTest {
     @Override
     public void error(Throwable error) {
       error(error.getMessage());
-    }
-
-    public void removeLogsContaining(String text) {
-      logs.removeIf(log -> log.contains(text));
     }
   }
 }

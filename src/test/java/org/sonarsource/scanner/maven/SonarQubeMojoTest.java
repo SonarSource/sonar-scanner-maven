@@ -42,7 +42,6 @@ import org.apache.maven.model.building.Result;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugin.testing.MojoRule;
 import org.apache.maven.project.MavenProject;
-import org.assertj.core.api.Condition;
 import org.assertj.core.data.MapEntry;
 import org.junit.Rule;
 import org.junit.Test;
@@ -52,6 +51,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
 public class SonarQubeMojoTest {
+
+  private static final String UNSPECIFIED_VERSION_WARNING_SUFFIX = "instead of an explicit plugin version may introduce breaking analysis changes at an unwanted time. " +
+    "It is highly recommended to use an explicit version, e.g. 'org.sonarsource.scanner.maven:sonar-maven-plugin:";
 
   private static final String DEFAULT_GOAL = "org.sonarsource.scanner.maven:sonar-maven-plugin:sonar";
 
@@ -199,62 +201,49 @@ public class SonarQubeMojoTest {
   @Test
   public void sonar_maven_plugin_version_not_set_should_display_a_warning() throws Exception {
     executeProject("sample-project", "sonar:sonar");
-    String expected = "Using an unspecified version instead of a fixed plugin version may introduce breaking analysis changes at an unwanted time. " +
-        "It is highly recommended to use a fixed version," +
-        " e.g. 'org.sonarsource.scanner.maven:sonar-maven-plugin:";
-    assertThat(logger.logs).areAtLeastOne(new Condition<>(log -> log.contains(expected), "Missing: " + expected));
+    assertThat(logger.logs).anyMatch(log -> log.contains("Using an unspecified version " + UNSPECIFIED_VERSION_WARNING_SUFFIX));
   }
 
   @Test
   public void sonar_maven_plugin_version_LATEST_in_goal_should_display_a_warning() throws Exception {
     executeProject("sample-project", "sonar:LATEST:sonar");
-    String expected = "Using LATEST instead of a fixed plugin version may introduce breaking analysis changes at an unwanted time. " +
-      "It is highly recommended to use a fixed version," +
-      " e.g. 'org.sonarsource.scanner.maven:sonar-maven-plugin:";
-    assertThat(logger.logs).areAtLeastOne(new Condition<>(log -> log.contains(expected), "Missing: " + expected));
+    assertThat(logger.logs).anyMatch(log -> log.contains("Using LATEST " + UNSPECIFIED_VERSION_WARNING_SUFFIX));
   }
 
   @Test
   public void sonar_maven_plugin_version_RELEASE_in_goal_should_display_a_warning() throws Exception {
     executeProject("sample-project", "org.sonarsource.scanner.maven:sonar-maven-plugin:RELEASE:sonar");
-    String expected = "Using RELEASE instead of a fixed plugin version may introduce breaking analysis changes at an unwanted time. " +
-      "It is highly recommended to use a fixed version," +
-      " e.g. 'org.sonarsource.scanner.maven:sonar-maven-plugin:";
-    assertThat(logger.logs).areAtLeastOne(new Condition<>(log -> log.contains(expected), "Missing: " + expected));
+    assertThat(logger.logs).anyMatch(log -> log.contains("Using RELEASE " + UNSPECIFIED_VERSION_WARNING_SUFFIX));
   }
 
   @Test
   public void sonar_maven_plugin_version_set_in_goal_should_not_display_a_warning() throws Exception {
     executeProject("sample-project", "org.sonarsource.scanner.maven:sonar-maven-plugin:1.2.3.4:sonar");
-    logger.removeLogsContaining("Failed to collect configuration from the maven-compiler-plugin");
-    assertThat(logger.warnings()).isEmpty();
+    assertThat(logger.logs).noneMatch(log -> log.contains(UNSPECIFIED_VERSION_WARNING_SUFFIX));
   }
 
   @Test
   public void sonar_maven_plugin_version_set_in_sonar_sonar_goal_should_not_display_a_warning() throws Exception {
     executeProject("sample-project", "sonar:1.2.3.4:sonar");
-    logger.removeLogsContaining("Failed to collect configuration from the maven-compiler-plugin");
-    assertThat(logger.warnings()).isEmpty();
+    assertThat(logger.logs).noneMatch(log -> log.contains(UNSPECIFIED_VERSION_WARNING_SUFFIX));
   }
 
   @Test
   public void sonar_maven_plugin_version_set_in_plugin_management_should_not_display_a_warning() throws Exception {
     executeProject("project-with-sonar-plugin-management-configuration", "org.sonarsource.scanner.maven:sonar-maven-plugin:sonar");
-    logger.removeLogsContaining("Failed to collect configuration from the maven-compiler-plugin");
-    assertThat(logger.warnings()).isEmpty();
+    assertThat(logger.logs).noneMatch(log -> log.contains(UNSPECIFIED_VERSION_WARNING_SUFFIX));
   }
 
   @Test
   public void sonar_maven_plugin_version_set_in_build_plugins_should_not_display_a_warning() throws Exception {
     executeProject("project-with-sonar-plugin-configuration", "org.sonarsource.scanner.maven:sonar-maven-plugin:sonar");
-    logger.removeLogsContaining("Failed to collect configuration from the maven-compiler-plugin");
-    assertThat(logger.warnings()).isEmpty();
+    assertThat(logger.logs).noneMatch(log -> log.contains(UNSPECIFIED_VERSION_WARNING_SUFFIX));
   }
 
   @Test
-  public void cover_corner_cases_for_hasPluginVersionDefinedInTheProject() {
+  public void cover_corner_cases_for_isPluginVersionDefinedInTheProject() {
     MavenProject project = new MavenProject();
-    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
+    assertThat(SonarQubeMojo.isPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
 
     Plugin pluginDefinition = new Plugin();
     project.getBuild().getPlugins().add(pluginDefinition);
@@ -262,32 +251,32 @@ public class SonarQubeMojoTest {
     pluginDefinition.setGroupId(null);
     pluginDefinition.setArtifactId("sonar-maven-plugin");
     pluginDefinition.setVersion(null);
-    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
+    assertThat(SonarQubeMojo.isPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
 
     pluginDefinition.setGroupId("org.sonarsource.scanner.maven");
     pluginDefinition.setArtifactId("sonar-maven-plugin");
     pluginDefinition.setVersion(null);
-    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
+    assertThat(SonarQubeMojo.isPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
 
     pluginDefinition.setGroupId("org.sonarsource.scanner.maven");
     pluginDefinition.setArtifactId("sonar-maven-plugin");
     pluginDefinition.setVersion("  ");
-    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
+    assertThat(SonarQubeMojo.isPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
 
     pluginDefinition.setGroupId("org.sonarsource.scanner.maven");
     pluginDefinition.setArtifactId("sonar-maven-plugin");
     pluginDefinition.setVersion("1.2.3.4");
-    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isTrue();
+    assertThat(SonarQubeMojo.isPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isTrue();
 
     pluginDefinition.setGroupId("org.other");
     pluginDefinition.setArtifactId("sonar-maven-plugin");
     pluginDefinition.setVersion("1.2.3.4");
-    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
+    assertThat(SonarQubeMojo.isPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
 
     pluginDefinition.setGroupId("org.sonarsource.scanner.maven");
     pluginDefinition.setArtifactId("other-plugin");
     pluginDefinition.setVersion("1.2.3.4");
-    assertThat(SonarQubeMojo.hasPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
+    assertThat(SonarQubeMojo.isPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
   }
 
   @Test

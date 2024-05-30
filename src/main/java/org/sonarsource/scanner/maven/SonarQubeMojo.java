@@ -33,7 +33,6 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -94,7 +93,7 @@ public class SonarQubeMojo extends AbstractMojo {
       return;
     }
 
-    warnAboutNonFixedSonarPluginVersion();
+    warnAboutUnspecifiedSonarPluginVersion();
 
     Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
 
@@ -114,32 +113,31 @@ public class SonarQubeMojo extends AbstractMojo {
     new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, propertyDecryptor).execute();
   }
 
-  private void warnAboutNonFixedSonarPluginVersion() {
+  private void warnAboutUnspecifiedSonarPluginVersion() {
     String effectivePluginVersion = mojoExecution.getVersion();
     String groupId = mojoExecution.getGroupId();
     String artifactId = mojoExecution.getArtifactId();
     Plugin plugin = mojoExecution.getPlugin();
     MavenProject project = session.getTopLevelProject();
     List<String> goals = session.getGoals();
-    Log log = getLog();
-    boolean requiredArgumentsAreNotNull = !Arrays.asList(effectivePluginVersion, groupId, artifactId, plugin, log, project, goals).contains(null);
+    boolean requiredArgumentsAreNotNull = !Arrays.asList(effectivePluginVersion, groupId, artifactId, plugin, project, goals).contains(null);
     if (requiredArgumentsAreNotNull) {
       String invalidPluginVersion = null;
       String configuredPluginVersion = plugin.getVersion();
       if ("LATEST".equals(configuredPluginVersion) || "RELEASE".equals(configuredPluginVersion)) {
         invalidPluginVersion = configuredPluginVersion;
-      } else if (!hasPluginVersionDefinedInTheProject(project, groupId, artifactId) && hasASonarGoalMissingVersion(goals, groupId, artifactId)) {
+      } else if (!isPluginVersionDefinedInTheProject(project, groupId, artifactId) && isVersionMissingFromSonarGoal(goals, groupId, artifactId)) {
         invalidPluginVersion = "an unspecified version";
       }
       if (invalidPluginVersion != null) {
-        log.warn(String.format("Using %s instead of a fixed plugin version may introduce breaking analysis changes at an unwanted time. " +
-          "It is highly recommended to use a fixed version, e.g. '%s:%s:%s'.", invalidPluginVersion, groupId, artifactId, effectivePluginVersion));
+        getLog().warn(String.format("Using %s instead of an explicit plugin version may introduce breaking analysis changes at an unwanted time. " +
+          "It is highly recommended to use an explicit version, e.g. '%s:%s:%s'.", invalidPluginVersion, groupId, artifactId, effectivePluginVersion));
       }
     }
   }
 
   @VisibleForTesting
-  static boolean hasPluginVersionDefinedInTheProject(MavenProject project, String groupId, String artifactId) {
+  static boolean isPluginVersionDefinedInTheProject(MavenProject project, String groupId, String artifactId) {
     Stream<Plugin> pluginStream = project.getBuildPlugins().stream();
     PluginManagement pluginManagement = project.getPluginManagement();
     pluginStream = pluginManagement != null ? Stream.concat(pluginStream, pluginManagement.getPlugins().stream()) : pluginStream;
@@ -148,7 +146,7 @@ public class SonarQubeMojo extends AbstractMojo {
       (plugin.getVersion() != null && !plugin.getVersion().isBlank()));
   }
 
-  private static boolean hasASonarGoalMissingVersion(List<String> goals, String groupId, String artifactId) {
+  private static boolean isVersionMissingFromSonarGoal(List<String> goals, String groupId, String artifactId) {
     List<String> sonarGoalsWithoutVersion = Arrays.asList("sonar:sonar", groupId + ":" + artifactId + ":sonar");
     return goals.stream().anyMatch(sonarGoalsWithoutVersion::contains);
   }

@@ -121,7 +121,8 @@ public class SonarQubeMojo extends AbstractMojo {
     MavenProject project = session.getTopLevelProject();
     List<String> goals = session.getGoals();
     Log log = getLog();
-    if (Arrays.asList(effectivePluginVersion, groupId, artifactId, plugin, log, project, goals).contains(null)) {
+    boolean anyRequiredArgumentsIsNull = Arrays.asList(effectivePluginVersion, groupId, artifactId, plugin, log, project, goals).contains(null);
+    if (anyRequiredArgumentsIsNull) {
       return;
     }
     String invalidPluginVersion = null;
@@ -208,5 +209,9 @@ public class SonarQubeMojo extends AbstractMojo {
 
   MavenSession getSession() {
     return session;
+  }
+
+  MojoExecution getMojoExecution() {
+    return mojoExecution;
   }
 }

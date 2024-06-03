@@ -21,7 +21,7 @@ package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.Collection;
 import javax.annotation.CheckForNull;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginManagement;
 import org.apache.maven.model.ReportPlugin;
@@ -41,7 +41,7 @@ public class MavenPlugin {
   /**
    * Creates a MavenPlugin based on a Plugin
    *
-   * @param plugin the plugin
+   * @param configuration the plugin
    */
   private MavenPlugin(Object configuration) {
     this.configuration = (Xpp3Dom) configuration;

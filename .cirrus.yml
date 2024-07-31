@@ -15,7 +15,6 @@ env:
 
   ### Project variables
   DEPLOY_PULL_REQUEST: true
-  ARTIFACTS: org.sonarsource.scanner.maven:sonar-maven-plugin:jar
   NIGHTLY_CRON: 'nightly-cron'
 
 #

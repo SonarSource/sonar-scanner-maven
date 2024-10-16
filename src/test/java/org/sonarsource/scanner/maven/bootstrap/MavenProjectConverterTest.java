@@ -67,7 +67,7 @@ class MavenProjectConverterTest {
   @Test
   void convertSingleModuleProject() throws Exception {
     MavenProject project = createProject(new Properties(), "jar");
-
+    assertThat(projectConverter.getEnvProperties()).isEmpty();
     Map<String, String> props = projectConverter.configure(Collections.singletonList(project),
       project, new Properties());
     assertThat(props)
@@ -110,7 +110,9 @@ class MavenProjectConverterTest {
   @Test
   void shouldUseEnvironment() throws Exception {
     env.put("sonar.projectKey", "com.foo:anotherProject");
-    MavenProject project = createProject(new Properties(), "jar");
+    var projectProps = new Properties();
+    projectProps.put("project.build.sourceEncoding", "UTF-8");
+    MavenProject project = createProject(projectProps, "jar");
 
     Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
     assertThat(props).containsEntry("sonar.projectKey", "com.foo:anotherProject")

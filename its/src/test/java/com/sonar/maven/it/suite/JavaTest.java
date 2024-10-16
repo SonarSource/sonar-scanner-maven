@@ -141,7 +141,8 @@ class JavaTest extends AbstractMavenTest {
     ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
-    assertThat(props).contains(entry("sonar.java.jdkHome", "path/to/java_executable"));
+    String expected = "path/to/java_executable".replace('/', File.separatorChar);
+    assertThat(props).contains(entry("sonar.java.jdkHome", expected));
   }
 
   @Test

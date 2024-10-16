@@ -91,7 +91,7 @@ class MavenTest extends AbstractMavenTest {
     BuildResult result = runner.runQuietly(null, build);
 
     assertThat(result.isSuccess()).isFalse();
-    assertThat(result.getLogs()).contains("http://dummy-url.org");
+    assertThat(result.getLogs()).contains("java.net.UnknownHostException: from-env.org");
   }
 
   /**

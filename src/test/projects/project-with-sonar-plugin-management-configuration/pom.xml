@@ -9,7 +9,7 @@
   <name>Test project</name>
 
   <properties>
-    <sonar.scanner.dumpToFile>target/dump.properties</sonar.scanner.dumpToFile>
+    <sonar.scanner.internal.dumpToFile>target/dump.properties</sonar.scanner.internal.dumpToFile>
   </properties>
 
   <build>

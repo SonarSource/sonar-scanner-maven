@@ -475,13 +475,8 @@ class MavenTest extends AbstractMavenTest {
       File securityXml = new File(this.getClass().getResource("/security-settings.xml").toURI());
       File settingsXml = new File(this.getClass().getResource("/settings-with-encrypted-sonar-password.xml").toURI());
 
-      // Adding ~/.m2/settings-security.xml
-      String userHomeDir = System.getProperty("user.home");
-      Path defaultPath = Paths.get(userHomeDir, ".m2", "settings-security.xml");
-      Files.copy(securityXml.toPath(), defaultPath);
-
       build.addArgument("--settings=" + settingsXml.getAbsolutePath());
-
+      build.addArgument("-Dsettings.security=" + securityXml.getAbsolutePath());
       build.setProperty("sonar.login", "julien2");
       build.addArgument("-Psonar-password");
       ORCHESTRATOR.executeBuild(build);

@@ -28,7 +28,6 @@ import com.sonar.orchestrator.http.HttpMethod;
 import com.sonar.orchestrator.http.HttpResponse;
 import com.sonar.orchestrator.junit5.OrchestratorExtension;
 import com.sonar.orchestrator.locator.FileLocation;
-import com.sonar.orchestrator.locator.MavenLocation;
 import com.sonar.orchestrator.version.Version;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -41,9 +40,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.sonarqube.ws.Components.Component;
 import org.sonarqube.ws.Measures;
 import org.sonarqube.ws.Measures.Measure;
@@ -57,13 +57,16 @@ import org.sonarqube.ws.client.measures.ComponentRequest;
 
 import static java.util.Collections.singletonList;
 
+
 public abstract class AbstractMavenTest {
 
   private static final Pattern VERSION_REGEX = Pattern.compile("Apache Maven\\s(\\d+\\.\\d+(?:\\.\\d+)?)(?:-\\S+)?\\s");
 
   private static Version mojoVersion;
 
-  @RegisterExtension
+  private static int orchestratorAccessingClassCount = 0;
+
+  // @RegisterExtension was removed because it did not properly support parallel execution
   public static final OrchestratorExtension ORCHESTRATOR = OrchestratorExtension.builderEnv()
     .setSonarVersion(getSonarVersion())
     .useDefaultAdminCredentialsForBuilds(true)
@@ -76,6 +79,26 @@ public abstract class AbstractMavenTest {
 
   protected HttpConnector wsConnector;
   protected WsClient wsClient;
+
+  @BeforeAll
+  public static void setUp() {
+    synchronized (AbstractMavenTest.class) {
+      orchestratorAccessingClassCount++;
+      if (orchestratorAccessingClassCount == 1) {
+        ORCHESTRATOR.start();
+      }
+    }
+  }
+
+  @AfterAll
+  public static void tearDown() {
+    synchronized (AbstractMavenTest.class) {
+      orchestratorAccessingClassCount--;
+      if (orchestratorAccessingClassCount == 0) {
+        ORCHESTRATOR.stop();
+      }
+    }
+  }
 
   protected static String[] cleanInstallSonarGoal() {
     return new String[]{"clean install " + sonarGoal()};
@@ -220,7 +243,7 @@ public abstract class AbstractMavenTest {
 
   private static String getSonarVersion() {
     String versionProperty = System.getProperty("sonar.runtimeVersion");
-    return versionProperty != null ? versionProperty : "DEV";
+    return versionProperty != null ? versionProperty : "LATEST_RELEASE";
   }
 
 }

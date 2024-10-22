@@ -29,14 +29,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class BootstrapTest extends AbstractMavenTest {
-
-  @TempDir
-  public Path temp;
 
   @Test
   void test_unsupported_platform() {

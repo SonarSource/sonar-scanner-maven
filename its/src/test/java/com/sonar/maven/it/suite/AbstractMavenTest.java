@@ -19,14 +19,10 @@
  */
 package com.sonar.maven.it.suite;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonValue;
 import com.sonar.orchestrator.build.Build;
 import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.MavenBuild;
 import com.sonar.orchestrator.container.Server;
-import com.sonar.orchestrator.http.HttpMethod;
-import com.sonar.orchestrator.http.HttpResponse;
 import com.sonar.orchestrator.junit5.OrchestratorExtension;
 import com.sonar.orchestrator.locator.FileLocation;
 import com.sonar.orchestrator.version.Version;
@@ -36,14 +32,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
@@ -58,7 +51,6 @@ import org.sonarqube.ws.client.WsClient;
 import org.sonarqube.ws.client.WsClientFactories;
 import org.sonarqube.ws.client.ce.TaskRequest;
 import org.sonarqube.ws.client.components.ShowRequest;
-import org.sonarqube.ws.client.components.TreeRequest;
 import org.sonarqube.ws.client.measures.ComponentRequest;
 
 import static java.util.Collections.singletonList;
@@ -131,10 +123,6 @@ public abstract class AbstractMavenTest {
     return new String[]{"clean package " + sonarGoal()};
   }
 
-  protected static String[] cleanVerifySonarGoal() {
-    return new String[]{"clean verify " + sonarGoal()};
-  }
-
   @BeforeEach
   public void setUpWsClient() {
     wsConnector = HttpConnector.newBuilder()
@@ -142,40 +130,6 @@ public abstract class AbstractMavenTest {
       .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
       .build();
     wsClient = WsClientFactories.getDefault().newClient(wsConnector);
-  }
-
-  @AfterEach
-  public void resetData() {
-    Set<String> projectKeys = getProjectKeysToDelete();
-
-    if (!projectKeys.isEmpty()) {
-      ORCHESTRATOR.getServer()
-        .newHttpCall("/api/projects/bulk_delete")
-        .setAdminCredentials()
-        .setMethod(HttpMethod.POST)
-        .setParams("projects", String.join(",", projectKeys))
-        .execute();
-    }
-  }
-
-  private Set<String> getProjectKeysToDelete() {
-    HttpResponse ps = ORCHESTRATOR.getServer()
-      .newHttpCall("api/projects/search")
-      .setAdminCredentials()
-      .setMethod(HttpMethod.GET)
-      .setParam("ps", "100")
-      .execute();
-
-    return Json.parse(ps.getBodyAsString())
-      .asObject()
-      .get("components")
-      .asArray()
-      .values()
-      .stream()
-      .map(JsonValue::asObject)
-      .map(members -> members.getString("key", ""))
-      .filter(s -> !s.isEmpty())
-      .collect(Collectors.toSet());
   }
 
   protected static Version mojoVersion() {
@@ -222,10 +176,6 @@ public abstract class AbstractMavenTest {
       }
       throw new IllegalStateException(e);
     }
-  }
-
-  static List<Component> getModules(String projectKey) {
-    return newWsClient().components().tree(new TreeRequest().setComponent(projectKey).setQualifiers(singletonList("BRC"))).getComponentsList();
   }
 
   static WsClient newWsClient() {
@@ -310,7 +260,7 @@ public abstract class AbstractMavenTest {
   // [INFO] More about the report processing at http://127.0.0.1:63532/api/ce/task?id=bedf3100-4d72-497b-8103-68402821e49c
   private static final Pattern CE_TASK_ID_PATTERN = Pattern.compile("More about the report processing at[^?]++\\?id=([\\w\\-]++)");
 
-  public static final List<String> extractCETaskIds(BuildResult result) {
+  public static List<String> extractCETaskIds(BuildResult result) {
     Matcher matcher = CE_TASK_ID_PATTERN.matcher(result.getLogs());
     List<String> ids = new ArrayList<>();
     while (matcher.find()) {

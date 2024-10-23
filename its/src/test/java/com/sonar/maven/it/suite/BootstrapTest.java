@@ -48,12 +48,13 @@ public class BootstrapTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
 
     boolean sonarQubeThatSupportJREProvisioning = ORCHESTRATOR.getServer().version().isGreaterThanOrEquals(10, 6);
-    int expectedBuildStatus = sonarQubeThatSupportJREProvisioning ? EXEC_FAILED : EXEC_SUCCESS;
-    BuildResult result = validateBuildWithoutCE(runner.runQuietly(null, build), expectedBuildStatus);
     if (sonarQubeThatSupportJREProvisioning) {
+      BuildResult result = validateBuildWithoutCE(runner.runQuietly(null, build), EXEC_FAILED);
       String url = ORCHESTRATOR.getServer().getUrl() + String.format("/api/v2/analysis/jres?os=%s&arch=%s", unsupportedOS, arch);
       String expectedLog = String.format("Error status returned by url [%s]: 400", url);
       assertThat(result.getLogs()).contains(expectedLog);
+    } else {
+      validateBuildWithCE(runner.runQuietly(null, build));
     }
   }
 

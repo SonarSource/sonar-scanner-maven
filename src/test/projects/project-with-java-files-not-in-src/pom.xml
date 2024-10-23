@@ -8,7 +8,7 @@
   <version>1.0-SNAPSHOT</version>
 
   <properties>
-    <sonar.scanner.dumpToFile>target/dump.properties</sonar.scanner.dumpToFile>
+    <sonar.scanner.internal.dumpToFile>target/dump.properties</sonar.scanner.internal.dumpToFile>
   </properties>
 
 </project>

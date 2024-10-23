@@ -27,8 +27,9 @@ import com.sonar.orchestrator.container.Server;
 import com.sonar.orchestrator.http.HttpMethod;
 import com.sonar.orchestrator.http.HttpResponse;
 import com.sonar.orchestrator.junit5.OrchestratorExtension;
+import com.sonar.orchestrator.locator.FileLocation;
+import com.sonar.orchestrator.locator.MavenLocation;
 import com.sonar.orchestrator.version.Version;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -39,7 +40,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
-
 import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,6 +70,8 @@ public abstract class AbstractMavenTest {
     .addBundledPluginToKeep("sonar-java-plugin")
     .addBundledPluginToKeep("sonar-xml-plugin")
     .addBundledPluginToKeep("sonar-html-plugin")
+    // This plugin should have been built locally from the property-dump-plugin module
+    .addPlugin(FileLocation.of("../property-dump-plugin/target/property-dump-plugin-1-SNAPSHOT.jar"))
     .build();
 
   protected HttpConnector wsConnector;

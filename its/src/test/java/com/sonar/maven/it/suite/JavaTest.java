@@ -57,7 +57,7 @@ class JavaTest extends AbstractMavenTest {
     File projectPom = ItUtils.locateProjectPom("shared/struts-1.3.9-diet");
     MavenBuild build = MavenBuild.create(projectPom)
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
     ORCHESTRATOR.executeBuild(build);
 
     Properties generatedProps = getProps(outputProps);
@@ -84,7 +84,7 @@ class JavaTest extends AbstractMavenTest {
     File pom = ItUtils.locateProjectPom("project-default-config");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
     ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
@@ -103,7 +103,7 @@ class JavaTest extends AbstractMavenTest {
     File pom = ItUtils.locateProjectPom("version/compilerPluginConfig");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
     ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
@@ -120,7 +120,7 @@ class JavaTest extends AbstractMavenTest {
     File pom = ItUtils.locateProjectPom("version/properties");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
     ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
@@ -137,11 +137,12 @@ class JavaTest extends AbstractMavenTest {
     File pom = ItUtils.locateProjectPom("jdkHome/compilerPluginConfigExecutable");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(sonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
     ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
-    assertThat(props).contains(entry("sonar.java.jdkHome", "path/to/java_executable"));
+    String expected = "path/to/java_executable".replace('/', File.separatorChar);
+    assertThat(props).contains(entry("sonar.java.jdkHome", expected));
   }
 
   @Test
@@ -155,7 +156,7 @@ class JavaTest extends AbstractMavenTest {
       // Run only the toolchain goal + sonar. Can't run a true build since our toolchains paths are fake
       .setGoals("toolchains:toolchain " + sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
     ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
@@ -175,7 +176,7 @@ class JavaTest extends AbstractMavenTest {
       .setExecutionDir(pom.getParentFile())
       .setGoals(sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
     ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);
@@ -195,7 +196,7 @@ class JavaTest extends AbstractMavenTest {
       .setExecutionDir(pom.getParentFile())
       .setGoals(sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
     ORCHESTRATOR.executeBuild(build);
 
     Properties props = getProps(outputProps);

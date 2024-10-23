@@ -20,6 +20,8 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.monitor.logging.DefaultLog;
@@ -33,38 +35,37 @@ import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.sonarsource.scanner.api.EmbeddedScanner;
-import org.sonarsource.scanner.api.LogOutput;
+import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class ScannerFactoryTest {
-  private LogOutput logOutput;
-  private RuntimeInformation runtimeInformation;
-  private MojoExecution mojoExecution;
-  private MavenSession mavenSession;
-  private MavenProject rootProject;
-  private PropertyDecryptor propertyDecryptor;
-  private Properties envProps;
+class ScannerBootstrapperFactoryTest {
+  private final RuntimeInformation runtimeInformation = mock(RuntimeInformation.class, Mockito.RETURNS_DEEP_STUBS);
+  private final MojoExecution mojoExecution = mock(MojoExecution.class);
+  private final MavenSession mavenSession = mock(MavenSession.class);
+  private final MavenProject rootProject = mock(MavenProject.class);
+  private final PropertyDecryptor propertyDecryptor = new PropertyDecryptor(mock(Log.class), mock(SecDispatcher.class));
+  private final Map<String, String> envProps = new HashMap<>();
+
+  private final Log log = mock(Log.class);
+  private final ScannerBootstrapperFactory underTest = spy(new ScannerBootstrapperFactory(log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor));
+  private final ScannerEngineBootstrapper mockBootstrapper = mock(ScannerEngineBootstrapper.class);
 
   private Proxy httpsProxy;
 
   @BeforeEach
   public void setUp() {
-    logOutput = mock(LogOutput.class);
-    runtimeInformation = mock(RuntimeInformation.class, Mockito.RETURNS_DEEP_STUBS);
-    mavenSession = mock(MavenSession.class);
-    rootProject = mock(MavenProject.class);
-    mojoExecution = mock(MojoExecution.class);
-    envProps = new Properties();
 
     Properties system = new Properties();
     system.put("system", "value");
@@ -80,7 +81,7 @@ class ScannerFactoryTest {
     when(mavenSession.getSettings()).thenReturn(new Settings());
     when(rootProject.getProperties()).thenReturn(root);
     when(mavenSession.getCurrentProject()).thenReturn(rootProject);
-    propertyDecryptor = new PropertyDecryptor(mock(Log.class), mock(SecDispatcher.class));
+    when(underTest.createScannerEngineBootstrapper(anyString(), anyString())).thenReturn(mockBootstrapper);
 
     // Set up default proxy
     httpsProxy = new Proxy();
@@ -115,9 +116,7 @@ class ScannerFactoryTest {
     settings.setProxies(Collections.singletonList(proxy));
     when(mavenSession.getSettings()).thenReturn(settings);
 
-    Log log = mock(Log.class);
-    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
-    factory.create();
+    underTest.create();
     assertThat(System.getProperty("http.proxyHost")).isEqualTo("myhost");
     assertThat(System.getProperty("https.proxyHost")).isNull();
   }
@@ -128,9 +127,7 @@ class ScannerFactoryTest {
     settings.setProxies(Collections.singletonList(httpsProxy));
     when(mavenSession.getSettings()).thenReturn(settings);
 
-    Log log = mock(Log.class);
-    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
-    factory.create();
+    underTest.create();
     assertThat(System.getProperty("https.proxyHost")).isEqualTo("myhost");
     assertThat(System.getProperty("https.proxyPort")).isEqualTo("443");
     assertThat(System.getProperty("http.proxyUser")).isEqualTo("toto");
@@ -150,9 +147,7 @@ class ScannerFactoryTest {
     settings.setProxies(Collections.singletonList(proxyWithBothProtocols));
     when(mavenSession.getSettings()).thenReturn(settings);
 
-    Log log = mock(Log.class);
-    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
-    factory.create();
+    underTest.create();
     assertThat(System.getProperty("https.proxyHost")).isEqualTo("myhost");
     assertThat(System.getProperty("https.proxyPort")).isEqualTo("443");
     assertThat(System.getProperty("http.proxyHost")).isEqualTo("myhost");
@@ -167,13 +162,13 @@ class ScannerFactoryTest {
     Settings settings = new Settings();
     when(mavenSession.getSettings()).thenReturn(settings);
 
-    Log log = spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "no-proxy")));
-    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
-    factory.create();
+    Log specificLog = spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "unrecognizable-protocol")));
+    var specificUnderTest = spy(new ScannerBootstrapperFactory(specificLog, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor));
+    specificUnderTest.create();
 
     assertProxySettingsAreNotSet();
 
-    verify(log, times(1)).debug("Skipping proxy settings: No active proxy detected.");
+    verify(specificLog, times(1)).debug("Skipping proxy settings: No active proxy detected.");
   }
 
   @Test
@@ -186,13 +181,13 @@ class ScannerFactoryTest {
     settings.setProxies(Collections.singletonList(proxyWithNullProtocol));
     when(mavenSession.getSettings()).thenReturn(settings);
 
-    Log log = spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "null-protocol-proxy")));
-    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
-    factory.create();
+    Log specificLog = spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "null-protocol-proxy")));
+    ScannerBootstrapperFactory specificUnderTest = spy(new ScannerBootstrapperFactory(specificLog, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor));
+    specificUnderTest.create();
 
     assertProxySettingsAreNotSet();
 
-    verify(log, times(1)).warn("Skipping proxy settings: an active proxy was detected (id: null-protocol-proxy) but the protocol is null.");
+    verify(specificLog, times(1)).warn("Skipping proxy settings: an active proxy was detected (id: null-protocol-proxy) but the protocol is null.");
   }
 
   @Test
@@ -205,13 +200,13 @@ class ScannerFactoryTest {
     settings.setProxies(Collections.singletonList(proxyWithNullProtocol));
     when(mavenSession.getSettings()).thenReturn(settings);
 
-    Log log = spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "null-protocol-proxy")));
-    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
-    factory.create();
+    Log specificLog = spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "unrecognizable-protocol")));
+    var specificUnderTest = spy(new ScannerBootstrapperFactory(specificLog, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor));
+    specificUnderTest.create();
 
     assertProxySettingsAreNotSet();
 
-    verify(log, times(1)).warn("Skipping proxy settings: an active proxy was detected (id: null-protocol-proxy) but the protocol was not recognized.");
+    verify(specificLog, times(1)).warn("Skipping proxy settings: an active proxy was detected (id: null-protocol-proxy) but the protocol was not recognized.");
   }
 
   @Test
@@ -223,9 +218,9 @@ class ScannerFactoryTest {
     settings.setProxies(Collections.singletonList(proxyWithUnrecognizableProtocol));
     when(mavenSession.getSettings()).thenReturn(settings);
 
-    Log log = spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "unrecognizable-protocol")));
-    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
-    factory.create();
+    Log specificLog = spy(new DefaultLog(new ConsoleLogger(ConsoleLogger.LEVEL_DEBUG, "unrecognizable-protocol")));
+    var specificUnderTest = spy(new ScannerBootstrapperFactory(specificLog, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor));
+    specificUnderTest.create();
 
     assertThat(System.getProperty("https.proxyHost")).isEqualTo("myhost");
     assertThat(System.getProperty("https.proxyPort")).isEqualTo("443");
@@ -233,37 +228,38 @@ class ScannerFactoryTest {
     assertThat(System.getProperty("http.proxyPassword")).isEqualTo("some-secret");
     assertThat(System.getProperty("http.nonProxyHosts")).isEqualTo("sonarcloud.io|*.sonarsource.com");
 
-    verify(log, times(1)).isDebugEnabled();
-    verify(log, times(1)).debug("Setting proxy properties");
-    verify(log, times(1)).warn("Setting proxy properties: one or multiple protocols of the active proxy (id: unknown-protocol-proxy) are not supported (protocols: unknown-proto).");
+    verify(specificLog, times(1)).isDebugEnabled();
+    verify(specificLog, times(1)).debug("Setting proxy properties");
+    verify(specificLog, times(1)).warn("Setting proxy properties: one or multiple protocols of the active proxy (id: unknown-protocol-proxy) are not supported (protocols: unknown-proto).");
   }
 
   @Test
   void testProperties() {
-    Log log = mock(Log.class);
-    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
-    EmbeddedScanner scanner = factory.create();
+    underTest.create();
+    verify(underTest).createScannerEngineBootstrapper("ScannerMaven", "2.0/1.0");
+    ArgumentCaptor<Map<String, String>> captor = ArgumentCaptor.forClass(Map.class);
+    verify(mockBootstrapper).addBootstrapProperties(captor.capture());
+    assertThat(captor.getValue()).contains(entry("system", "value"), entry("user", "value"), entry("root", "value"), entry("env", "value"));
     verify(mavenSession).getSystemProperties();
     verify(rootProject).getProperties();
-
-    assertThat(scanner.appVersion()).isEqualTo("2.0/1.0");
-    assertThat(scanner.app()).isEqualTo("ScannerMaven");
-    assertThat(scanner.globalProperties()).contains(entry("system", "value"), entry("user", "value"), entry("root", "value"), entry("env", "value"));
   }
 
   @Test
-  void testDebug() {
-    Log log = mock(Log.class);
+  void testDebugEnabled() {
     when(log.isDebugEnabled()).thenReturn(true);
-    ScannerFactory factoryDebug = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
-    EmbeddedScanner scannerDebug = factoryDebug.create();
+    underTest.create();
+
+    verify(mockBootstrapper).setBootstrapProperty("sonar.verbose", "true");
 
     when(log.isDebugEnabled()).thenReturn(false);
-    ScannerFactory factory = new ScannerFactory(logOutput, log, runtimeInformation, mojoExecution, mavenSession, envProps, propertyDecryptor);
-    EmbeddedScanner scanner = factory.create();
+  }
 
-    assertThat(scannerDebug.globalProperties()).contains(entry("sonar.verbose", "true"));
-    assertThat(scanner.globalProperties()).doesNotContain(entry("sonar.verbose", "true"));
+  @Test
+  void testDebugDisabled() {
+    when(log.isDebugEnabled()).thenReturn(false);
+    underTest.create();
+
+    verify(mockBootstrapper, never()).setBootstrapProperty(anyString(), anyString());
   }
 
   static void assertProxySettingsAreNotSet() {

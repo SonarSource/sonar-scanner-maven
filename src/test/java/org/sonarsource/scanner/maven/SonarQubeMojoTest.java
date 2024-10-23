@@ -45,7 +45,6 @@ import org.apache.maven.project.MavenProject;
 import org.assertj.core.data.MapEntry;
 import org.junit.Rule;
 import org.junit.Test;
-import org.sonarsource.scanner.maven.TimestampLoggerTest.TestLog;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -321,10 +320,10 @@ public class SonarQubeMojoTest {
   private Plugin createSonarPluginFrom(PluginDescriptor pluginDescriptor, String goal, MavenProject project) {
     String version = null;
     Pattern versionPattern = Pattern.compile("(?:" +
-        "sonar|" +
-        "org\\.codehaus\\.mojo:sonar-maven-plugin|" +
-        "org\\.sonarsource\\.scanner\\.maven:sonar-maven-plugin" +
-        "):([^:]+):sonar");
+      "sonar|" +
+      "org\\.codehaus\\.mojo:sonar-maven-plugin|" +
+      "org\\.sonarsource\\.scanner\\.maven:sonar-maven-plugin" +
+      "):([^:]+):sonar");
     Matcher matcher = versionPattern.matcher(goal);
     if (matcher.matches()) {
       version = matcher.group(1);
@@ -339,7 +338,7 @@ public class SonarQubeMojoTest {
         String pluginGroupId = plugin.getGroupId();
         if ((pluginGroupId == null || pluginGroupId.equals(pluginDescriptor.getGroupId())) &&
           pluginDescriptor.getArtifactId().equals(plugin.getArtifactId()) &&
-          plugin.getVersion() != null){
+          plugin.getVersion() != null) {
           version = plugin.getVersion();
           break;
         }

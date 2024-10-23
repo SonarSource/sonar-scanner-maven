@@ -330,9 +330,11 @@ public abstract class AbstractMavenTest {
       while (true) {
         TaskStatus status = wsClient.ce().task(new TaskRequest().setId(ceTaskId)).getTask().getStatus();
         if (status == TaskStatus.PENDING || status == TaskStatus.IN_PROGRESS) {
-          if (System.currentTimeMillis() - start > MAX_WAIT_TIME) {
+          long duration = System.currentTimeMillis() - start;
+          if (duration > MAX_WAIT_TIME) {
             throw new AssertionError("CE task " + ceTaskId + " did not finish after " + (MAX_WAIT_TIME / 1000) + " seconds");
           }
+          LOG.info("CE task {} has status {}, wait duration {} ms", ceTaskId, status.name(), duration);
           Thread.sleep(POLLING_TIME);
         } else if (status == TaskStatus.SUCCESS) {
           LOG.info("CE task {} succeeded", ceTaskId);

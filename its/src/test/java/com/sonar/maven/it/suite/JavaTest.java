@@ -57,8 +57,8 @@ class JavaTest extends AbstractMavenTest {
     File projectPom = ItUtils.locateProjectPom("shared/struts-1.3.9-diet");
     MavenBuild build = MavenBuild.create(projectPom)
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    ORCHESTRATOR.executeBuild(build);
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
+    executeBuildAndValidateWithoutCE(build);
 
     Properties generatedProps = getProps(outputProps);
     String[] moduleIds = generatedProps.getProperty("sonar.modules").split(",");
@@ -84,15 +84,15 @@ class JavaTest extends AbstractMavenTest {
     File pom = ItUtils.locateProjectPom("project-default-config");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    ORCHESTRATOR.executeBuild(build);
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
+    executeBuildAndValidateWithoutCE(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
       entry("sonar.findbugs.excludeFilters", new File(pom.getParentFile(), "findbugs-filter.xml").toString()),
       entry("sonar.junit.reportsPath", new File(pom.getParentFile(), "target/surefire-output").toString()),
       entry("sonar.junit.reportPaths", new File(pom.getParentFile(), "target/surefire-output").toString()),
-      entry("sonar.java.source", "1.7"));
+      entry("sonar.java.source", "1.8"));
   }
 
   @Test
@@ -103,12 +103,12 @@ class JavaTest extends AbstractMavenTest {
     File pom = ItUtils.locateProjectPom("version/compilerPluginConfig");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    ORCHESTRATOR.executeBuild(build);
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
+    executeBuildAndValidateWithoutCE(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
-      entry("sonar.java.source", "1.7"),
+      entry("sonar.java.source", "1.8"),
       entry("sonar.java.target", "1.8"));
   }
 
@@ -120,12 +120,12 @@ class JavaTest extends AbstractMavenTest {
     File pom = ItUtils.locateProjectPom("version/properties");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    ORCHESTRATOR.executeBuild(build);
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
+    executeBuildAndValidateWithoutCE(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
-      entry("sonar.java.source", "1.7"),
+      entry("sonar.java.source", "1.8"),
       entry("sonar.java.target", "1.8"));
   }
 
@@ -137,11 +137,12 @@ class JavaTest extends AbstractMavenTest {
     File pom = ItUtils.locateProjectPom("jdkHome/compilerPluginConfigExecutable");
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(sonarGoal())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    ORCHESTRATOR.executeBuild(build);
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
+    executeBuildAndValidateWithoutCE(build);
 
     Properties props = getProps(outputProps);
-    assertThat(props).contains(entry("sonar.java.jdkHome", "path/to/java_executable"));
+    String expected = "path/to/java_executable".replace('/', File.separatorChar);
+    assertThat(props).contains(entry("sonar.java.jdkHome", expected));
   }
 
   @Test
@@ -155,8 +156,8 @@ class JavaTest extends AbstractMavenTest {
       // Run only the toolchain goal + sonar. Can't run a true build since our toolchains paths are fake
       .setGoals("toolchains:toolchain " + sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    ORCHESTRATOR.executeBuild(build);
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
+    executeBuildAndValidateWithoutCE(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_1.5"));
@@ -175,8 +176,8 @@ class JavaTest extends AbstractMavenTest {
       .setExecutionDir(pom.getParentFile())
       .setGoals(sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    ORCHESTRATOR.executeBuild(build);
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
+    executeBuildAndValidateWithoutCE(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_1.6"));
@@ -195,8 +196,8 @@ class JavaTest extends AbstractMavenTest {
       .setExecutionDir(pom.getParentFile())
       .setGoals(sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
-      .setProperty("sonar.scanner.dumpToFile", outputProps.getAbsolutePath());
-    ORCHESTRATOR.executeBuild(build);
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
+    executeBuildAndValidateWithoutCE(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_9"));

@@ -39,12 +39,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <version>3.9.0</version>
@@ -87,13 +81,25 @@
       <scope>provided</scope>
     </dependency>
   </dependencies>
-  
+
   <build>
     <pluginManagement>
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.5.1</version>
+          <configuration>
+            <properties>
+              <configurationParameters>
+                junit.jupiter.execution.parallel.enabled = true
+                junit.jupiter.execution.parallel.mode.default = same_thread
+                junit.jupiter.execution.parallel.mode.classes.default = concurrent
+                junit.jupiter.testclass.order.default=org.junit.jupiter.api.ClassOrderer$ClassName
+                junit.jupiter.testmethod.order.default=org.junit.jupiter.api.MethodOrderer$MethodName
+              </configurationParameters>
+            </properties>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>

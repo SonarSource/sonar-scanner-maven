@@ -44,17 +44,14 @@ class LinksTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("batch/links-project"))
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scm.disabled", "true");
-    ORCHESTRATOR.executeBuild(build);
+    executeBuildAndValidateWithCE(build);
 
     checkLinks();
   }
 
   private void checkLinks() {
     Server server = ORCHESTRATOR.getServer();
-    WsClient client = WsClientFactories.getDefault().newClient(HttpConnector.newBuilder()
-      .url(server.getUrl())
-      .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
-      .build());
+    WsClient client = newAuthenticatedWsClient();
     SearchWsResponse response = client.projectLinks().search(new SearchRequest().setProjectKey("com.sonarsource.it.samples:simple-sample"));
     if (server.version().isGreaterThanOrEquals(7, 1)) {
       // SONAR-10299

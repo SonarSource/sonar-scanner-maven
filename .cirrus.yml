@@ -87,7 +87,7 @@ qa_task:
   <<: *ONLY_SONARSOURCE_QA
   eks_container:
     <<: *CONTAINER_DEFINITION
-    cpu: 2
+    cpu: 6
     memory: 4G
   env:
     matrix:

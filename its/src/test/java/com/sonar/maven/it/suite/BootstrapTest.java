@@ -40,14 +40,14 @@ public class BootstrapTest extends AbstractMavenTest {
     String arch = "amd64";
 
     BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/aggregator-inherit-parent"))
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/bootstrap-small-project"))
       .setProperty("sonar.scanner.os", unsupportedOS)
       .setProperty("sonar.scanner.arch", arch)
       .setProperty("sonar.login", ORCHESTRATOR.getDefaultAdminToken())
       .setProperty("sonar.host.url", ORCHESTRATOR.getServer().getUrl())
       .setGoals(cleanSonarGoal());
 
-    BuildResult result = runner.runQuietly(null, build);
+    BuildResult result = validateBuildWithoutCE(runner.runQuietly(null, build), EXEC_FAILED);
     if (ORCHESTRATOR.getServer().version().isGreaterThanOrEquals(10, 6)) {
       assertThat(result.isSuccess()).isFalse();
 
@@ -63,14 +63,14 @@ public class BootstrapTest extends AbstractMavenTest {
   @Test
   void test_supported_arch_to_assert_jre_used() throws IOException {
     BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
-    String projectName = "maven/aggregator-inherit-parent";
+    String projectName = "maven/bootstrap-small-project";
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom(projectName))
       .setProperty("sonar.login", ORCHESTRATOR.getDefaultAdminToken())
       .setProperty("sonar.host.url", ORCHESTRATOR.getServer().getUrl())
       .setGoals(cleanSonarGoal());
 
 
-    BuildResult result = runner.runQuietly(null, build);
+    BuildResult result = validateBuildWithCE(runner.runQuietly(null, build));
     assertThat(result.isSuccess()).isTrue();
     Path propertiesFile = ItUtils.locateProjectDir(projectName).toPath().resolve("target/sonar/dumpSensor.system.properties");
     Properties props = new Properties();

@@ -7,7 +7,7 @@
     <version>1.0-SNAPSHOT</version>
     <relativePath>parent/pom.xml</relativePath>
   </parent>
-  <artifactId>aggregator</artifactId>
+  <artifactId>aggregator-inherit-parent</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 

@@ -104,11 +104,14 @@ class ScannerBootstrapperTest {
     pom.toFile().createNewFile();
     Path sourceMainDirs = tmpFolder.resolve(Paths.get("src", "main", "java"));
     sourceMainDirs.toFile().mkdirs();
+    Path sourceTestDirs = tmpFolder.resolve(Paths.get("src", "test", "java"));
+    sourceTestDirs.toFile().mkdirs();
     Path sourceResourceDirs = tmpFolder.resolve(Paths.get("src", "main", "resources"));
     sourceResourceDirs.toFile().mkdirs();
     Path javascriptResource = sourceResourceDirs.resolve("index.js");
     javascriptResource.toFile().createNewFile();
     projectProperties.put(AnalysisProperties.PROJECT_SOURCE_DIRS, sourceMainDirs.toFile() + "," + pom.toFile());
+    projectProperties.put(AnalysisProperties.PROJECT_TEST_DIRS, sourceTestDirs.toFile() + "," + pom.toFile());
 
     when(mavenProjectConverter.configure(any(), any(), any())).thenReturn(projectProperties);
     when(mavenProjectConverter.getEnvProperties()).thenReturn(new HashMap<>());

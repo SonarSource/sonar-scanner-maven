@@ -152,8 +152,8 @@ public abstract class AbstractMavenTest {
   }
 
   @CheckForNull
-  static Measure getMeasure(String componentKey, String metricKey) {
-    Measures.ComponentWsResponse response = newWsClient().measures().component(new ComponentRequest()
+  Measure getMeasure(String componentKey, String metricKey) {
+    Measures.ComponentWsResponse response = wsClient.measures().component(new ComponentRequest()
       .setComponent(componentKey)
       .setMetricKeys(singletonList(metricKey)));
     List<Measure> measures = response.getComponent().getMeasuresList();
@@ -161,34 +161,21 @@ public abstract class AbstractMavenTest {
   }
 
   @CheckForNull
-  static Integer getMeasureAsInteger(String componentKey, String metricKey) {
+  Integer getMeasureAsInteger(String componentKey, String metricKey) {
     Measure measure = getMeasure(componentKey, metricKey);
     return (measure == null) ? null : Integer.parseInt(measure.getValue());
   }
 
   @CheckForNull
-  static Component getComponent(String componentKey) {
+  Component getComponent(String componentKey) {
     try {
-      return newWsClient().components().show(new ShowRequest().setComponent(componentKey)).getComponent();
+      return wsClient.components().show(new ShowRequest().setComponent(componentKey)).getComponent();
     } catch (HttpException e) {
       if (e.code() == 404) {
         return null;
       }
       throw new IllegalStateException(e);
     }
-  }
-
-  static WsClient newWsClient() {
-    return WsClientFactories.getDefault().newClient(HttpConnector.newBuilder()
-      .url(ORCHESTRATOR.getServer().getUrl())
-      .build());
-  }
-
-  static WsClient newAuthenticatedWsClient() {
-    return WsClientFactories.getDefault().newClient(HttpConnector.newBuilder()
-      .url(ORCHESTRATOR.getServer().getUrl())
-      .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
-      .build());
   }
 
   Version mavenVersion = null;
@@ -222,7 +209,7 @@ public abstract class AbstractMavenTest {
     return validateBuildWithCE(ORCHESTRATOR.executeBuild(build));
   }
 
-  public static BuildResult validateBuildWithCE(BuildResult result) {
+  public BuildResult validateBuildWithCE(BuildResult result) {
     assertBuildResultStatuses(result, 0);
     List<String> ceTaskIds = extractCETaskIds(result);
     if (ceTaskIds.isEmpty()) {
@@ -272,10 +259,9 @@ public abstract class AbstractMavenTest {
   private static final long POLLING_TIME = 500; // 0.5 second
   private static final long MAX_WAIT_TIME = 20_000; // 20 seconds
 
-  private static void waitForCeTaskToBeFinished(String ceTaskId) {
+  private void waitForCeTaskToBeFinished(String ceTaskId) {
     LOG.info("Waiting for CE task {} to be finished", ceTaskId);
     try {
-      WsClient wsClient = newAuthenticatedWsClient();
       long start = System.currentTimeMillis();
       while (true) {
         TaskStatus status = wsClient.ce().task(new TaskRequest().setId(ceTaskId)).getTask().getStatus();

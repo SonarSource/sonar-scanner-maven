@@ -8,6 +8,22 @@
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
+    <sonar.java.fileByFile>true</sonar.java.fileByFile>
+    <!--
+     This property will be ignored because:
+     - We will run sonar:sonar with the SONAR_SCANNER_JAVA_OPTS environment variable that has priority on pom.xml properties
+     - We will run sonar:sonar with the -Dsonar.scanner.javaOpts command line argument that has priority on everything
+    -->
+    <sonar.scanner.javaOpts>-Dhttp.proxyUser=my-custom-user-from-pom-xml</sonar.scanner.javaOpts>
   </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>3.0.2</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
 
 </project>

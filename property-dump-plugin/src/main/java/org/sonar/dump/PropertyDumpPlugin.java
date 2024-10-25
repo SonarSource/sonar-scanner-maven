@@ -22,12 +22,17 @@ package org.sonar.dump;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.Plugin;
 import org.sonar.api.batch.sensor.Sensor;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
+import org.sonar.api.config.Configuration;
 
 public class PropertyDumpPlugin implements Plugin, Sensor {
 
@@ -45,17 +50,37 @@ public class PropertyDumpPlugin implements Plugin, Sensor {
 
   @Override
   public void execute(SensorContext sensorContext) {
-    var props = System.getProperties();
     try {
       Path filePath = sensorContext.fileSystem().workDir().toPath().resolve("dumpSensor.system.properties");
-      LOG.info("Dumping system properties to {}", filePath);
-      props.stringPropertyNames().stream()
-        .filter(key -> key.startsWith("java."))
-        .forEach(key -> LOG.info("{}={}", key, props.getProperty(key)));
+      LOG.info("Dumping sensorContext properties, environment variables, and system properties to {}", filePath);
+      var props = new Properties();
+      Configuration config = sensorContext.config();
+      getPropertyKeys("DUMP_SENSOR_PROPERTIES").forEach(key -> props.setProperty(key, nonNull(config.get(key))));
+      getPropertyKeys("DUMP_ENV_PROPERTIES").forEach(key -> props.setProperty(key, nonNull(System.getenv(key))));
+      getPropertyKeys("DUMP_SYSTEM_PROPERTIES").forEach(key -> props.setProperty(key, nonNull(System.getProperty(key, ""))));
+      props.stringPropertyNames().forEach(key -> LOG.info("{}={}", key, props.getProperty(key)));
       props.store(Files.newOutputStream(filePath), null);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new IllegalStateException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);
     }
+  }
+
+  private static String nonNull(Object value) {
+    if (value instanceof Optional<?> opt) {
+      value = opt.orElse(null);
+    }
+    if (value != null) {
+      return value.toString();
+    }
+    return "";
+  }
+
+  private static List<String> getPropertyKeys(String envName) {
+    String list = System.getenv(envName);
+    if (list == null) {
+      return List.of();
+    }
+    return Arrays.asList(list.replace(" ", "").split(",", -1));
   }
 
 }

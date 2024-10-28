@@ -81,7 +81,6 @@ public abstract class AbstractMavenTest {
     .addPlugin(FileLocation.of("../property-dump-plugin/target/property-dump-plugin-1-SNAPSHOT.jar"))
     .build();
 
-  protected HttpConnector wsConnector;
   protected WsClient wsClient;
 
   @BeforeAll
@@ -125,11 +124,11 @@ public abstract class AbstractMavenTest {
 
   @BeforeEach
   public void setUpWsClient() {
-    wsConnector = HttpConnector.newBuilder()
+    wsClient = WsClientFactories.getDefault()
+      .newClient(HttpConnector.newBuilder()
       .url(ORCHESTRATOR.getServer().getUrl())
       .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
-      .build();
-    wsClient = WsClientFactories.getDefault().newClient(wsConnector);
+      .build());
   }
 
   protected static Version mojoVersion() {

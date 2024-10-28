@@ -19,8 +19,10 @@
  */
 package com.sonar.maven.it.suite;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+import com.sonar.maven.it.ItUtils;
+import com.sonar.maven.it.Proxy;
+import com.sonar.orchestrator.build.BuildResult;
+import com.sonar.orchestrator.build.MavenBuild;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -29,20 +31,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import com.sonar.maven.it.ItUtils;
-import com.sonar.maven.it.Proxy;
-import com.sonar.orchestrator.build.BuildResult;
-import com.sonar.orchestrator.build.MavenBuild;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 class ProxyTest extends AbstractMavenTest {
   private Proxy proxy;
-  @TempDir
-  public Path temp;
 
   @BeforeEach
   public void prepare() throws Exception {
@@ -58,7 +55,7 @@ class ProxyTest extends AbstractMavenTest {
   }
 
   @Test
-  void useActiveProxyInSettings() throws IOException, URISyntaxException, InterruptedException {
+  void useActiveProxyInSettings(@TempDir Path temp) throws IOException, URISyntaxException, InterruptedException {
     Thread.sleep(2000);
     Path proxyXml = Paths.get(this.getClass().getResource("/proxy-settings.xml").toURI());
     Path proxyXmlPatched = temp.resolve("settings.xml");

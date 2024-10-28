@@ -24,50 +24,40 @@ import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.BuildRunner;
 import com.sonar.orchestrator.build.MavenBuild;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.sonarqube.ws.Components;
 import org.sonarqube.ws.client.components.ComponentsService;
 import org.sonarqube.ws.client.components.ShowRequest;
-import org.sonarqube.ws.client.settings.SetRequest;
 import org.sonarqube.ws.client.users.CreateRequest;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class MavenTest extends AbstractMavenTest {
 
   private static final String MODULE_START = "------------- Run sensors on module ";
 
-  @TempDir
-  public Path temp;
-
-  @AfterEach
-  public void cleanup() {
-    wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("false"));
-  }
-
   /**
    * See MSONAR-129
    */
   @Test
-  void useUserPropertiesGlobalConfig() throws Exception {
+  void useUserPropertiesGlobalConfig(@TempDir Path temp) throws Exception {
     BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
       .setGoals(cleanSonarGoal());
 
-    File settingsXml = temp.resolve("settings.xml").toFile();
-    settingsXml.createNewFile();
+    Path settingsXml = temp.resolve("settings.xml").toAbsolutePath();
     Map<String, String> props = ORCHESTRATOR.getDatabase().getSonarProperties();
     props.put("sonar.host.url", ORCHESTRATOR.getServer().getUrl());
     props.put("sonar.login", ORCHESTRATOR.getDefaultAdminToken());
-    FileUtils.write(settingsXml, ItUtils.createSettingsXml(props));
+    Files.write(settingsXml, ItUtils.createSettingsXml(props).getBytes(UTF_8));
 
-    build.addArgument("--settings=" + settingsXml.getAbsolutePath());
+    build.addArgument("--settings=" + settingsXml);
     build.addArgument("-Psonar");
     // we build without sonarqube server settings, it will need to fetch it from the profile defined in the settings xml file
     BuildResult result = runner.run(null, build);
@@ -420,9 +410,8 @@ class MavenTest extends AbstractMavenTest {
    * MSONAR-141
    */
   @Test
-  void supportMavenEncryption() throws Exception {
+  void supportMavenEncryption() {
     Assertions.assertDoesNotThrow(() -> {
-      wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("true"));
       wsClient.users().create(new CreateRequest().setLogin("julien").setName("Julien").setPassword("123abc"));
 
       MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
@@ -441,10 +430,9 @@ class MavenTest extends AbstractMavenTest {
   }
 
   @Test
-  void supportMavenEncryptionWithDefaultSecuritySettings() throws Exception {
+  void supportMavenEncryptionWithDefaultSecuritySettings() {
     // Should fail because settings-security.xml is missing
     Assertions.assertThrows(Exception.class, () -> {
-      wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("true"));
       wsClient.users().create(new CreateRequest().setLogin("julien3").setName("Julien3").setPassword("123abc"));
 
       MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
@@ -460,7 +448,6 @@ class MavenTest extends AbstractMavenTest {
     });
 
     Assertions.assertDoesNotThrow(() -> {
-      wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("true"));
       wsClient.users().create(new CreateRequest().setLogin("julien2").setName("Julien2").setPassword("123abc"));
 
       MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))

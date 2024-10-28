@@ -24,15 +24,11 @@ import com.sonar.orchestrator.build.MavenBuild;
 import com.sonar.orchestrator.version.Version;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Properties;
-
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.sonarqube.ws.client.settings.SetRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
@@ -42,11 +38,6 @@ class JavaTest extends AbstractMavenTest {
 
   @TempDir
   public Path temp;
-
-  @AfterEach
-  public void cleanup() {
-    wsClient.settings().set(new SetRequest().setKey("sonar.forceAuthentication").setValue("false"));
-  }
 
   // MSONAR-83
   @Test
@@ -203,8 +194,7 @@ class JavaTest extends AbstractMavenTest {
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_9"));
   }
 
-  private Properties getProps(File outputProps)
-    throws FileNotFoundException, IOException {
+  private Properties getProps(File outputProps) throws IOException {
     Properties props = new Properties();
     try (FileInputStream fis = new FileInputStream(outputProps)) {
       props.load(fis);

@@ -22,13 +22,9 @@ package com.sonar.maven.it.suite;
 import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.MavenBuild;
 import com.sonar.orchestrator.container.Server;
-
 import org.junit.jupiter.api.Test;
 import org.sonarqube.ws.ProjectLinks;
 import org.sonarqube.ws.ProjectLinks.SearchWsResponse;
-import org.sonarqube.ws.client.HttpConnector;
-import org.sonarqube.ws.client.WsClient;
-import org.sonarqube.ws.client.WsClientFactories;
 import org.sonarqube.ws.client.projectlinks.SearchRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,8 +47,7 @@ class LinksTest extends AbstractMavenTest {
 
   private void checkLinks() {
     Server server = ORCHESTRATOR.getServer();
-    WsClient client = newAuthenticatedWsClient();
-    SearchWsResponse response = client.projectLinks().search(new SearchRequest().setProjectKey("com.sonarsource.it.samples:simple-sample"));
+    SearchWsResponse response = wsClient.projectLinks().search(new SearchRequest().setProjectKey("com.sonarsource.it.samples:simple-sample"));
     if (server.version().isGreaterThanOrEquals(7, 1)) {
       // SONAR-10299
       assertThat(response.getLinksList())

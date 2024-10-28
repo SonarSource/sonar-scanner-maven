@@ -249,23 +249,6 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-site-plugin</artifactId>
-        <version>4.0.0-M14</version>
-        <executions>
-          <execution>
-            <id>stage-for-scm-publish</id>
-            <phase>post-site</phase>
-            <goals>
-              <goal>stage</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <skipDeploy>true</skipDeploy>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-scm-publish-plugin</artifactId>
         <version>3.2.1</version>
         <configuration>

@@ -133,8 +133,8 @@ class JavaTest extends AbstractMavenTest {
 
     Properties props = getProps(outputProps);
     Object value = props.getOrDefault("sonar.java.jdkHome", "");
-    if(value instanceof String){
-      assertThat((String)value).isNotEmpty();
+    if (value instanceof String) {
+      assertThat((String) value).isNotEmpty();
     }
   }
 
@@ -153,7 +153,6 @@ class JavaTest extends AbstractMavenTest {
     String expected = "path/to/java_executable".replace('/', File.separatorChar);
     assertThat(props).contains(entry("sonar.java.jdkHome", expected));
   }
-
 
   @Test
   void setJdkHomeFromGlobalToolchainsPlugin() throws IOException {

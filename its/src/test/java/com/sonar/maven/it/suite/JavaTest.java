@@ -121,6 +121,24 @@ class JavaTest extends AbstractMavenTest {
   }
 
   @Test
+  void extractJdkHomeFromJre() throws IOException {
+    File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
+
+    File pom = ItUtils.locateProjectPom("jdkHome/extractFromJre");
+    MavenBuild build = MavenBuild.create(pom)
+      .setGoals(sonarGoal())
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
+    executeBuildAndValidateWithoutCE(build);
+
+    Properties props = getProps(outputProps);
+    Object value = props.getOrDefault("sonar.java.jdkHome", "");
+    if(value instanceof String){
+      assertThat((String)value).isNotEmpty();
+    }
+  }
+
+  @Test
   void setJdkHomeFromCompilerExecutableConfiguration() throws IOException {
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
@@ -135,6 +153,7 @@ class JavaTest extends AbstractMavenTest {
     String expected = "path/to/java_executable".replace('/', File.separatorChar);
     assertThat(props).contains(entry("sonar.java.jdkHome", expected));
   }
+
 
   @Test
   void setJdkHomeFromGlobalToolchainsPlugin() throws IOException {

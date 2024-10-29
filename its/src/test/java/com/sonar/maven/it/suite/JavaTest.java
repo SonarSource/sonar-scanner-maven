@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Properties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -121,22 +122,29 @@ class JavaTest extends AbstractMavenTest {
   }
 
   @Test
-  void extractJdkHomeFromJre() throws IOException {
+  void whenPropertyJavaHomeExistsThenItIsUsedAsDefaultValue() throws IOException {
+    //verify that property java home exists, it may not be pointing to a jdk
+    if (!System.getProperties().containsKey("java.home")
+      && !System.getenv().containsKey("JAVA_HOME")) {
+      return;
+    }
+
+
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
-
     File pom = ItUtils.locateProjectPom("jdkHome/extractFromJre");
+
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(sonarGoal())
       .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
     executeBuildAndValidateWithoutCE(build);
 
     Properties props = getProps(outputProps);
-    Object value = props.getOrDefault("sonar.java.jdkHome", "");
-    if (value instanceof String) {
-      assertThat((String) value).isNotEmpty();
-    }
+    String jdkHome = props.getProperty("sonar.java.jdkHome");
+    //the jdk is not configured in the project, so default value should be used
+    assertThat(jdkHome).isIn(Arrays.asList(System.getProperty("java.home"), System.getenv().get("JAVA_HOME")));
   }
+
 
   @Test
   void setJdkHomeFromCompilerExecutableConfiguration() throws IOException {

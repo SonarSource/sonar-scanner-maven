@@ -125,13 +125,10 @@ class JavaTest extends AbstractMavenTest {
   @Test
   void when_java_home_exists_it_is_used_as_default_sonar_java_jdkHome_value() throws IOException {
     //verify that property java home exists, it may not be pointing to a jdk
-    Assumptions.assumeTrue(System.getProperties().containsKey("java.home")
-      || System.getenv().containsKey("JAVA_HOME"));
+    Assumptions.assumeTrue(System.getProperties().containsKey("java.home"));
 
-
-    //fix java.home and JAVA_HOME, the plugin should not modify them
+    //fix value, the plugin should not modify them
     String javaHomeSystem = System.getProperty("java.home");
-    String javaHomeEnv = System.getenv().get("JAVA_HOME");
 
 
     File outputProps = temp.resolve("out.properties").toFile();
@@ -146,7 +143,7 @@ class JavaTest extends AbstractMavenTest {
     Properties props = getProps(outputProps);
     String jdkHome = props.getProperty("sonar.java.jdkHome");
     //the jdk is not configured in the project, so default value should be used
-    assertThat(jdkHome).isIn(Arrays.asList(javaHomeSystem, javaHomeEnv));
+    assertThat(jdkHome).isIn(Arrays.asList(javaHomeSystem));
   }
 
   @Test

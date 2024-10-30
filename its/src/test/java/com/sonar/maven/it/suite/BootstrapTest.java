@@ -37,6 +37,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class BootstrapTest extends AbstractMavenTest {
 
+  private static final String EFFECTIVE_JRE_PROVISIONING_LOG = "JRE provisioning:";
+  private static final String COMMUNICATING_WITH_SONARQUBE = "Communicating with SonarQube Server";
+  private static final String STARTING_SCANNER_ENGINE = "Starting SonarScanner Engine";
+  private static final String SKIPPING_ANALYSIS = "Skipping analysis";
+  public static final String JRE_PROVISIONING_IS_DISABLED = "JRE provisioning is disabled";
+  public static final String USING_CONFIGURED_JRE = "Using the configured java executable";
+
   @Test
   void test_unsupported_platform() {
     String unsupportedOS = "unsupportedOS";
@@ -70,8 +77,8 @@ class BootstrapTest extends AbstractMavenTest {
       .setGoals(sonarGoal());
     BuildResult result = executeBuildAndValidateWithoutCE(build);
     assertThat(result.getLogs())
-      .contains("Skipping analysis")
-      .doesNotContain("JRE provisioning:", "Communicating with SonarQube Server", "Starting SonarScanner Engine");
+      .contains(SKIPPING_ANALYSIS)
+      .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
   }
 
   @Test
@@ -84,8 +91,8 @@ class BootstrapTest extends AbstractMavenTest {
       .setGoals(sonarGoal());
     BuildResult result = executeBuildAndValidateWithoutCE(build);
     assertThat(result.getLogs())
-      .contains("Skipping analysis")
-      .doesNotContain("JRE provisioning:", "Communicating with SonarQube Server", "Starting SonarScanner Engine");
+      .contains(SKIPPING_ANALYSIS)
+      .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
   }
 
   @Test
@@ -98,8 +105,8 @@ class BootstrapTest extends AbstractMavenTest {
       .setGoals(sonarGoal());
     BuildResult result = executeBuildAndValidateWithoutCE(build);
     assertThat(result.getLogs())
-      .contains("Skipping analysis")
-      .doesNotContain("JRE provisioning:", "Communicating with SonarQube Server", "Starting SonarScanner Engine");
+      .contains(SKIPPING_ANALYSIS)
+      .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
   }
 
   @Test
@@ -113,10 +120,10 @@ class BootstrapTest extends AbstractMavenTest {
       .setGoals(sonarGoal());
     BuildResult result = executeBuildAndValidateWithCE(build);
     assertThat(result.getLogs())
-      .doesNotContain("JRE provisioning:");
+      .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG);
     if (isSonarQubeSupportsJREProvisioning()) {
       assertThat(result.getLogs())
-        .contains("JRE provisioning is disabled", "Communicating with SonarQube Server", "Starting SonarScanner Engine");
+        .contains(JRE_PROVISIONING_IS_DISABLED, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
     }
     Path propertiesFile = ItUtils.locateProjectDir(projectName).toPath().resolve("target/sonar/dumpSensor.system.properties");
     Properties props = new Properties();
@@ -136,10 +143,10 @@ class BootstrapTest extends AbstractMavenTest {
       .setGoals(sonarGoal());
     BuildResult result = executeBuildAndValidateWithCE(build);
     assertThat(result.getLogs())
-      .doesNotContain("JRE provisioning:", "JRE provisioning is disabled");
+      .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG, JRE_PROVISIONING_IS_DISABLED);
     if (isSonarQubeSupportsJREProvisioning()) {
       assertThat(result.getLogs())
-        .contains("Using the configured java executable", "Communicating with SonarQube Server", "Starting SonarScanner Engine");
+        .contains(USING_CONFIGURED_JRE, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
     }
     Path propertiesFile = ItUtils.locateProjectDir(projectName).toPath().resolve("target/sonar/dumpSensor.system.properties");
     Properties props = new Properties();
@@ -236,7 +243,7 @@ class BootstrapTest extends AbstractMavenTest {
       softly.assertThat(props.getProperty("http.proxyUser")).isEqualTo("my-custom-user-from-system-properties");
 
       softly.assertThat(result.getLogs())
-        .contains("JRE provisioning:", "Communicating with SonarQube Server", "Starting SonarScanner Engine");
+        .contains(EFFECTIVE_JRE_PROVISIONING_LOG, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
     } else {
       //we test that we are using the system JRE
       javaHomeAssertion

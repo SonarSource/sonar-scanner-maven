@@ -121,6 +121,26 @@ class JavaTest extends AbstractMavenTest {
   }
 
   @Test
+  void when_java_home_exists_it_is_used_as_default_sonar_java_jdkHome_value() throws IOException {
+    //fix value, the plugin should not modify them
+    String javaHomeSystem = System.getProperty("java.home");
+
+    File outputProps = temp.resolve("out.properties").toFile();
+    outputProps.createNewFile();
+    File pom = ItUtils.locateProjectPom("jdkHome/defaultValue");
+
+    MavenBuild build = MavenBuild.create(pom)
+      .setGoals(sonarGoal())
+      .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
+    executeBuildAndValidateWithoutCE(build);
+
+    Properties props = getProps(outputProps);
+    String jdkHome = props.getProperty("sonar.java.jdkHome");
+    //the jdk is not configured in the project, so default value should be used
+    assertThat(jdkHome).isEqualTo(javaHomeSystem);
+  }
+
+  @Test
   void setJdkHomeFromCompilerExecutableConfiguration() throws IOException {
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();

@@ -37,6 +37,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class BootstrapTest extends AbstractMavenTest {
 
+  private static final String EFFECTIVE_JRE_PROVISIONING_LOG = "JRE provisioning:";
+  private static final String COMMUNICATING_WITH_SONARQUBE = "Communicating with SonarQube Server";
+  private static final String STARTING_SCANNER_ENGINE = "Starting SonarScanner Engine";
+  private static final String SKIPPING_ANALYSIS = "Skipping analysis";
+  public static final String JRE_PROVISIONING_IS_DISABLED = "JRE provisioning is disabled";
+  public static final String USING_CONFIGURED_JRE = "Using the configured java executable";
+
   @Test
   void test_unsupported_platform() {
     String unsupportedOS = "unsupportedOS";
@@ -50,8 +57,7 @@ class BootstrapTest extends AbstractMavenTest {
       .setProperty("sonar.host.url", ORCHESTRATOR.getServer().getUrl())
       .setGoals(cleanSonarGoal());
 
-    boolean sonarQubeThatSupportJREProvisioning = ORCHESTRATOR.getServer().version().isGreaterThanOrEquals(10, 6);
-    if (sonarQubeThatSupportJREProvisioning) {
+    if (isSonarQubeSupportsJREProvisioning()) {
       BuildResult result = validateBuildWithoutCE(runner.runQuietly(null, build), EXEC_FAILED);
       String url = ORCHESTRATOR.getServer().getUrl() + String.format("/api/v2/analysis/jres?os=%s&arch=%s", unsupportedOS, arch);
       String expectedLog = String.format("Error status returned by url [%s]: 400", url);
@@ -59,6 +65,93 @@ class BootstrapTest extends AbstractMavenTest {
     } else {
       validateBuildWithCE(runner.runQuietly(null, build));
     }
+  }
+
+  @Test
+  void test_bootstrapping_with_sonar_skip_in_pom_xml() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/bootstrap-small-project"))
+      .setProperty("sonar.login", ORCHESTRATOR.getDefaultAdminToken())
+      .setProperty("sonar.host.url", ORCHESTRATOR.getServer().getUrl())
+      // activate in the pom.xml <properties><sonar.skip>true</sonar.skip></properties>
+      .addArguments("-Ptest-sonar-skip")
+      .setGoals(sonarGoal());
+    BuildResult result = executeBuildAndValidateWithoutCE(build);
+    assertThat(result.getLogs())
+      .contains(SKIPPING_ANALYSIS)
+      .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
+  }
+
+  @Test
+  void test_bootstrapping_with_sonar_skip_in_system_property() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/bootstrap-small-project"))
+      .setProperty("sonar.login", ORCHESTRATOR.getDefaultAdminToken())
+      .setProperty("sonar.host.url", ORCHESTRATOR.getServer().getUrl())
+      // analyze using: mvn sonar:sonar -Dsonar.skip=true
+      .setProperty("sonar.skip", "true")
+      .setGoals(sonarGoal());
+    BuildResult result = executeBuildAndValidateWithoutCE(build);
+    assertThat(result.getLogs())
+      .contains(SKIPPING_ANALYSIS)
+      .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
+  }
+
+  @Test
+  void test_bootstrapping_with_sonar_skip_in_plugin_configuration() {
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/bootstrap-small-project"))
+      .setProperty("sonar.login", ORCHESTRATOR.getDefaultAdminToken())
+      .setProperty("sonar.host.url", ORCHESTRATOR.getServer().getUrl())
+      // activate in the pom.xml <configuration><skip>true</skip></configuration>
+      .addArguments("-Ptest-plugin-skip")
+      .setGoals(sonarGoal());
+    BuildResult result = executeBuildAndValidateWithoutCE(build);
+    assertThat(result.getLogs())
+      .contains(SKIPPING_ANALYSIS)
+      .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
+  }
+
+  @Test
+  void test_bootstrapping_that_skip_the_JRE_provisioning() throws IOException {
+    String projectName = "maven/bootstrap-small-project";
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom(projectName))
+      .setProperty("sonar.login", ORCHESTRATOR.getDefaultAdminToken())
+      .setProperty("sonar.host.url", ORCHESTRATOR.getServer().getUrl())
+      .setProperty("sonar.scanner.skipJreProvisioning", "true")
+      .setEnvironmentVariable("DUMP_SYSTEM_PROPERTIES", "java.home")
+      .setGoals(sonarGoal());
+    BuildResult result = executeBuildAndValidateWithCE(build);
+    assertThat(result.getLogs())
+      .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG);
+    if (isSonarQubeSupportsJREProvisioning()) {
+      assertThat(result.getLogs())
+        .contains(JRE_PROVISIONING_IS_DISABLED, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
+    }
+    Path propertiesFile = ItUtils.locateProjectDir(projectName).toPath().resolve("target/sonar/dumpSensor.system.properties");
+    Properties props = new Properties();
+    props.load(Files.newInputStream(propertiesFile));
+    assertThat(props.getProperty("java.home")).isEqualTo(guessJavaHomeSelectedByMvn());
+  }
+
+  @Test
+  void test_bootstrapping_that_use_the_provided_JRE_instead_of_downloading_a_JRE() throws IOException {
+    String mvnJavaHome = guessJavaHomeSelectedByMvn();
+    String projectName = "maven/bootstrap-small-project";
+    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom(projectName))
+      .setProperty("sonar.login", ORCHESTRATOR.getDefaultAdminToken())
+      .setProperty("sonar.host.url", ORCHESTRATOR.getServer().getUrl())
+      .setProperty("sonar.scanner.javaExePath", mvnJavaHome + File.separator + "bin" + File.separator + "java")
+      .setEnvironmentVariable("DUMP_SYSTEM_PROPERTIES", "java.home")
+      .setGoals(sonarGoal());
+    BuildResult result = executeBuildAndValidateWithCE(build);
+    assertThat(result.getLogs())
+      .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG, JRE_PROVISIONING_IS_DISABLED);
+    if (isSonarQubeSupportsJREProvisioning()) {
+      assertThat(result.getLogs())
+        .contains(USING_CONFIGURED_JRE, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
+    }
+    Path propertiesFile = ItUtils.locateProjectDir(projectName).toPath().resolve("target/sonar/dumpSensor.system.properties");
+    Properties props = new Properties();
+    props.load(Files.newInputStream(propertiesFile));
+    assertThat(props.getProperty("java.home")).isEqualTo(mvnJavaHome);
   }
 
   @Test
@@ -131,30 +224,30 @@ class BootstrapTest extends AbstractMavenTest {
     softly.assertThat(props.getProperty("sonar.java.source")).isEqualTo( "11");
     softly.assertThat(props.getProperty("sonar.java.target")).isEqualTo( "11");
     softly.assertThat(props.getProperty("sonar.java.test.libraries")).contains("jsr305-3.0.2.jar");
-    // sonar.java.jdkHome should be the one used by "mvn sonar:sonar", by default maven uses JAVA_HOME
-    String javaHome = System.getenv("JAVA_HOME");
-    if (javaHome == null) {
-      javaHome = System.getProperty("java.home");
-    }
-    softly.assertThat(props.getProperty("sonar.java.jdkHome")).isEqualTo( new File(javaHome).getCanonicalPath());
+    // sonar.java.jdkHome should be the one used by "mvn sonar:sonar"
+    softly.assertThat(props.getProperty("sonar.java.jdkHome")).isEqualTo(guessJavaHomeSelectedByMvn());
 
     StringAssert javaHomeAssertion = softly.assertThat(props.getProperty("java.home")).isNotEmpty();
-    if (ORCHESTRATOR.getServer().version().isGreaterThanOrEquals(10, 6)) {
+    if (isSonarQubeSupportsJREProvisioning()) {
       //we test that we are actually using the JRE downloaded from SQ
       javaHomeAssertion
         .isNotEqualTo(System.getProperty("java.home"))
+        .isNotEqualTo(guessJavaHomeSelectedByMvn())
         .contains(".sonar" + File.separator + "cache");
 
       // System properties of the initial JRE are intentionally not set on the provisioned JRE
       softly.assertThat(props.getProperty("http.nonProxyHosts"))
-        .isEmpty();
+        .isNotEqualTo("localhost|my-custom-non-proxy.server.com");
 
       // System properties defined in "sonar.scanner.javaOpts" are set on the provisioned JRE
       softly.assertThat(props.getProperty("http.proxyUser")).isEqualTo("my-custom-user-from-system-properties");
+
+      softly.assertThat(result.getLogs())
+        .contains(EFFECTIVE_JRE_PROVISIONING_LOG, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
     } else {
       //we test that we are using the system JRE
       javaHomeAssertion
-        .isEqualTo(System.getProperty("java.home"))
+        .isEqualTo(guessJavaHomeSelectedByMvn())
         .doesNotContain(".sonar" + File.separator + "cache");
 
       softly.assertThat(props.getProperty("http.nonProxyHosts"))
@@ -164,6 +257,19 @@ class BootstrapTest extends AbstractMavenTest {
       softly.assertThat(props.getProperty("http.proxyUser")).isEmpty();
     }
     softly.assertAll();
+  }
+
+  private static boolean isSonarQubeSupportsJREProvisioning() {
+    return ORCHESTRATOR.getServer().version().isGreaterThanOrEquals(10, 6);
+  }
+
+  private static String guessJavaHomeSelectedByMvn() throws IOException {
+    // By default maven uses JAVA_HOME if it exists, otherwise we don't know, we hope it uses the one that is currently running
+    String javaHome = System.getenv("JAVA_HOME");
+    if (javaHome == null) {
+      javaHome = System.getProperty("java.home");
+    }
+    return new File(javaHome).getCanonicalPath();
   }
 
 }

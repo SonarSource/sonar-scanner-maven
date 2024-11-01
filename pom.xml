@@ -15,7 +15,6 @@
 
   <name>SonarQube Scanner for Maven</name>
   <description>Trigger SonarQube analysis on Maven projects</description>
-  <url>http://sonarsource.github.io/sonar-scanner-maven/</url>
   <inceptionYear>2009</inceptionYear>
 
   <licenses>

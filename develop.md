@@ -32,7 +32,5 @@ For example, in order to debug the test [java-compiler-executable](src/it/java-c
 
 #### Integration Tests
 The Integration tests are located in `its`.
-
-Before running them, you have to package the `property-dump-plugin` by running the following command from the root of the project: `mvn -f property-dump-plugin/pom.xml clean package`. 
-
+Before running them, you have to package the `property-dump-plugin` by running the following command from the root of the project: `mvn -f property-dump-plugin/pom.xml clean package`.
 Then, they can be run as a separate Maven project: `cd its && mvn verify`

@@ -31,4 +31,8 @@ For example, in order to debug the test [java-compiler-executable](src/it/java-c
 *Note* that you have to run `mvn invoker:install` to debug the latest changes in your code!
 
 #### Integration Tests
-The Integration tests are located in its. Before running them, you have to package the `property-dump-plugin`: `mvn -f property-dump-plugin/pom.xml clean install`. Then, they can be run as a separate Maven project: `cd its && mvn verify`
+The Integration tests are located in `its`.
+
+Before running them, you have to package the `property-dump-plugin`: `mvn -f property-dump-plugin/pom.xml clean package`. 
+
+Then, they can be run as a separate Maven project: `cd its && mvn verify`

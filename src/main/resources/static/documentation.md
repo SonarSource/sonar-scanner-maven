@@ -3,14 +3,14 @@ The SonarScanner for Maven is recommended as the default scanner for Maven proje
 
 The ability to execute the SonarQube analysis via a regular Maven goal makes it available anywhere Maven is available (developer build, CI server, etc.), without the need to manually download, set up, and maintain a SonarQube scanner installation. The Maven build already has much of the information needed for SonarQube to successfully analyze a project. By preconfiguring the analysis based on that information, the need for manual configuration is reduced significantly.
 
-[Prerequisites](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#prerequisites "Prerequisites")
----------------------------------------------------------------------------------------------------------------------------------------------------
+## [Prerequisites](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#prerequisites "Prerequisites")
+
 
 *   Maven 3.2.5+
 *   At least the minimal version of Java supported by your SonarQube server is in use
 
-[Analyzing](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#analyzing "Analyzing")
----------------------------------------------------------------------------------------------------------------------------------------
+## [Analyzing](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#analyzing "Analyzing")
+
 
 Analyzing a Maven project consists of running a Maven goal: `sonar:sonar` from the directory that holds the main project `pom.xml`. You need to pass an [authentication token](https://docs.sonarsource.com/sonarqube/latest/user-guide/managing-tokens/ "authentication token") using one of the following options: 
 
@@ -44,8 +44,7 @@ mvn org.sonarsource.scanner.maven:sonar-maven-plugin:<version>:sonar
 
 To get coverage information, you'll need to generate the coverage report before the analysis and specify the location of the resulting report in an analysis parameter. See [test coverage](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/test-coverage/overview/ "test coverage") for details.
 
-[Configuring analysis](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#configuring-analysis "Configuring analysis")
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+## [Configuring analysis](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#configuring-analysis "Configuring analysis")
 
 Most analysis properties will be read from your project. If you would like to override the default values of specific additional parameters, configure the parameter names found on the [analysis parameters](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/analysis-parameters/ "analysis parameters") page in the `<properties>` section of your `pom.xml` like this:
 
@@ -56,13 +55,11 @@ Most analysis properties will be read from your project. If you would like to ov
 ```
 
 
-[Sample project](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#sample-project "Sample project")
-------------------------------------------------------------------------------------------------------------------------------------------------------
+## [Sample project](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#sample-project "Sample project")
 
 To help you get started, a simple project sample is available here: [https://github.com/SonarSource/sonar-scanning-examples/tree/master/sonar-scanner-maven/maven-basic](https://github.com/SonarSource/sonar-scanning-examples/tree/master/sonar-scanner-maven/maven-basic "https://github.com/SonarSource/sonar-scanning-examples/tree/master/sonar-scanner-maven/maven-basic")
 
-[Adjusting the analysis scope](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#analysis-scope "Adjusting the analysis scope")
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+## [Adjusting the analysis scope](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#analysis-scope "Adjusting the analysis scope")
 
 The analysis scope of a project determines the source and test files to be analyzed. 
 
@@ -113,8 +110,8 @@ To exclude a module from the analysis, you may:
 *   Use build profiles to exclude some modules (like for integration tests).
 *   Use Advanced Reactor Options (such as `-pl`). For example `mvn sonar:sonar -pl !module2`
 
-[Other settings](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#other-settings "Other settings")
-------------------------------------------------------------------------------------------------------------------------------------------------------
+## [Other settings](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#other-settings "Other settings")
+
 
 ### [Locking down the version of the Maven plugin](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#locking-down-the-version-of-the-maven-plugin "Locking down the version of the Maven plugin")
 
@@ -141,8 +138,8 @@ If your SonarQube server is [configured with HTTPS](https://docs.sonarsource.com
 
 See [Managing the TLS certificates on the client side](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/scanner-environment/manage-tls-certificates/ "Managing the TLS certificates on the client side").
 
-[Troubleshooting](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#troubleshooting "Troubleshooting")
----------------------------------------------------------------------------------------------------------------------------------------------------------
+## [Troubleshooting](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/#troubleshooting "Troubleshooting")
+
 
 **If you get a java.lang.OutOfMemoryError**
 

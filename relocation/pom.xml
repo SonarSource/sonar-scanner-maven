@@ -10,6 +10,7 @@
   <artifactId>sonar-maven-plugin</artifactId>
   <packaging>pom</packaging>
   <version>REPLACE_ME</version>
+  <url>https://redirect.sonarsource.com/doc/download-scanner-maven.html</url>
 
   <distributionManagement>
     <relocation>

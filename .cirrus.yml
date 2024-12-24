@@ -12,7 +12,8 @@ env:
   ARTIFACTORY_DEPLOY_REPO: sonarsource-public-qa
 
   ARTIFACTORY_PROMOTE_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
-
+  DEVELOCITY_TOKEN: VAULT[development/kv/data/develocity data.token]
+  DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${DEVELOCITY_TOKEN}
   ### Project variables
   DEPLOY_PULL_REQUEST: true
 
@@ -27,6 +28,9 @@ container_definition: &CONTAINER_DEFINITION
 
 only_sonarsource_qa: &ONLY_SONARSOURCE_QA
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == "master" || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH =~ "dogfood-on-.*")
+
+log_develocity_url_script: &log_develocity_url_script |
+  echo "Develocity URL: https://develocity.sonar.build/scans?search.publicHostnames=cirrus-ci-task-${CIRRUS_TASK_ID}"
 
 #
 # TASKS
@@ -44,6 +48,7 @@ build_task:
   maven_cache:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
   script:
+    - *log_develocity_url_script
     - source cirrus-env BUILD
     - mvn -f property-dump-plugin/pom.xml -B install
     - regular_mvn_build_deploy_analyze
@@ -116,6 +121,7 @@ qa_task:
   maven_cache:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
   qa_script:
+    - *log_develocity_url_script
     - ./cirrus/cirrus-qa.sh
   cleanup_before_cache_script:
     - cleanup_maven_repository

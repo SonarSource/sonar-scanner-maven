@@ -27,9 +27,12 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+
+import com.sonar.orchestrator.version.Version;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.opentest4j.TestAbortedException;
 import org.sonarqube.ws.Components;
 import org.sonarqube.ws.client.components.ComponentsService;
 import org.sonarqube.ws.client.components.ShowRequest;
@@ -411,6 +414,7 @@ class MavenTest extends AbstractMavenTest {
    */
   @Test
   void supportMavenEncryption() {
+    checkSupportOfSonarPassword();
     Assertions.assertDoesNotThrow(() -> {
       wsClient.users().create(new CreateRequest().setLogin("julien").setName("Julien").setPassword("123abc"));
 
@@ -431,6 +435,7 @@ class MavenTest extends AbstractMavenTest {
 
   @Test
   void supportMavenEncryptionWithDefaultSecuritySettings() {
+    checkSupportOfSonarPassword();
     // Should fail because settings-security.xml is missing
     Assertions.assertThrows(Exception.class, () -> {
       wsClient.users().create(new CreateRequest().setLogin("julien3").setName("Julien3").setPassword("123abc"));
@@ -462,5 +467,18 @@ class MavenTest extends AbstractMavenTest {
       build.addArgument("-Psonar-password");
       executeBuildAndValidateWithCE(build);
     });
+  }
+
+
+  /*
+   * As of version 25.0, SQS no longer supports the sonar.password property.
+   * Aborts the test if the property is not supported by the server provided by orchestrator.
+   */
+  private static void checkSupportOfSonarPassword() {
+    Version version = ORCHESTRATOR.getServer().version();
+    if (version.isGreaterThanOrEquals(25, 0)) {
+      String message = String.format("The SQ server provided by orchestrator does not support the property sonar.password (SQS %s).", version);
+      throw new TestAbortedException(message);
+    }
   }
 }

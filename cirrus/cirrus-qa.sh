@@ -15,4 +15,4 @@ mvn -f property-dump-plugin/pom.xml --batch-mode -Dmaven.home=$MAVEN_HOME_IT ins
 
 # Run ITs.
 cd its
-mvn -B -e -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$MAVEN_HOME_IT verify
+mvn -B -e -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$MAVEN_HOME_IT -Ddevelocity.scan.disabled=$SKIP_DEVELOCITY verify

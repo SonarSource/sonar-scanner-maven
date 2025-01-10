@@ -91,9 +91,11 @@ qa_task:
     cpu: 6
     memory: 6G
   env:
+    SKIP_DEVELOCITY: false
     matrix:
       - SQ_VERSION: DEV
         MAVEN_VERSION: 4.0.0-alpha-4
+        SKIP_DEVELOCITY: true
       - SQ_VERSION: DEV
         MAVEN_VERSION: 3.9.4
       - SQ_VERSION: DEV

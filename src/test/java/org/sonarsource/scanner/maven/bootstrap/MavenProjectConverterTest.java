@@ -57,7 +57,7 @@ class MavenProjectConverterTest {
   private MavenProjectConverter projectConverter;
 
   @BeforeEach
-  public void prepare() {
+  void prepare() {
     log = mock(Log.class);
     MavenCompilerResolver mavenCompilerResolver = mock(MavenCompilerResolver.class);
     when(mavenCompilerResolver.extractConfiguration(any())).thenReturn(Optional.empty());

@@ -88,7 +88,7 @@ class ScannerBootstrapperTest {
   ScannerEngineFacade scannerEngineFacade;
 
   @BeforeEach
-  public void setUp()
+  void setUp()
     throws MojoExecutionException, IOException {
     MockitoAnnotations.initMocks(this);
 

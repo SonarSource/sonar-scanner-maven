@@ -65,7 +65,7 @@ class ScannerBootstrapperFactoryTest {
   private Proxy httpsProxy;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
 
     Properties system = new Properties();
     system.put("system", "value");
@@ -96,7 +96,7 @@ class ScannerBootstrapperFactoryTest {
 
   @AfterEach
   @BeforeEach
-  public void clearProxyProperties() {
+  void clearProxyProperties() {
     System.clearProperty("http.proxyHost");
     System.clearProperty("http.proxyPort");
     System.clearProperty("https.proxyHost");

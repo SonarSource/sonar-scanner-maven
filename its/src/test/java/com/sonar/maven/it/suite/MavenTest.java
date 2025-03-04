@@ -81,7 +81,8 @@ class MavenTest extends AbstractMavenTest {
 
     BuildResult result = validateBuildWithoutCE(runner.runQuietly(null, build), EXEC_FAILED);
 
-    assertThat(result.getLogs()).contains("java.net.UnknownHostException: from-env.org");
+    assertThat(result.getLogs())
+      .contains("Call to URL [http://from-env.org:9000/api/v2/analysis/version] failed: from-env.org");
   }
 
   /**

@@ -44,6 +44,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.sonarsource.scanner.lib.AnalysisProperties;
+import org.sonarsource.scanner.lib.ScannerEngineBootstrapResult;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
 import org.sonarsource.scanner.lib.ScannerEngineFacade;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
@@ -87,6 +88,9 @@ class ScannerBootstrapperTest {
   @Mock
   ScannerEngineFacade scannerEngineFacade;
 
+  @Mock
+  ScannerEngineBootstrapResult scannerEngineBootstrapResult;
+
   @BeforeEach
   void setUp()
     throws MojoExecutionException, IOException {
@@ -117,7 +121,8 @@ class ScannerBootstrapperTest {
     when(mavenProjectConverter.getEnvProperties()).thenReturn(new HashMap<>());
     when(rootProject.getProperties()).thenReturn(new Properties());
 
-    when(scannerEngineBootstrapper.bootstrap()).thenReturn(scannerEngineFacade);
+    when(scannerEngineBootstrapResult.getEngineFacade()).thenReturn(scannerEngineFacade);
+    when(scannerEngineBootstrapper.bootstrap()).thenReturn(scannerEngineBootstrapResult);
     scannerBootstrapper = new ScannerBootstrapper(log, session, scannerEngineBootstrapper, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher));
   }
 

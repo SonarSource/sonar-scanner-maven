@@ -14,5 +14,5 @@ cp -f ~/.m2/settings.xml $MAVEN_HOME_IT/conf/
 mvn -f property-dump-plugin/pom.xml --batch-mode -Dmaven.home=$MAVEN_HOME_IT install
 
 # Run ITs.
-cd its
+cd sonar-maven-its
 mvn -B -e -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$MAVEN_HOME_IT verify

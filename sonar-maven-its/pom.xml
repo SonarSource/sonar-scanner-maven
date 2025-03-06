@@ -4,23 +4,30 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.sonarsource.parent</groupId>
-    <artifactId>parent</artifactId>
-    <version>83.0.0.2369</version>
-    <relativePath/>
+    <groupId>org.sonarsource.scanner.maven</groupId>
+    <artifactId>sonar-scanner-maven</artifactId>
+    <version>5.0.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>it-sonar-maven</artifactId>
+  <artifactId>sonar-maven-its</artifactId>
   <name>SonarSource :: IT :: SonarQube Maven</name>
-  <inceptionYear>2009</inceptionYear>
 
   <properties>
     <jetty.version>9.4.51.v20230217</jetty.version>
     <maven.compiler.release>8</maven.compiler.release>
-    <license.name>GNU LGPL v3</license.name>
+    <skipTests>true</skipTests>
   </properties>
-  
+
   <dependencies>
+    <dependency>
+      <groupId>org.sonarsource.scanner.maven</groupId>
+      <artifactId>sonar-maven-plugin</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.sonarsource.scanner.maven</groupId>
+      <artifactId>property-dump-plugin</artifactId>
+      <version>1-SNAPSHOT</version>
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
@@ -117,5 +124,14 @@
       </plugins>
     </pluginManagement>
   </build>
+
+  <profiles>
+    <profile>
+      <id>its</id>
+      <properties>
+        <skipTests>false</skipTests>
+      </properties>
+    </profile>
+  </profiles>
 
 </project>

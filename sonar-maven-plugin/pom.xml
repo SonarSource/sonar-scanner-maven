@@ -1,191 +1,100 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.sonarsource.parent</groupId>
-    <artifactId>parent</artifactId>
-    <version>83.0.0.2369</version>
+    <groupId>org.sonarsource.scanner.maven</groupId>
+    <artifactId>sonar-scanner-maven</artifactId>
+    <version>5.0.0-SNAPSHOT</version>
   </parent>
 
-  <groupId>org.sonarsource.scanner.maven</groupId>
+
   <artifactId>sonar-maven-plugin</artifactId>
-  <version>5.0.0-SNAPSHOT</version>
+  <name>SonarQube Scanner for Maven</name>
   <packaging>maven-plugin</packaging>
 
-  <name>SonarQube Scanner for Maven</name>
-  <description>Trigger SonarQube analysis on Maven projects</description>
-  <inceptionYear>2009</inceptionYear>
-
-  <licenses>
-    <license>
-      <name>GNU LGPL 3</name>
-      <url>http://www.gnu.org/licenses/lgpl.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-
-  <developers>
-    <developer>
-      <id>olamy</id>
-      <name>Olivier Lamy</name>
-      <email>olamy@apache.org</email>
-      <timezone>+1</timezone>
-    </developer>
-    <developer>
-      <id>godin</id>
-      <name>Evgeny Mandrikov</name>
-      <email>mandrikov@gmail.com</email>
-      <timezone>+3</timezone>
-    </developer>
-    <developer>
-      <id>simon.brandhof</id>
-      <name>Simon Brandhof</name>
-      <email>simon.brandhof@gmail.com</email>
-      <timezone>+1</timezone>
-    </developer>
-    <developer>
-      <id>henryju</id>
-      <name>Julien Henry</name>
-      <email>henryju@yahoo.fr</email>
-      <timezone>+1</timezone>
-    </developer>
-  </developers>
-
-  <prerequisites>
-    <maven>3.0</maven>
-  </prerequisites>
-
-  <scm>
-    <connection>scm:git:https://github.com/SonarSource/sonar-scanner-maven.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/SonarSource/sonar-scanner-maven.git</developerConnection>
-    <url>https://github.com/SonarSource/sonar-scanner-maven</url>
-    <tag>HEAD</tag>
-  </scm>
-
-  <issueManagement>
-    <system>JIRA</system>
-    <url>http://jira.sonarsource.com/browse/MSONAR</url>
-  </issueManagement>
-
-  <distributionManagement>
-    <site>
-      <id>github</id>
-      <name>GitHub</name>
-      <url>scm:git:git@github.com:SonarSource/sonar-scanner-maven.git</url>
-    </site>
-  </distributionManagement>
-
   <properties>
-    <!--
-      We can't update the Maven core dependencies unless we remove the dependency on SecDispatcher
-      For more details see this ticket https://sonarsource.atlassian.net/browse/SCANMAVEN-222
-    -->
-    <mavenVersion>3.6.3</mavenVersion>
-    <mojo.java.target>11</mojo.java.target>
-    <maven.compiler.release>11</maven.compiler.release>
-    <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*</sonar.exclusions>
-    <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
-    <license.name>GNU LGPL v3</license.name>
+    <sonar.exclusions>
+      src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*
+    </sonar.exclusions>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
-      <version>${mavenVersion}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-model</artifactId>
-      <version>${mavenVersion}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-artifact</artifactId>
-      <version>${mavenVersion}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-core</artifactId>
-      <version>${mavenVersion}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.sonatype.plexus</groupId>
       <artifactId>plexus-sec-dispatcher</artifactId>
-      <version>1.4</version>
     </dependency>
-
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
       <artifactId>maven-plugin-annotations</artifactId>
-      <version>3.5</version>
       <scope>provided</scope>
     </dependency>
-
     <dependency>
       <groupId>org.sonarsource.scanner.lib</groupId>
       <artifactId>sonar-scanner-java-library</artifactId>
-      <version>3.1.1.261</version>
     </dependency>
-
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.14.0</version>
     </dependency>
-
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
       <artifactId>jsr305</artifactId>
-      <version>2.0.3</version>
       <scope>provided</scope>
     </dependency>
-
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.13.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
-      <version>5.10.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.vintage</groupId>
       <artifactId>junit-vintage-engine</artifactId>
-      <version>5.10.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>5.3.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
-      <version>3.26.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugin-testing</groupId>
       <artifactId>maven-plugin-testing-harness</artifactId>
-      <version>4.0.0-alpha-1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <!-- Needed for the maven-plugin-testing-harness -->
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-compat</artifactId>
-      <version>${mavenVersion}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

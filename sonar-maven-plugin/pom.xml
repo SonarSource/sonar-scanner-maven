@@ -21,7 +21,8 @@
   <dependencies>
     <dependency>
       <groupId>org.sonarsource.scanner.maven</groupId>
-      <artifactId>sonar-maven-plugin</artifactId>
+      <artifactId>property-dump-plugin</artifactId>
+      <version>1-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>

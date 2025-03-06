@@ -59,9 +59,9 @@ class BootstrapTest extends AbstractMavenTest {
 
     if (isSonarQubeSupportsJREProvisioning()) {
       BuildResult result = validateBuildWithoutCE(runner.runQuietly(null, build), EXEC_FAILED);
-      String url = ORCHESTRATOR.getServer().getUrl() + String.format("/api/v2/analysis/jres?os=%s&arch=%s", unsupportedOS, arch);
-      String expectedLog = String.format("Error status returned by url [%s]: 400", url);
-      assertThat(result.getLogs()).contains(expectedLog);
+      assertThat(result.getLogs())
+        .contains(String.format("JRE provisioning: os[%s], arch[%s]", unsupportedOS, arch))
+        .contains("Failed to query JRE metadata");
     } else {
       validateBuildWithCE(runner.runQuietly(null, build));
     }

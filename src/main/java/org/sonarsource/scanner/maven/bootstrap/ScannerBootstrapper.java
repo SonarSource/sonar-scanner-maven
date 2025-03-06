@@ -37,6 +37,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.sonarsource.scanner.lib.AnalysisProperties;
+import org.sonarsource.scanner.lib.ScannerEngineBootstrapResult;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
 import org.sonarsource.scanner.lib.ScannerEngineFacade;
 
@@ -66,8 +67,8 @@ public class ScannerBootstrapper {
 
   public boolean execute() throws MojoExecutionException {
     logEnvironmentInformation();
-    try (ScannerEngineFacade engineFacade = bootstrapper.bootstrap()) {
-
+    try (ScannerEngineBootstrapResult bootstrapResult = bootstrapper.bootstrap();
+         ScannerEngineFacade engineFacade = bootstrapResult.getEngineFacade()) {
       if (engineFacade.isSonarCloud()) {
         log.info("Communicating with SonarCloud");
       } else {

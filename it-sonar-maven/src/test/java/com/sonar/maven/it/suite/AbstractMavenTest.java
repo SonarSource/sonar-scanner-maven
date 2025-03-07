@@ -134,7 +134,7 @@ public abstract class AbstractMavenTest {
   protected static Version mojoVersion() {
     if (mojoVersion == null) {
       try {
-        for (String line : Files.readAllLines(Paths.get("../pom.xml"), StandardCharsets.UTF_8)) {
+        for (String line : Files.readAllLines(Paths.get("../sonar-maven-plugin/pom.xml"), StandardCharsets.UTF_8)) {
           if (line.startsWith("  <version>")) {
             String version = StringUtils.substringAfter(line, "<version>");
             version = StringUtils.substringBefore(version, "</version>");

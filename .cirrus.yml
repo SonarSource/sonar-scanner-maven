@@ -45,8 +45,6 @@ build_task:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
   script:
     - source cirrus-env BUILD
-    - mvn -f property-dump-plugin/pom.xml -B install
-    - cd sonar-maven-plugin
     - regular_mvn_build_deploy_analyze
   cleanup_before_cache_script:
     - cleanup_maven_repository
@@ -68,7 +66,6 @@ mend_scan_task:
   maven_cache:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
   mend_script:
-    - cd sonar-maven-plugin
     - source cirrus-env QA
     - source set_maven_build_version $BUILD_NUMBER
     - mvn clean install -DskipTests -B

@@ -12,7 +12,7 @@ curl -sSL https://repo1.maven.org/maven2/org/apache/maven/apache-maven/$MAVEN_VE
 cp -f ~/.m2/settings.xml $MAVEN_HOME_IT/conf/
 
 # We need to build this small plugin first, that will dump the analysis properties in a local file
-#mvn -pl 'property-dump-plugin' --batch-mode -Dmaven.home=$MAVEN_HOME_IT install
+mvn -pl 'property-dump-plugin' --batch-mode -Dmaven.home=$MAVEN_HOME_IT install
 
 # Run ITs.
-mvn  -B -e -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$MAVEN_HOME_IT verify
+mvn  -pl 'sonar-maven-its' -B -e -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$MAVEN_HOME_IT verify

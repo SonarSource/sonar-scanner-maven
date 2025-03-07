@@ -2,7 +2,9 @@
 
 # Set up environment variables.
 source cirrus-env QA
+cd sonar-maven-plugin
 source set_maven_build_version $BUILD_NUMBER
+cd ..
 
 # Install a specific version of Maven. We want to test against multiple versions.
 MAVEN_HOME_IT=`pwd`/maven_it
@@ -14,5 +16,5 @@ cp -f ~/.m2/settings.xml $MAVEN_HOME_IT/conf/
 mvn -f property-dump-plugin/pom.xml --batch-mode -Dmaven.home=$MAVEN_HOME_IT install
 
 # Run ITs.
-cd its
+cd it-sonar-maven
 mvn -B -e -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$MAVEN_HOME_IT verify

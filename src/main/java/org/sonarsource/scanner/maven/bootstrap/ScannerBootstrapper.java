@@ -69,9 +69,7 @@ public class ScannerBootstrapper {
     logEnvironmentInformation();
     try (ScannerEngineBootstrapResult bootstrapResult = bootstrapper.bootstrap();
          ScannerEngineFacade engineFacade = bootstrapResult.getEngineFacade()) {
-      if (engineFacade.isSonarCloud()) {
-        log.info("Communicating with SonarCloud");
-      } else {
+      if (!engineFacade.isSonarCloud()) {
         serverVersion = engineFacade.getServerVersion();
         log.info("Communicating with SonarQube Server " + serverVersion);
         checkSQVersion();

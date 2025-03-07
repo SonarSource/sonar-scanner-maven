@@ -285,15 +285,6 @@ class ScannerBootstrapperTest {
     verify(log).info("Communicating with SonarQube Server 10.5");
   }
 
-  @Test
-  void test_not_logging_the_version_when_sonarcloud_is_used() throws MojoExecutionException {
-    when(scannerEngineFacade.isSonarCloud()).thenReturn(true);
-    scannerBootstrapper.execute();
-
-    verify(log).info("Communicating with SonarCloud");
-    verify(log, never()).info("Communicating with SonarQube Server 8.0");
-  }
-
   @Nested
   class EnvironmentInformation {
     MockedStatic<SystemWrapper> mockedSystem;

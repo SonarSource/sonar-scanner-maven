@@ -45,8 +45,9 @@ build_task:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
   script:
     - source cirrus-env BUILD
+    - mvn clean install
     # running sonar analysis on the integration tests is not in scope of the ticket
-    - regular_mvn_build_deploy_analyze -pl '!sonar-maven-its'
+    #- regular_mvn_build_deploy_analyze -pl '!sonar-maven-its'
   cleanup_before_cache_script:
     - cleanup_maven_repository
 

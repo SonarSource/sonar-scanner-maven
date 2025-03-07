@@ -4,6 +4,7 @@
 source cirrus-env QA
 source set_maven_build_version $BUILD_NUMBER
 
+
 # Install a specific version of Maven. We want to test against multiple versions.
 MAVEN_HOME_IT=`pwd`/maven_it
 mkdir -p $MAVEN_HOME_IT
@@ -11,8 +12,7 @@ curl -sSL https://repo1.maven.org/maven2/org/apache/maven/apache-maven/$MAVEN_VE
 cp -f ~/.m2/settings.xml $MAVEN_HOME_IT/conf/
 
 # We need to build this small plugin first, that will dump the analysis properties in a local file
-mvn -f property-dump-plugin/pom.xml --batch-mode -Dmaven.home=$MAVEN_HOME_IT install
+#mvn -pl 'property-dump-plugin' --batch-mode -Dmaven.home=$MAVEN_HOME_IT install
 
 # Run ITs.
-cd sonar-maven-its
-mvn -B -e -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$MAVEN_HOME_IT verify
+mvn  -B -e -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$MAVEN_HOME_IT verify

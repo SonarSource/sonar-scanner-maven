@@ -89,6 +89,7 @@
     <maven.compiler.release>11</maven.compiler.release>
     <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
     <license.name>GNU LGPL v3</license.name>
+    <sonar.projectKey>org.sonarsource.scanner.maven:sonar-maven-plugin</sonar.projectKey>
   </properties>
 
   <dependencyManagement>

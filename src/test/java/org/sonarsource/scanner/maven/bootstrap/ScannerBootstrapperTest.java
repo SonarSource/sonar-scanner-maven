@@ -276,15 +276,6 @@ class ScannerBootstrapperTest {
     assertThat(values).hasSize(4);
   }
 
-  @Test
-  void test_logging_SQ_version() throws MojoExecutionException {
-    when(scannerEngineFacade.isSonarCloud()).thenReturn(false);
-    when(scannerEngineFacade.getServerVersion()).thenReturn("10.5");
-    scannerBootstrapper.execute();
-
-    verify(log).info("Communicating with SonarQube Server 10.5");
-  }
-
   @Nested
   class EnvironmentInformation {
     MockedStatic<SystemWrapper> mockedSystem;

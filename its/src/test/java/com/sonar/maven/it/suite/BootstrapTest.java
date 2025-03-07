@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BootstrapTest extends AbstractMavenTest {
 
   private static final String EFFECTIVE_JRE_PROVISIONING_LOG = "JRE provisioning:";
-  private static final String COMMUNICATING_WITH_SONARQUBE = "Communicating with SonarQube Server";
+  private static final String COMMUNICATING_WITH_SONARQUBE = "Communicating with SonarQube Community Build";
   private static final String STARTING_SCANNER_ENGINE = "Starting SonarScanner Engine";
   private static final String SKIPPING_ANALYSIS = "Skipping analysis";
   public static final String JRE_PROVISIONING_IS_DISABLED = "JRE provisioning is disabled";

@@ -1,79 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.sonarsource.parent</groupId>
-    <artifactId>parent</artifactId>
-    <version>83.0.0.2369</version>
+    <groupId>org.sonarsource.scanner.maven</groupId>
+    <artifactId>sonar-scanner-maven</artifactId>
+    <version>5.1.0-SNAPSHOT</version>
   </parent>
 
-  <groupId>org.sonarsource.scanner.maven</groupId>
+
   <artifactId>sonar-maven-plugin</artifactId>
-  <version>5.1.0-SNAPSHOT</version>
-  <packaging>maven-plugin</packaging>
-
   <name>SonarQube Scanner for Maven</name>
-  <description>Trigger SonarQube analysis on Maven projects</description>
-  <inceptionYear>2009</inceptionYear>
-
-  <licenses>
-    <license>
-      <name>GNU LGPL 3</name>
-      <url>http://www.gnu.org/licenses/lgpl.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-
-  <developers>
-    <developer>
-      <id>olamy</id>
-      <name>Olivier Lamy</name>
-      <email>olamy@apache.org</email>
-      <timezone>+1</timezone>
-    </developer>
-    <developer>
-      <id>godin</id>
-      <name>Evgeny Mandrikov</name>
-      <email>mandrikov@gmail.com</email>
-      <timezone>+3</timezone>
-    </developer>
-    <developer>
-      <id>simon.brandhof</id>
-      <name>Simon Brandhof</name>
-      <email>simon.brandhof@gmail.com</email>
-      <timezone>+1</timezone>
-    </developer>
-    <developer>
-      <id>henryju</id>
-      <name>Julien Henry</name>
-      <email>henryju@yahoo.fr</email>
-      <timezone>+1</timezone>
-    </developer>
-  </developers>
-
-  <prerequisites>
-    <maven>3.0</maven>
-  </prerequisites>
-
-  <scm>
-    <connection>scm:git:https://github.com/SonarSource/sonar-scanner-maven.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/SonarSource/sonar-scanner-maven.git</developerConnection>
-    <url>https://github.com/SonarSource/sonar-scanner-maven</url>
-    <tag>HEAD</tag>
-  </scm>
-
-  <issueManagement>
-    <system>JIRA</system>
-    <url>http://jira.sonarsource.com/browse/MSONAR</url>
-  </issueManagement>
-
-  <distributionManagement>
-    <site>
-      <id>github</id>
-      <name>GitHub</name>
-      <url>scm:git:git@github.com:SonarSource/sonar-scanner-maven.git</url>
-    </site>
-  </distributionManagement>
+  <packaging>maven-plugin</packaging>
 
   <properties>
     <!--
@@ -86,7 +23,9 @@
     <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*</sonar.exclusions>
     <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
     <license.name>GNU LGPL v3</license.name>
-    <sonar.projectKey>org.sonarsource.scanner.maven:sonar-scanner-maven</sonar.projectKey>
+    <sonar.exclusions>
+      src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*
+    </sonar.exclusions>
   </properties>
 
   <dependencies>

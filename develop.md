@@ -31,5 +31,5 @@ For example, in order to debug the test [java-compiler-executable](src/it/java-c
 *Note* that you have to run `mvn invoker:install` to debug the latest changes in your code!
 
 #### Integration Tests
-The Integration tests are located in `it-sonar-maven`.
+The Integration tests are located in `its`.
 Integration tests can be run with `mvn verify -Pits`.

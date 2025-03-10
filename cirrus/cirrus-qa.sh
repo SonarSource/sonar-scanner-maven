@@ -12,4 +12,4 @@ curl -sSL https://repo1.maven.org/maven2/org/apache/maven/apache-maven/$MAVEN_VE
 cp -f ~/.m2/settings.xml $MAVEN_HOME_IT/conf/
 
 # we don't need to rebuild the sonar-maven-plugin, it is already deployed on repox
-mvn -B -e -pl '!sonar-maven-plugin' -Pits -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$MAVEN_HOME_IT verify
+mvn --batch-mode --errors --projects '!sonar-maven-plugin' --activate-profiles its -Dsonar.runtimeVersion=$SQ_VERSION -Dmaven.test.redirectTestOutputToFile=false -Dmaven.home=$MAVEN_HOME_IT verify

@@ -45,7 +45,6 @@ build_task:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
   script:
     - source cirrus-env BUILD
-    - mvn -f property-dump-plugin/pom.xml -B install
     - regular_mvn_build_deploy_analyze
   cleanup_before_cache_script:
     - cleanup_maven_repository

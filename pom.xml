@@ -130,7 +130,7 @@
     <dependency>
       <groupId>org.sonarsource.scanner.lib</groupId>
       <artifactId>sonar-scanner-java-library</artifactId>
-      <version>3.2.1.385</version>
+      <version>3.3.0.423</version>
     </dependency>
 
     <dependency>

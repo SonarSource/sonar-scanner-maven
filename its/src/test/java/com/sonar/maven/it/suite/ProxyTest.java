@@ -67,8 +67,8 @@ class ProxyTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/many-source-dirs"))
       .setGoals(cleanPackageSonarGoal());
     build.addArgument("--settings=" + proxyXmlPatched.toAbsolutePath().toString());
-    build.addArgument("-X");
-    build.addArgument("-U");
+    build.addArgument("--debug");
+    build.addArgument("--update-snapshots");
     BuildResult result = executeBuildAndAssertWithCE(build);
 
     assertThat(result.getLogs()).contains("Setting proxy properties");

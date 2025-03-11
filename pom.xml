@@ -84,9 +84,6 @@
       We can't update the Maven core dependencies unless we remove the dependency on SecDispatcher
       For more details see this ticket https://sonarsource.atlassian.net/browse/SCANMAVEN-222
     -->
-    <mavenVersion>3.6.3</mavenVersion>
-    <mojo.java.target>11</mojo.java.target>
-    <maven.compiler.release>11</maven.compiler.release>
     <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
     <license.name>GNU LGPL v3</license.name>
   </properties>

@@ -50,9 +50,9 @@
   </developers>
 
   <modules>
-    <module>sonar-maven-plugin</module>
     <module>its</module>
     <module>property-dump-plugin</module>
+    <module>sonar-maven-plugin</module>
   </modules>
 
   <prerequisites>

@@ -33,3 +33,6 @@ For example, in order to debug the test [java-compiler-executable](src/it/java-c
 #### Integration Tests
 The Integration tests are located in `its`.
 Integration tests can be run with `mvn verify -Pits`.
+
+### Change the maven scanner version
+Use `mvn versions:set -DgenerateBackupPoms=false -DnewVersion=X.Y.Z-SNAPSHOT` to change te project version.

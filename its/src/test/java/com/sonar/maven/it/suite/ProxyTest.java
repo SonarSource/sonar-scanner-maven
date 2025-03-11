@@ -62,13 +62,13 @@ class ProxyTest extends AbstractMavenTest {
     Path proxyXmlPatched = temp.resolve("settings.xml");
     proxyXmlPatched.toFile().createNewFile();
     assertThat(proxyXml).exists();
-    replaceInFile(proxyXml, proxyXmlPatched, "8080", String.valueOf(proxy.port()));
+    replaceInFile(proxyXml, proxyXmlPatched, "$PORT", String.valueOf(proxy.port()));
 
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/many-source-dirs"))
       .setGoals(cleanPackageSonarGoal());
     build.addArgument("--settings=" + proxyXmlPatched.toAbsolutePath().toString());
-    build.addArgument("-X");
-    build.addArgument("-U");
+    build.addArgument("--debug");
+    build.addArgument("--update-snapshots");
     BuildResult result = executeBuildAndValidateWithCE(build);
 
     assertThat(result.getLogs()).contains("Setting proxy properties");

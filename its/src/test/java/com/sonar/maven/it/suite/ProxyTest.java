@@ -62,7 +62,7 @@ class ProxyTest extends AbstractMavenTest {
     Path proxyXmlPatched = temp.resolve("settings.xml");
     proxyXmlPatched.toFile().createNewFile();
     assertThat(proxyXml).exists();
-    replaceInFile(proxyXml, proxyXmlPatched, "8080", String.valueOf(proxy.port()));
+    replaceInFile(proxyXml, proxyXmlPatched, "__PORT__", String.valueOf(proxy.port()));
 
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/many-source-dirs"))
       .setGoals(cleanPackageSonarGoal());
@@ -77,7 +77,7 @@ class ProxyTest extends AbstractMavenTest {
 
   private void replaceInFile(Path srcFilePath, Path dstFilePath, String str, String replacement) throws IOException {
     List<String> lines = Files.readAllLines(srcFilePath, StandardCharsets.UTF_8);
-    lines = lines.stream().map(s -> s.replaceAll(str, replacement)).collect(Collectors.toList());
+    lines = lines.stream().map(s -> s.replace(str, replacement)).collect(Collectors.toList());
     Files.write(dstFilePath, lines);
   }
 

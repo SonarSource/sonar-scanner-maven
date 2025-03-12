@@ -22,7 +22,7 @@ There are 3 type of tests:
 The Unit Tests are located in src/test/java, and they can be run with `mvn test`
 
 #### Invoker Tests
-The Invoker tests are located in src/it, and they can be run with `mvn verify`
+The Invoker tests are located in `sonar-maven-plugin/src/it`, and they can be run with `mvn verify`
 
 The [maven-invoker-plugin](https://maven.apache.org/plugins/maven-invoker-plugin/) allows to debug single tests from the cli with `mvn invoker:run -Dinvoker.test=<test-name> -Dinvoker.mavenExecutable=mvnDebug`.
 
@@ -32,5 +32,7 @@ For example, in order to debug the test [java-compiler-executable](src/it/java-c
 
 #### Integration Tests
 The Integration tests are located in `its`.
-Before running them, you have to package the `property-dump-plugin` by running the following command from the root of the project: `mvn -f property-dump-plugin/pom.xml clean package`.
-Then, they can be run as a separate Maven project: `cd its && mvn verify`
+Integration tests can be run with `mvn verify -Pits`.
+
+### Change the maven scanner version
+Use `mvn versions:set -DgenerateBackupPoms=false -DnewVersion=X.Y.Z-SNAPSHOT` to change te project version.

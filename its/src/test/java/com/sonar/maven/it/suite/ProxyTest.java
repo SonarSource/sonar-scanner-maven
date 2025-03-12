@@ -24,6 +24,7 @@ import com.sonar.maven.it.Proxy;
 import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.MavenBuild;
 import java.io.IOException;
+import java.net.Socket;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -42,13 +43,13 @@ class ProxyTest extends AbstractMavenTest {
   private Proxy proxy;
 
   @BeforeEach
-  public void prepare() throws Exception {
+  void prepare() throws Exception {
     proxy = new Proxy();
     proxy.startProxy();
   }
 
   @AfterEach
-  public void after() throws Exception {
+  void after() throws Exception {
     if (proxy != null) {
       proxy.stopProxy();
     }
@@ -56,7 +57,7 @@ class ProxyTest extends AbstractMavenTest {
 
   @Test
   void useActiveProxyInSettings(@TempDir Path temp) throws IOException, URISyntaxException, InterruptedException {
-    Thread.sleep(2000);
+    waitForProxyToBeUpAndRunning(proxy.port());
     Path proxyXml = Paths.get(this.getClass().getResource("/proxy-settings.xml").toURI());
     Path proxyXmlPatched = temp.resolve("settings.xml");
     proxyXmlPatched.toFile().createNewFile();
@@ -78,5 +79,17 @@ class ProxyTest extends AbstractMavenTest {
     List<String> lines = Files.readAllLines(srcFilePath, StandardCharsets.UTF_8);
     lines = lines.stream().map(s -> s.replaceAll(str, replacement)).collect(Collectors.toList());
     Files.write(dstFilePath, lines);
+  }
+
+  private void waitForProxyToBeUpAndRunning(int port) throws InterruptedException {
+    for (int retryCount = 0; retryCount < 100; retryCount++) {
+      try (Socket ignored = new Socket("localhost", port)) {
+        // Proxy is up
+        return;
+      } catch (IOException e) {
+        Thread.sleep(50);
+      }
+    }
+    throw new RuntimeException("Proxy server did not start within the expected time.");
   }
 }

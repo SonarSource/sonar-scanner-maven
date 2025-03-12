@@ -21,6 +21,7 @@ package com.sonar.maven.it;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
@@ -34,16 +35,12 @@ import org.eclipse.jetty.security.authentication.LoginAuthenticator;
 import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.Authentication.User;
 import org.eclipse.jetty.server.UserIdentity;
-import org.eclipse.jetty.util.B64Code;
 import org.eclipse.jetty.util.security.Constraint;
 
 /**
  * Inspired from {@link BasicAuthenticator} but adapted for proxy auth.
  */
 public class ProxyAuthenticator extends LoginAuthenticator {
-  /* ------------------------------------------------------------ */
-  public ProxyAuthenticator() {
-  }
 
   /* ------------------------------------------------------------ */
   /**
@@ -74,7 +71,7 @@ public class ProxyAuthenticator extends LoginAuthenticator {
           String method = credentials.substring(0, space);
           if ("basic".equalsIgnoreCase(method)) {
             credentials = credentials.substring(space + 1);
-            credentials = B64Code.decode(credentials, StandardCharsets.ISO_8859_1);
+            credentials = new String(Base64.getDecoder().decode(credentials), StandardCharsets.ISO_8859_1);
             int i = credentials.indexOf(':');
             if (i > 0) {
               String username = credentials.substring(0, i);
@@ -101,7 +98,7 @@ public class ProxyAuthenticator extends LoginAuthenticator {
   }
 
   @Override
-  public boolean secureResponse(ServletRequest req, ServletResponse res, boolean mandatory, User validatedUser) throws ServerAuthException {
+  public boolean secureResponse(ServletRequest req, ServletResponse res, boolean mandatory, User validatedUser) {
     return true;
   }
 

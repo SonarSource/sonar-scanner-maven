@@ -21,6 +21,7 @@ package org.sonarsource.scanner.maven;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -82,6 +83,9 @@ public class SonarQubeMojo extends AbstractMojo {
   @Component
   private ToolchainManager toolchainManager;
 
+  // Visible for testing
+  Map<String, String> environmentVariables = new HashMap<>(System.getenv());
+
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
 
@@ -92,7 +96,7 @@ public class SonarQubeMojo extends AbstractMojo {
 
     warnAboutUnspecifiedSonarPluginVersion();
 
-    Map<String, String> envProps = EnvironmentConfig.load(System.getenv());
+    Map<String, String> envProps = EnvironmentConfig.load(environmentVariables);
 
     MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), toolchainManager);
     MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), mavenCompilerResolver, envProps);

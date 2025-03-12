@@ -11,9 +11,12 @@ set -euo pipefail
   else
     export SQ_VERSION="${SQ_VERSION:-LATEST_RELEASE}"
     export MAVEN_VERSION="${MAVEN_VERSION:-3.9.4}"
+    mvn --batch-mode --errors clean
+    mvn --batch-mode --errors \
+        --file 'sonar-maven-plugin/pom.xml' \
+        -DskipTests=true -Dinvoker.skip=true \
+        clean install
   fi
-
-  mvn --batch-mode --errors clean
 
   # Install a specific version of Maven. We want to test against multiple versions.
   MAVEN_HOME_IT="${REPOSITORY_DIR}/target/downloaded-maven-${MAVEN_VERSION}"

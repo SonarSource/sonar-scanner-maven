@@ -47,6 +47,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
 
 public class SonarQubeMojoTest {
@@ -285,11 +286,63 @@ public class SonarQubeMojoTest {
     assertThat(readProps("target/dump.properties")).contains((entry("sonar.verbose", "true")));
   }
 
+  @Test
+  public void test_without_sonar_region() throws Exception {
+    executeProject("sample-project", DEFAULT_GOAL);
+    assertThat(readProps("target/dump.properties"))
+      .contains((entry("sonar.host.url", "https://sonarcloud.io")))
+      .contains((entry("sonar.scanner.apiBaseUrl", "https://api.sonarcloud.io")));
+  }
+
+  @Test
+  public void test_without_sonar_region_but_sonar_host_url() throws Exception {
+    executeProject("sample-project", DEFAULT_GOAL, "sonar.host.url", "https://my.sonarqube.com/sonarqube");
+    assertThat(readProps("target/dump.properties"))
+      .contains((entry("sonar.host.url", "https://my.sonarqube.com/sonarqube")))
+      .contains((entry("sonar.scanner.apiBaseUrl", "https://my.sonarqube.com/sonarqube/api/v2")));
+  }
+
+  @Test
+  public void test_without_sonar_region_but_sonar_host_url_env() throws Exception {
+    var env = Map.of("SONAR_HOST_URL", "https://my.sonarqube.com/sonarqube");
+    executeProject("sample-project", DEFAULT_GOAL, env);
+    assertThat(readProps("target/dump.properties"))
+      .contains((entry("sonar.host.url", "https://my.sonarqube.com/sonarqube")))
+      .contains((entry("sonar.scanner.apiBaseUrl", "https://my.sonarqube.com/sonarqube/api/v2")));
+  }
+
+  @Test
+  public void test_sonar_region_us() throws Exception {
+    executeProject("sample-project", DEFAULT_GOAL, "sonar.region", "us");
+    assertThat(readProps("target/dump.properties"))
+      .contains((entry("sonar.host.url", "https://sonarqube.us")))
+      .contains((entry("sonar.scanner.apiBaseUrl", "https://api.sonarqube.us")));
+  }
+
+  @Test
+  public void test_sonar_region_us_using_env() throws Exception {
+    var env = Map.of("SONAR_REGION", "us");
+    executeProject("sample-project", DEFAULT_GOAL, env);
+    assertThat(readProps("target/dump.properties"))
+      .contains((entry("sonar.host.url", "https://sonarqube.us")))
+      .contains((entry("sonar.scanner.apiBaseUrl", "https://api.sonarqube.us")));
+  }
+
+  @Test
+  public void test_sonar_region_invalid() {
+    assertThatThrownBy(() -> executeProject("sample-project", DEFAULT_GOAL, "sonar.region", "invalid"))
+      .hasMessageContaining("Invalid region 'invalid'.");
+  }
+
   private File executeProject(String projectName) throws Exception {
     return executeProject(projectName, DEFAULT_GOAL);
   }
 
   private File executeProject(String projectName, String goal, String... properties) throws Exception {
+    return executeProject(projectName, goal, Collections.emptyMap(), properties);
+  }
+
+  private File executeProject(String projectName, String goal, Map<String, String> env, String... properties) throws Exception {
     File baseDir = new File("src/test/projects/" + projectName).getAbsoluteFile();
     SonarQubeMojo mojo = getMojo(baseDir);
     mojo.getSession().getRequest().setGoals(Collections.singletonList(goal));
@@ -311,6 +364,13 @@ public class SonarQubeMojoTest {
     for (int i = 0; i < properties.length; i += 2) {
       userProperties.put(properties[i], properties[i + 1]);
     }
+
+    // Clean environment variables. We don't want the context of the CI to interfere with the tests.
+    // For example, we don't want the SONAR_HOST_URL to be set to https://next.sonarqube.com/sonarqube/
+    mojo.environmentVariables.entrySet()
+      .removeIf(entry -> entry.getKey().startsWith("SONAR_") || entry.getKey().startsWith("SONARQUBE_"));
+
+    mojo.environmentVariables.putAll(env);
 
     mojo.execute();
 

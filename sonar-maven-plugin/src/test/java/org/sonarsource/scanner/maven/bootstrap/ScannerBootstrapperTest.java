@@ -128,7 +128,7 @@ class ScannerBootstrapperTest {
 
   @Test
   void testSQBefore56() {
-    when(scannerEngineFacade.isSonarCloud()).thenReturn(false);
+    when(scannerEngineFacade.isSonarQubeCloud()).thenReturn(false);
     when(scannerEngineFacade.getServerVersion()).thenReturn("5.1");
 
     MojoExecutionException exception = assertThrows(MojoExecutionException.class,
@@ -141,7 +141,7 @@ class ScannerBootstrapperTest {
 
   @Test
   void testSQ56() throws MojoExecutionException {
-    when(scannerEngineFacade.isSonarCloud()).thenReturn(false);
+    when(scannerEngineFacade.isSonarQubeCloud()).thenReturn(false);
     when(scannerEngineFacade.getServerVersion()).thenReturn("5.6");
     scannerBootstrapper.execute();
 
@@ -150,7 +150,7 @@ class ScannerBootstrapperTest {
 
   @Test
   void testVersionComparisonWithBuildNumber() throws MojoExecutionException {
-    when(scannerEngineFacade.isSonarCloud()).thenReturn(false);
+    when(scannerEngineFacade.isSonarQubeCloud()).thenReturn(false);
     when(scannerEngineFacade.getServerVersion()).thenReturn("6.3.0.12345");
     scannerBootstrapper.execute();
 
@@ -283,7 +283,7 @@ class ScannerBootstrapperTest {
     @BeforeEach
     void before() {
       when(scannerEngineFacade.getServerVersion()).thenReturn("9.9");
-      when(scannerEngineFacade.isSonarCloud()).thenReturn(false);
+      when(scannerEngineFacade.isSonarQubeCloud()).thenReturn(false);
       mockedSystem = mockStatic(SystemWrapper.class);
     }
 
@@ -342,7 +342,7 @@ class ScannerBootstrapperTest {
   }
 
   private void verifyCommonCalls() {
-    verify(scannerEngineFacade).isSonarCloud();
+    verify(scannerEngineFacade).isSonarQubeCloud();
     verify(scannerEngineFacade).analyze(projectProperties);
   }
 }

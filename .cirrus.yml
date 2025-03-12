@@ -84,7 +84,7 @@ qa_task:
   eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 6
-    memory: 4G
+    memory: 6G
   env:
     matrix:
       - SQ_VERSION: DEV

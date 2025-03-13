@@ -15,7 +15,7 @@
       <active>true</active>
       <protocol>http|https</protocol>
       <host>localhost</host>
-      <port>8080</port>
+      <port>__PORT__</port>
       <username>scott</username>
       <password>tiger</password>
       <nonProxyHosts></nonProxyHosts>

@@ -71,10 +71,10 @@ public class ScannerBootstrapperFactory {
 
   public Map<String, String> createGlobalProperties() {
     Map<String, String> p = new HashMap<>();
-    MavenUtils.putAll(session.getCurrentProject().getProperties(), p);
+    MavenUtils.putRelevant(session.getCurrentProject().getProperties(), p);
     p.putAll(envProps);
-    MavenUtils.putAll(session.getSystemProperties(), p);
-    MavenUtils.putAll(session.getUserProperties(), p);
+    MavenUtils.putRelevant(session.getSystemProperties(), p);
+    MavenUtils.putRelevant(session.getUserProperties(), p);
     p.putAll(propertyDecryptor.decryptProperties(p));
     return p;
   }

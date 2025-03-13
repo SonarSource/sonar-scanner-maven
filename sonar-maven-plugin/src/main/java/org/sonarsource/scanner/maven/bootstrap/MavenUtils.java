@@ -22,8 +22,14 @@ package org.sonarsource.scanner.maven.bootstrap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -40,6 +46,9 @@ public final class MavenUtils {
   public static final String GROUP_ID_APACHE_MAVEN = "org.apache.maven.plugins";
 
   public static final String GROUP_ID_CODEHAUS_MOJO = "org.codehaus.mojo";
+
+  // Matches strings starting with "{AES}", "{b64}", "{anything}", etc.
+  private static final Pattern ENCRYPTED_VALUE = Pattern.compile("^\\{[a-zA-Z0-9_-]++\\}.*");
 
   private MavenUtils() {
     // utility class with only static methods
@@ -92,6 +101,43 @@ public final class MavenUtils {
     for (final String name : src.stringPropertyNames()) {
       dest.put(name, src.getProperty(name));
     }
+  }
+
+  /**
+   * Copy all items, except irrelevant encrypted properties, that is,
+   * entries which are encrypted and whose name does not contain "sonar".
+   */
+  static void putRelevant(Properties src, Properties dest) {
+    putRelevant(src::stringPropertyNames, src::getProperty, dest::put);
+  }
+
+  /**
+   * See {@link #putRelevant(Properties, Properties)}.
+   */
+  static void putRelevant(Properties src, Map<String, String> dest) {
+    putRelevant(src::stringPropertyNames, src::getProperty, dest::put);
+  }
+
+  /**
+   * See {@link #putRelevant(Properties, Properties)}.
+   */
+  static void putRelevant(Map<String, String> src, Map<String, String> dest) {
+    putRelevant(src::keySet, src::get, dest::put);
+  }
+
+  private static void putRelevant(Supplier<Set<String>> propertyNames, UnaryOperator<String> getProperty, BiConsumer<String, String> dest) {
+    for (String name : propertyNames.get()) {
+      String value = getProperty.apply(name);
+      if (isIrrelevantEncryptedProperty(name, value)) {
+        continue;
+      }
+      dest.accept(name, value);
+    }
+  }
+
+  private static boolean isIrrelevantEncryptedProperty(String name, String value) {
+    return ENCRYPTED_VALUE.matcher(value).matches()
+      && !name.toLowerCase(Locale.US).contains("sonar");
   }
 
   /**

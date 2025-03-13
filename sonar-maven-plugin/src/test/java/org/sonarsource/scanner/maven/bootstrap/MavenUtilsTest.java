@@ -20,7 +20,10 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import org.junit.jupiter.api.Test;
 
 
@@ -71,5 +74,33 @@ class MavenUtilsTest {
     // Interleaved escaped values
     assertThat(MavenUtils.splitAsCsv("\"/opt/lib\",src/main/java,\"/home/users/me/artifact-123,456.jar\""))
       .containsOnly(expectedValues);
+  }
+
+  @Test
+  void testPutRelevant() {
+    Properties src = new Properties();
+    src.put("abc", "123");
+    src.put("encrypted1", "{AES}hello1");
+    src.put("encrypted2", "{b64}hello2");
+    src.put("encrypted3", "{aes-gcm}hello3");
+    src.put("weird", "this{is}fine");
+    src.put("sonar.ours", "{aes}let-it-pass");
+    src.put("env.SONAR_VAR", "{aes}this-too");
+
+    Map<String, String> destMap = new HashMap<>();
+    Properties destProps = new Properties();
+
+    MavenUtils.putRelevant(src, destMap);
+    MavenUtils.putRelevant(src, destProps);
+
+    Map<String, String> expected = Map.of(
+      "abc", "123",
+      "weird", "this{is}fine",
+      "sonar.ours", "{aes}let-it-pass",
+      "env.SONAR_VAR", "{aes}this-too"
+    );
+
+    assertThat(destMap).containsExactlyInAnyOrderEntriesOf(expected);
+    assertThat(destProps).containsExactlyInAnyOrderEntriesOf(expected);
   }
 }

@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -60,8 +59,6 @@ public class SonarQubeMojoTest {
 
   @Rule
   public MojoRule mojoRule = new MojoRule();
-
-  private final Map<String, String> env = new HashMap<>();
 
   private TestLog logger = new TestLog(TestLog.LogLevel.WARN);
 
@@ -307,8 +304,8 @@ public class SonarQubeMojoTest {
 
   @Test
   public void test_without_sonar_region_but_sonar_host_url_env() throws Exception {
-    env.put("SONAR_HOST_URL", "https://my.sonarqube.com/sonarqube");
-    executeProject("sample-project", DEFAULT_GOAL);
+    var env = Map.of("SONAR_HOST_URL", "https://my.sonarqube.com/sonarqube");
+    executeProject("sample-project", DEFAULT_GOAL, env);
     assertThat(readProps("target/dump.properties"))
       .contains((entry("sonar.host.url", "https://my.sonarqube.com/sonarqube")))
       .contains((entry("sonar.scanner.apiBaseUrl", "https://my.sonarqube.com/sonarqube/api/v2")));
@@ -324,8 +321,8 @@ public class SonarQubeMojoTest {
 
   @Test
   public void test_sonar_region_us_using_env() throws Exception {
-    env.put("SONAR_REGION", "us");
-    executeProject("sample-project", DEFAULT_GOAL);
+    var env = Map.of("SONAR_REGION", "us");
+    executeProject("sample-project", DEFAULT_GOAL, env);
     assertThat(readProps("target/dump.properties"))
       .contains((entry("sonar.host.url", "https://sonarqube.us")))
       .contains((entry("sonar.scanner.apiBaseUrl", "https://api.sonarqube.us")));
@@ -342,6 +339,10 @@ public class SonarQubeMojoTest {
   }
 
   private File executeProject(String projectName, String goal, String... properties) throws Exception {
+    return executeProject(projectName, goal, Collections.emptyMap(), properties);
+  }
+
+  private File executeProject(String projectName, String goal, Map<String, String> env, String... properties) throws Exception {
     File baseDir = new File("src/test/projects/" + projectName).getAbsoluteFile();
     SonarQubeMojo mojo = getMojo(baseDir);
     mojo.getSession().getRequest().setGoals(Collections.singletonList(goal));

@@ -105,11 +105,9 @@ public class SonarQubeMojo extends AbstractMojo {
       return;
     }
 
-    ScannerEngineBootstrapper bootstrapper = bootstrapperFactory.create();
-    boolean success = new ScannerBootstrapper(getLog(), session, bootstrapper, mavenProjectConverter, propertyDecryptor).execute();
-    if (!success) {
-      throw new MojoFailureException("Analysis failed");
-    }
+    ScannerEngineBootstrapper engineBootstrapper = bootstrapperFactory.create();
+    ScannerBootstrapper scannerBootstrapper = new ScannerBootstrapper(getLog(), session, engineBootstrapper, mavenProjectConverter, propertyDecryptor);
+    scannerBootstrapper.execute();
   }
 
   private void warnAboutUnspecifiedSonarPluginVersion() {

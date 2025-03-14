@@ -50,6 +50,7 @@ import org.sonarsource.scanner.lib.ScannerEngineFacade;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
@@ -123,6 +124,8 @@ class ScannerBootstrapperTest {
 
     when(scannerEngineBootstrapResult.getEngineFacade()).thenReturn(scannerEngineFacade);
     when(scannerEngineBootstrapper.bootstrap()).thenReturn(scannerEngineBootstrapResult);
+    when(scannerEngineBootstrapResult.isSuccessful()).thenReturn(true);
+    when(scannerEngineFacade.analyze(any())).thenReturn(true);
     scannerBootstrapper = new ScannerBootstrapper(log, session, scannerEngineBootstrapper, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher));
   }
 
@@ -146,6 +149,29 @@ class ScannerBootstrapperTest {
     scannerBootstrapper.execute();
 
     verifyCommonCalls();
+  }
+
+  @Test
+  void when_ScannerEngineBootstrapper_is_not_successful_getEngineFacade_should_not_be_called() {
+    when(scannerEngineBootstrapResult.isSuccessful()).thenReturn(false);
+    when(scannerEngineBootstrapResult.getEngineFacade()).thenThrow(new IllegalAccessError("Should not be called"));
+    when(scannerEngineFacade.isSonarCloud()).thenReturn(false);
+    when(scannerEngineFacade.getServerVersion()).thenReturn("5.6");
+
+    assertThatThrownBy( () -> scannerBootstrapper.execute())
+      .isInstanceOf(MojoExecutionException.class)
+      .hasMessage("The scanner boostrapping has failed! See the logs for more details.");
+  }
+
+  @Test
+  void throw_an_exception_when_analyze_fail() {
+    when(scannerEngineFacade.analyze(any())).thenReturn(false);
+    when(scannerEngineFacade.isSonarCloud()).thenReturn(false);
+    when(scannerEngineFacade.getServerVersion()).thenReturn("5.6");
+
+    assertThatThrownBy( () -> scannerBootstrapper.execute())
+      .isInstanceOf(MojoExecutionException.class)
+      .hasMessage("The scanner analysis has failed! See the logs for more details.");
   }
 
   @Test

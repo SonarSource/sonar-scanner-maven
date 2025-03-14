@@ -123,6 +123,7 @@ class ScannerBootstrapperTest {
 
     when(scannerEngineBootstrapResult.getEngineFacade()).thenReturn(scannerEngineFacade);
     when(scannerEngineBootstrapper.bootstrap()).thenReturn(scannerEngineBootstrapResult);
+    when(scannerEngineBootstrapResult.isSuccessful()).thenReturn(true);
     scannerBootstrapper = new ScannerBootstrapper(log, session, scannerEngineBootstrapper, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher));
   }
 
@@ -146,6 +147,16 @@ class ScannerBootstrapperTest {
     scannerBootstrapper.execute();
 
     verifyCommonCalls();
+  }
+
+  @Test
+  void when_ScannerEngineBootstrapper_is_not_successful_getEngineFacade_should_not_be_called() throws MojoExecutionException {
+    when(scannerEngineBootstrapResult.isSuccessful()).thenReturn(false);
+    when(scannerEngineBootstrapResult.getEngineFacade()).thenThrow(new IllegalAccessError("Should not be called"));
+    when(scannerEngineFacade.isSonarCloud()).thenReturn(false);
+    when(scannerEngineFacade.getServerVersion()).thenReturn("5.6");
+    boolean result = scannerBootstrapper.execute();
+    assertThat(result).isFalse();
   }
 
   @Test

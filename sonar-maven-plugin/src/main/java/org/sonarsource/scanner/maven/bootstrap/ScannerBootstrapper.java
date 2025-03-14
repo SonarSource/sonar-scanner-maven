@@ -67,13 +67,18 @@ public class ScannerBootstrapper {
 
   public boolean execute() throws MojoExecutionException {
     logEnvironmentInformation();
-    try (ScannerEngineBootstrapResult bootstrapResult = bootstrapper.bootstrap();
-         ScannerEngineFacade engineFacade = bootstrapResult.getEngineFacade()) {
-      if (!engineFacade.isSonarCloud()) {
-        serverVersion = engineFacade.getServerVersion();
-        checkSQVersion();
+    try (ScannerEngineBootstrapResult bootstrapResult = bootstrapper.bootstrap()) {
+      if (!bootstrapResult.isSuccessful()) {
+        // error message is already logged
+        return false;
       }
-      return engineFacade.analyze(collectProperties());
+      try (ScannerEngineFacade engineFacade = bootstrapResult.getEngineFacade()) {
+        if (!engineFacade.isSonarCloud()) {
+          serverVersion = engineFacade.getServerVersion();
+          checkSQVersion();
+        }
+        return engineFacade.analyze(collectProperties());
+      }
     } catch (Exception e) {
       throw new MojoExecutionException(e.getMessage(), e);
     }

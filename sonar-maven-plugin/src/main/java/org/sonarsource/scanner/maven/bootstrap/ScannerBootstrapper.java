@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.sonarsource.scanner.lib.AnalysisProperties;
@@ -65,19 +66,20 @@ public class ScannerBootstrapper {
     this.propertyDecryptor = propertyDecryptor;
   }
 
-  public boolean execute() throws MojoExecutionException {
+  public void execute() throws MojoExecutionException {
     logEnvironmentInformation();
     try (ScannerEngineBootstrapResult bootstrapResult = bootstrapper.bootstrap()) {
       if (!bootstrapResult.isSuccessful()) {
-        // error message is already logged
-        return false;
+        throw new MojoFailureException("The scanner boostrapping has failed! See the logs for more details.");
       }
       try (ScannerEngineFacade engineFacade = bootstrapResult.getEngineFacade()) {
         if (!engineFacade.isSonarCloud()) {
           serverVersion = engineFacade.getServerVersion();
           checkSQVersion();
         }
-        return engineFacade.analyze(collectProperties());
+        if (!engineFacade.analyze(collectProperties())) {
+          throw new MojoFailureException("The scanner analysis has failed! See the logs for more details.");
+        }
       }
     } catch (Exception e) {
       throw new MojoExecutionException(e.getMessage(), e);

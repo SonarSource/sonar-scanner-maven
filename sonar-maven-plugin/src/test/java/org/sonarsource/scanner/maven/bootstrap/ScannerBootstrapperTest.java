@@ -152,7 +152,7 @@ class ScannerBootstrapperTest {
   }
 
   @Test
-  void when_ScannerEngineBootstrapper_is_not_successful_getEngineFacade_should_not_be_called() throws MojoExecutionException {
+  void when_ScannerEngineBootstrapper_is_not_successful_getEngineFacade_should_not_be_called() {
     when(scannerEngineBootstrapResult.isSuccessful()).thenReturn(false);
     when(scannerEngineBootstrapResult.getEngineFacade()).thenThrow(new IllegalAccessError("Should not be called"));
     when(scannerEngineFacade.isSonarCloud()).thenReturn(false);
@@ -161,6 +161,17 @@ class ScannerBootstrapperTest {
     assertThatThrownBy( () -> scannerBootstrapper.execute())
       .isInstanceOf(MojoExecutionException.class)
       .hasMessage("The scanner boostrapping has failed! See the logs for more details.");
+  }
+
+  @Test
+  void throw_an_exception_when_analyze_fail() {
+    when(scannerEngineFacade.analyze(any())).thenReturn(false);
+    when(scannerEngineFacade.isSonarCloud()).thenReturn(false);
+    when(scannerEngineFacade.getServerVersion()).thenReturn("5.6");
+
+    assertThatThrownBy( () -> scannerBootstrapper.execute())
+      .isInstanceOf(MojoExecutionException.class)
+      .hasMessage("The scanner analysis has failed! See the logs for more details.");
   }
 
   @Test

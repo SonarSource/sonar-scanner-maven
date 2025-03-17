@@ -204,11 +204,11 @@ public abstract class AbstractMavenTest {
     return versionProperty != null ? versionProperty : "LATEST_RELEASE";
   }
 
-  public BuildResult executeBuildAndValidateWithCE(Build<?> build) {
-    return validateBuildWithCE(ORCHESTRATOR.executeBuild(build));
+  public BuildResult executeBuildAndAssertWithCE(Build<?> build) {
+    return assertBuildWithCE(ORCHESTRATOR.executeBuild(build));
   }
 
-  public BuildResult validateBuildWithCE(BuildResult result) {
+  public BuildResult assertBuildWithCE(BuildResult result) {
     assertBuildResultStatuses(result, 0);
     List<String> ceTaskIds = extractCETaskIds(result);
     if (ceTaskIds.isEmpty()) {
@@ -220,15 +220,15 @@ public abstract class AbstractMavenTest {
     return result;
   }
 
-  public BuildResult executeBuildAndValidateWithoutCE(Build<?> build) {
-    return validateBuildWithoutCE(ORCHESTRATOR.executeBuild(build));
+  public BuildResult executeBuildAndAssertWithoutCE(Build<?> build) {
+    return assertBuildWithoutCE(ORCHESTRATOR.executeBuild(build));
   }
 
-  public static BuildResult validateBuildWithoutCE(BuildResult result) {
-    return validateBuildWithoutCE(result, EXEC_SUCCESS);
+  public static BuildResult assertBuildWithoutCE(BuildResult result) {
+    return assertBuildWithoutCE(result, EXEC_SUCCESS);
   }
 
-  public static BuildResult validateBuildWithoutCE(BuildResult result, int expectedStatus) {
+  public static BuildResult assertBuildWithoutCE(BuildResult result, int expectedStatus) {
     assertBuildResultStatuses(result, expectedStatus);
     assertThat(extractCETaskIds(result))
       .withFailMessage("The build result contains unexpected CE task ids")

@@ -20,6 +20,7 @@
 package org.sonar.dump;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -59,7 +60,9 @@ public class PropertyDumpPlugin implements Plugin, Sensor {
       getPropertyKeys("DUMP_ENV_PROPERTIES").forEach(key -> props.setProperty(key, nonNull(System.getenv(key))));
       getPropertyKeys("DUMP_SYSTEM_PROPERTIES").forEach(key -> props.setProperty(key, nonNull(System.getProperty(key, ""))));
       props.stringPropertyNames().forEach(key -> LOG.info("{}={}", key, props.getProperty(key)));
-      props.store(Files.newOutputStream(filePath), null);
+      try (OutputStream out = Files.newOutputStream(filePath)) {
+        props.store(out, null);
+      }
     } catch (IOException e) {
       throw new IllegalStateException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);
     }

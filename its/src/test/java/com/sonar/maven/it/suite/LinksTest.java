@@ -40,7 +40,7 @@ class LinksTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("batch/links-project"))
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scm.disabled", "true");
-    executeBuildAndValidateWithCE(build);
+    executeBuildAndAssertWithCE(build);
 
     checkLinks();
   }

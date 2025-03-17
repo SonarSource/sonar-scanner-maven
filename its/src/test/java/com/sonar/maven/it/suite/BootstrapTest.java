@@ -58,12 +58,12 @@ class BootstrapTest extends AbstractMavenTest {
       .setGoals(cleanSonarGoal());
 
     if (isSonarQubeSupportsJREProvisioning()) {
-      BuildResult result = validateBuildWithoutCE(runner.runQuietly(null, build), EXEC_FAILED);
+      BuildResult result = assertBuildWithoutCE(runner.runQuietly(null, build), EXEC_FAILED);
       assertThat(result.getLogs())
         .contains(String.format("JRE provisioning: os[%s], arch[%s]", unsupportedOS, arch))
         .contains("Failed to query JRE metadata");
     } else {
-      validateBuildWithCE(runner.runQuietly(null, build));
+      assertBuildWithCE(runner.runQuietly(null, build));
     }
   }
 
@@ -75,7 +75,7 @@ class BootstrapTest extends AbstractMavenTest {
       // activate in the pom.xml <properties><sonar.skip>true</sonar.skip></properties>
       .addArguments("-Ptest-sonar-skip")
       .setGoals(sonarGoal());
-    BuildResult result = executeBuildAndValidateWithoutCE(build);
+    BuildResult result = executeBuildAndAssertWithoutCE(build);
     assertThat(result.getLogs())
       .contains(SKIPPING_ANALYSIS)
       .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
@@ -89,7 +89,7 @@ class BootstrapTest extends AbstractMavenTest {
       // analyze using: mvn sonar:sonar -Dsonar.skip=true
       .setProperty("sonar.skip", "true")
       .setGoals(sonarGoal());
-    BuildResult result = executeBuildAndValidateWithoutCE(build);
+    BuildResult result = executeBuildAndAssertWithoutCE(build);
     assertThat(result.getLogs())
       .contains(SKIPPING_ANALYSIS)
       .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
@@ -103,7 +103,7 @@ class BootstrapTest extends AbstractMavenTest {
       // activate in the pom.xml <configuration><skip>true</skip></configuration>
       .addArguments("-Ptest-plugin-skip")
       .setGoals(sonarGoal());
-    BuildResult result = executeBuildAndValidateWithoutCE(build);
+    BuildResult result = executeBuildAndAssertWithoutCE(build);
     assertThat(result.getLogs())
       .contains(SKIPPING_ANALYSIS)
       .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG, COMMUNICATING_WITH_SONARQUBE, STARTING_SCANNER_ENGINE);
@@ -118,7 +118,7 @@ class BootstrapTest extends AbstractMavenTest {
       .setProperty("sonar.scanner.skipJreProvisioning", "true")
       .setEnvironmentVariable("DUMP_SYSTEM_PROPERTIES", "java.home")
       .setGoals(sonarGoal());
-    BuildResult result = executeBuildAndValidateWithCE(build);
+    BuildResult result = executeBuildAndAssertWithCE(build);
     assertThat(result.getLogs())
       .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG);
     if (isSonarQubeSupportsJREProvisioning()) {
@@ -141,7 +141,7 @@ class BootstrapTest extends AbstractMavenTest {
       .setProperty("sonar.scanner.javaExePath", mvnJavaHome + File.separator + "bin" + File.separator + "java")
       .setEnvironmentVariable("DUMP_SYSTEM_PROPERTIES", "java.home")
       .setGoals(sonarGoal());
-    BuildResult result = executeBuildAndValidateWithCE(build);
+    BuildResult result = executeBuildAndAssertWithCE(build);
     assertThat(result.getLogs())
       .doesNotContain(EFFECTIVE_JRE_PROVISIONING_LOG, JRE_PROVISIONING_IS_DISABLED);
     if (isSonarQubeSupportsJREProvisioning()) {
@@ -191,7 +191,7 @@ class BootstrapTest extends AbstractMavenTest {
       .setProperty("sonar.scanner.javaOpts", "-Dhttp.proxyUser=my-custom-user-from-system-properties")
       .setGoals(cleanSonarGoal());
 
-    BuildResult result = validateBuildWithCE(runner.runQuietly(null, build));
+    BuildResult result = assertBuildWithCE(runner.runQuietly(null, build));
     assertThat(result.isSuccess()).isTrue();
     Path propertiesFile = ItUtils.locateProjectDir(projectName).toPath().resolve("target/sonar/dumpSensor.system.properties");
     Properties props = new Properties();

@@ -20,10 +20,13 @@
 package org.sonar.dump;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import org.slf4j.Logger;
@@ -37,6 +40,18 @@ import org.sonar.api.config.Configuration;
 public class PropertyDumpPlugin implements Plugin, Sensor {
 
   private static final Logger LOG = LoggerFactory.getLogger(PropertyDumpPlugin.class);
+
+  // Visible for testing
+  final Map<String, String> environmentVariables;
+
+  // Visible for testing
+  final Properties systemProperties;
+
+  public PropertyDumpPlugin() {
+    environmentVariables = new HashMap<>(System.getenv());
+    systemProperties = new Properties();
+    systemProperties.putAll(System.getProperties());
+  }
 
   @Override
   public void define(Context context) {
@@ -56,10 +71,12 @@ public class PropertyDumpPlugin implements Plugin, Sensor {
       var props = new Properties();
       Configuration config = sensorContext.config();
       getPropertyKeys("DUMP_SENSOR_PROPERTIES").forEach(key -> props.setProperty(key, nonNull(config.get(key))));
-      getPropertyKeys("DUMP_ENV_PROPERTIES").forEach(key -> props.setProperty(key, nonNull(System.getenv(key))));
-      getPropertyKeys("DUMP_SYSTEM_PROPERTIES").forEach(key -> props.setProperty(key, nonNull(System.getProperty(key, ""))));
+      getPropertyKeys("DUMP_ENV_PROPERTIES").forEach(key -> props.setProperty(key, nonNull(environmentVariables.get(key))));
+      getPropertyKeys("DUMP_SYSTEM_PROPERTIES").forEach(key -> props.setProperty(key, nonNull(systemProperties.getProperty(key, ""))));
       props.stringPropertyNames().forEach(key -> LOG.info("{}={}", key, props.getProperty(key)));
-      props.store(Files.newOutputStream(filePath), null);
+      try (OutputStream out = Files.newOutputStream(filePath)) {
+        props.store(out, null);
+      }
     } catch (IOException e) {
       throw new IllegalStateException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);
     }
@@ -75,8 +92,8 @@ public class PropertyDumpPlugin implements Plugin, Sensor {
     return "";
   }
 
-  private static List<String> getPropertyKeys(String envName) {
-    String list = System.getenv(envName);
+  private List<String> getPropertyKeys(String envName) {
+    String list = environmentVariables.get(envName);
     if (list == null) {
       return List.of();
     }

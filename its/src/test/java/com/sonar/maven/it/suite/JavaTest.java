@@ -49,7 +49,7 @@ class JavaTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(projectPom)
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
-    executeBuildAndValidateWithoutCE(build);
+    executeBuildAndAssertWithoutCE(build);
 
     Properties generatedProps = getProps(outputProps);
     String[] moduleIds = generatedProps.getProperty("sonar.modules").split(",");
@@ -76,7 +76,7 @@ class JavaTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
-    executeBuildAndValidateWithoutCE(build);
+    executeBuildAndAssertWithoutCE(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
@@ -95,7 +95,7 @@ class JavaTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
-    executeBuildAndValidateWithoutCE(build);
+    executeBuildAndAssertWithoutCE(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
@@ -112,7 +112,7 @@ class JavaTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(cleanPackageSonarGoal())
       .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
-    executeBuildAndValidateWithoutCE(build);
+    executeBuildAndAssertWithoutCE(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(
@@ -132,7 +132,7 @@ class JavaTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(sonarGoal())
       .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
-    executeBuildAndValidateWithoutCE(build);
+    executeBuildAndAssertWithoutCE(build);
 
     Properties props = getProps(outputProps);
     String jdkHome = props.getProperty("sonar.java.jdkHome");
@@ -149,7 +149,7 @@ class JavaTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(pom)
       .setGoals(sonarGoal())
       .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
-    executeBuildAndValidateWithoutCE(build);
+    executeBuildAndAssertWithoutCE(build);
 
     Properties props = getProps(outputProps);
     String expected = "path/to/java_executable".replace('/', File.separatorChar);
@@ -168,7 +168,7 @@ class JavaTest extends AbstractMavenTest {
       .setGoals("toolchains:toolchain " + sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
       .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
-    executeBuildAndValidateWithoutCE(build);
+    executeBuildAndAssertWithoutCE(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_1.5"));
@@ -188,7 +188,7 @@ class JavaTest extends AbstractMavenTest {
       .setGoals(sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
       .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
-    executeBuildAndValidateWithoutCE(build);
+    executeBuildAndAssertWithoutCE(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_1.6"));
@@ -208,7 +208,7 @@ class JavaTest extends AbstractMavenTest {
       .setGoals(sonarGoal())
       .addArguments("--toolchains", new File(pom.getParent(), "toolchains.xml").getAbsolutePath())
       .setProperty("sonar.scanner.internal.dumpToFile", outputProps.getAbsolutePath());
-    executeBuildAndValidateWithoutCE(build);
+    executeBuildAndAssertWithoutCE(build);
 
     Properties props = getProps(outputProps);
     assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_9"));

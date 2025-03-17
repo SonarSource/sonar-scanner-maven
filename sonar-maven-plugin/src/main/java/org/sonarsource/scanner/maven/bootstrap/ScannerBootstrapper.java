@@ -73,7 +73,7 @@ public class ScannerBootstrapper {
         throw new MojoFailureException("The scanner boostrapping has failed! See the logs for more details.");
       }
       try (ScannerEngineFacade engineFacade = bootstrapResult.getEngineFacade()) {
-        if (!engineFacade.isSonarCloud()) {
+        if (!engineFacade.isSonarQubeCloud()) {
           serverVersion = engineFacade.getServerVersion();
           checkSQVersion();
         }

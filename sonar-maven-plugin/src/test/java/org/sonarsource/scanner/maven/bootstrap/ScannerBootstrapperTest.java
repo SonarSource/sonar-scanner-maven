@@ -160,7 +160,7 @@ class ScannerBootstrapperTest {
 
     assertThatThrownBy( () -> scannerBootstrapper.execute())
       .isInstanceOf(MojoExecutionException.class)
-      .hasMessage("The scanner boostrapping has failed! See the logs for more details.");
+      .hasMessage("The scanner bootstrapping has failed! See the logs for more details.");
   }
 
   @Test

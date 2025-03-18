@@ -72,22 +72,6 @@ public final class MavenUtils {
     return defaultValue;
   }
 
-  /**
-   * Returns first non null object or null if all objects are null
-   *
-   * @param objs
-   * @return First null argument, or null if they are all null
-   */
-  @SafeVarargs
-  public static <T> T coalesce(T... objs) {
-    for (T o : objs) {
-      if (o != null) {
-        return o;
-      }
-    }
-    return null;
-  }
-
   static void putAll(Properties src, Map<String, String> dest) {
     for (final String name : src.stringPropertyNames()) {
       dest.put(name, src.getProperty(name));

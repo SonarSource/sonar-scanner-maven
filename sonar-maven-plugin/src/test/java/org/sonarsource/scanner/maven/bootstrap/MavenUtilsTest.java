@@ -28,16 +28,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class MavenUtilsTest {
   @Test
-  void testCoalesce() {
-    Object o1 = null;
-    Object o2 = null;
-    Object o3 = new Object();
-
-    assertThat(MavenUtils.coalesce(o1, o2)).isNull();
-    assertThat(MavenUtils.coalesce(o1, o3, o2)).isEqualTo(o3);
-  }
-
-  @Test
   void testJoinAsCsv() {
     List<String> values = Arrays.asList("/home/users/me/artifact-123,456.jar", "/opt/lib");
     assertThat(MavenUtils.joinAsCsv(values)).isEqualTo("\"/home/users/me/artifact-123,456.jar\",/opt/lib");

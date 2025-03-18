@@ -100,7 +100,7 @@ public class SourceCollector implements FileVisitor<Path> {
   }
 
   @Override
-  public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
+  public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes basicFileAttributes) {
     if (
       isHidden(path) ||
       isExcludedDirectory(path) ||
@@ -137,12 +137,12 @@ public class SourceCollector implements FileVisitor<Path> {
   }
 
   @Override
-  public FileVisitResult visitFileFailed(Path path, IOException e) throws IOException {
+  public FileVisitResult visitFileFailed(Path path, IOException e) {
     return null;
   }
 
   @Override
-  public FileVisitResult postVisitDirectory(Path path, IOException e) throws IOException {
+  public FileVisitResult postVisitDirectory(Path path, IOException e) {
     return FileVisitResult.CONTINUE;
   }
 }

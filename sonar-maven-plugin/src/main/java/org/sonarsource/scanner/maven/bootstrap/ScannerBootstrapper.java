@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -102,8 +103,10 @@ public class ScannerBootstrapper {
       throw new IllegalStateException("Maven session does not declare a top level project");
     }
 
-    Properties userProperties = session.getUserProperties();
-    Map<String, String> props = mavenProjectConverter.configure(sortedProjects, topLevelProject, userProperties);
+    Properties userProperties = new Properties();
+    MavenUtils.putRelevant(session.getUserProperties(), userProperties);
+    Map<String, String> props = new HashMap<>();
+    MavenUtils.putRelevant(mavenProjectConverter.configure(sortedProjects, topLevelProject, userProperties), props);
     props.putAll(propertyDecryptor.decryptProperties(props));
     if (shouldCollectAllSources(userProperties)) {
       log.info("Parameter " + MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES + " is enabled. The scanner will attempt to collect additional sources.");

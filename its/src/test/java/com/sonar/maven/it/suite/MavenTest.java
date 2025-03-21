@@ -470,6 +470,49 @@ class MavenTest extends AbstractMavenTest {
     });
   }
 
+  /**
+   * SCANMAVEN-228
+   */
+  @Test
+  void skipIrrelevantEncryptedEnvironmentVariables() {
+    File pom = ItUtils.locateProjectPom("maven/bootstrap-small-project");
+    MavenBuild build = MavenBuild.create(pom)
+      .setExecutionDir(pom.getParentFile())
+      .setGoals(sonarGoal())
+      .setEnvironmentVariable("IRRELEVANT_SECRET", "{AES}cannot-decrypt");
+
+    BuildResult buildResult = executeBuildAndAssertWithCE(build);
+    assertThat(buildResult.isSuccess()).isTrue();
+  }
+
+  /**
+   * SCANMAVEN-228
+   */
+  @Test
+  void skipIrrelevantEncryptedMavenProperties() {
+    File pom = ItUtils.locateProjectPom("maven/bootstrap-small-project");
+    MavenBuild build = MavenBuild.create(pom)
+      .setExecutionDir(pom.getParentFile())
+      .setGoals(sonarGoal())
+      .setProperty("irrelevant.secret", "{AES}cannot-decrypt");
+
+    BuildResult buildResult = executeBuildAndAssertWithCE(build);
+    assertThat(buildResult.isSuccess()).isTrue();
+  }
+
+  /**
+   * SCANMAVEN-228
+   */
+  @Test
+  void skipIrrelevantEncryptedPropertyInMavenPom() {
+    File pom = ItUtils.locateProjectPom("maven/irrelevant-encrypted-property");
+    MavenBuild build = MavenBuild.create(pom)
+      .setExecutionDir(pom.getParentFile())
+      .setGoals(sonarGoal());
+
+    BuildResult buildResult = executeBuildAndAssertWithCE(build);
+    assertThat(buildResult.isSuccess()).isTrue();
+  }
 
   /*
    * As of version 25.0, SQS no longer supports the sonar.password property.

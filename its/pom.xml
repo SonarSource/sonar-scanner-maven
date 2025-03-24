@@ -27,6 +27,7 @@
       <groupId>org.sonarsource.scanner.maven</groupId>
       <artifactId>property-dump-plugin</artifactId>
       <version>1-SNAPSHOT</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

@@ -11,6 +11,10 @@ jobs:
   Next-Iteration-Job:
     name: Next Iteration Job
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+
     steps:
 
       - name: Checkout Sources
@@ -18,7 +22,7 @@ jobs:
 
       - name: Update Version Number
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"

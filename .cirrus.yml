@@ -28,6 +28,28 @@ container_definition: &CONTAINER_DEFINITION
 only_sonarsource_qa: &ONLY_SONARSOURCE_QA
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == "master" || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH =~ "dogfood-on-.*")
 
+
+orchestrator_cache_definition: &ORCHESTRATOR_CACHE_DEFINITION
+  set_orchestrator_home_script: |
+    # Check if SQ_VERSION exists and create an intermediary variable
+    if [ -n "$SQ_VERSION" ]; then
+        FOLDER="${SQ_VERSION}"
+    else
+        FOLDER="DEFAULT"
+    fi
+
+    CURRENT_MONTH=$(date +"%B")
+    echo "CURRENT_MONTH=${CURRENT_MONTH}" >> $CIRRUS_ENV
+    echo "ORCHESTRATOR_HOME=${CIRRUS_WORKING_DIR}/orchestrator/${FOLDER}/${CURRENT_MONTH}" >> $CIRRUS_ENV
+    echo "FOLDER=${FOLDER}" >> $CIRRUS_ENV
+  mkdir_orchestrator_home_script: |
+    echo "Create dir ${ORCHESTRATOR_HOME} if needed"
+    mkdir -p ${ORCHESTRATOR_HOME}
+  orchestrator_cache:
+    folder: ${ORCHESTRATOR_HOME}
+    fingerprint_script: echo ${FOLDER}-${CURRENT_MONTH}
+    reupload_on_changes: "true"
+
 #
 # TASKS
 #
@@ -115,10 +137,12 @@ qa_task:
         MAVEN_VERSION: 3.2.5
   maven_cache:
     folder: ${CIRRUS_WORKING_DIR}/.m2/repository
+  <<: *ORCHESTRATOR_CACHE_DEFINITION
   qa_script:
     - ./cirrus/cirrus-qa.sh
   cleanup_before_cache_script:
     - cleanup_maven_repository
+    - ./cirrus/clean-orchestrator-cache.sh
 
 promote_task:
   depends_on:

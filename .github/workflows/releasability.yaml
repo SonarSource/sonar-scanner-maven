@@ -2,6 +2,11 @@ name: Releasability status
 
 on:
   workflow_dispatch:
+    # Inputs the workflow accepts.
+    inputs:
+      version:
+        description: Optional; Used to specify the version to check, otherwise pulls the latest master version from artifactory.
+        required: false
 
 jobs:
   update_releasability_status:
@@ -26,8 +31,8 @@ jobs:
           ARTIFACTORY_PRIVATE_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_PASSWORD }}
           ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
           REPO: sonarsource-public-builds
-          GROUP_ID: org.sonarsource.java
-          ARTIFACT_ID: sonar-java-plugin
+          GROUP_ID: org.sonarsource.scanner.maven
+          ARTIFACT_ID: sonar-scanner-maven
         run: |
           if [[ -z "${{ github.event.inputs.version }}" ]]; then
             echo "version not provided, pulling latest version from $REPO."

@@ -715,6 +715,20 @@ class MavenProjectConverterTest {
     );
   }
 
+  @Test
+  void shouldNotIncludeGithubActionFolderWhenNotPresent() throws Exception {
+    File baseDir = temp.toAbsolutePath().toFile();
+    MavenProject project = createProject(new Properties(), "jar");
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+    assertThat(props).containsEntry("sonar.projectKey", "com.foo:myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1");
+    assertThat(props.get("sonar.sources").split(",")).containsExactly(
+      new File(baseDir, "pom.xml").getAbsolutePath()
+    );
+  }
+
   private MavenProject createProject(Properties pomProps, String packaging) throws IOException {
     File pom = temp.resolve("pom.xml").toFile();
     pom.createNewFile();

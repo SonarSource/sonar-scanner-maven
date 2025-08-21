@@ -558,6 +558,9 @@ public class MavenProjectConverter {
         .forEach(sources::add);
     }
 
+    // Add GHA folder
+    sources.add(new File(pom.getBasedir(), ".github").getAbsolutePath());
+
     return sourcePaths(pom, AnalysisProperties.PROJECT_SOURCE_DIRS, sources);
   }
 

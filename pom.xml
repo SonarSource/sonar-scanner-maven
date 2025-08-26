@@ -86,7 +86,6 @@
     -->
     <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
     <license.name>GNU LGPL v3</license.name>
-    <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
 
   <dependencyManagement>

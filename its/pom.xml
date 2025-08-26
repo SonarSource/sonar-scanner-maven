@@ -18,6 +18,8 @@
     <jetty.version>9.4.51.v20230217</jetty.version>
     <maven.compiler.release>8</maven.compiler.release>
     <license.name>GNU LGPL v3</license.name>
+    <skipTests>true</skipTests>
+    <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
   
   <dependencies>

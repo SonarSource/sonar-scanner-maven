@@ -17,7 +17,7 @@ jobs:
       slackChannel: squad-jvm-notifs
   relocation-pom:
     name: Publish relocation POM
-    runs-on: ubuntu-latest-large
+    runs-on: github-ubuntu-latest-s
     needs:
       - release
     permissions:

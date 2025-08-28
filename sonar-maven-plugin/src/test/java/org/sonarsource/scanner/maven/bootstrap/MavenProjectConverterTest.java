@@ -716,6 +716,23 @@ class MavenProjectConverterTest {
   }
 
   @Test
+  void shouldNotIncludeGithubActionFolderWhenUserPropertiesHavePrecedence() throws Exception {
+    Properties userProperties = new Properties();
+    userProperties.setProperty("sonar.sources", "pom.xml");
+
+    File baseDir = temp.toAbsolutePath().toFile();
+    File githubDir = new File(baseDir, ".github");
+    githubDir.mkdirs();
+    MavenProject project = createProject(new Properties(), "jar");
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, userProperties);
+    assertThat(props.get("sonar.sources").split(",")).containsExactly(
+      new File(baseDir, "pom.xml").getAbsolutePath()
+      //  ".github" directory is not present because the user property "sonar.sources" have precedence
+    );
+  }
+
+  @Test
   void shouldNotIncludeGithubActionFolderWhenNotPresent() throws Exception {
     File baseDir = temp.toAbsolutePath().toFile();
     MavenProject project = createProject(new Properties(), "jar");

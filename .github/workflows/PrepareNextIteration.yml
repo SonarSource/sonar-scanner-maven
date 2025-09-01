@@ -26,8 +26,16 @@ jobs:
         run: |
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git checkout -b gh-action/next-iteration
+          git config --global core.autocrlf input
+          git config --global core.safecrlf true
+          BRANCH="gh-action/next-iteration.${{ github.run_id }}"
+          git checkout -b "$BRANCH"
           mvn versions:set -DgenerateBackupPoms=false -DnewVersion="${{ inputs.nextVersion }}"
-          git commit -m 'Prepare next development iteration' -a
-          git push --set-upstream origin gh-action/next-iteration
-          gh pr create -B master --title 'Prepare next development iteration' --body ''
+          git commit -m "Prepare next development iteration ${{ inputs.nextVersion }}" -a
+          git push --set-upstream origin "$BRANCH"
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create -B master --title "Prepare next development iteration ${{ inputs.nextVersion }}" --body ''

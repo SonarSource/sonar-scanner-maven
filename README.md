@@ -2,7 +2,7 @@
 
 [![Build Status](https://api.cirrus-ci.com/github/SonarSource/sonar-scanner-maven.svg)](https://cirrus-ci.com/github/SonarSource/sonar-scanner-maven) [![Quality Gate Status](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.scanner.maven%3Asonar-scanner-maven&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.scanner.maven%3Asonar-scanner-maven)
 
-Sonar's [Clean Code solutions](https://www.sonarsource.com/solutions/clean-code/?utm_medium=referral&utm_source=github&utm_campaign=clean-code&utm_content=sonar-scanner-maven) help developers deliver high-quality, efficient code standards that benefit the entire team or organization. 
+Sonar's integrated code quality and code security solutions help developers deliver high-quality, efficient code standards that benefit the entire team or organization.
 
 ## Have Questions or Feedback?
 

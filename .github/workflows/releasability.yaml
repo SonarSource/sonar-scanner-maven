@@ -42,7 +42,7 @@ jobs:
             echo "version is provided, using its value: ${{ github.event.inputs.version }}."
             echo "LATEST_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
           fi
-      - uses: SonarSource/gh-action_releasability@v2
+      - uses: SonarSource/gh-action_releasability@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

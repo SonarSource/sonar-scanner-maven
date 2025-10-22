@@ -32,9 +32,63 @@ jobs:
           artifactory-reader-role: private-reader    # Override default public-reader
           artifactory-deployer-role: qa-deployer     # Override default public-deployer
 
+  qa:
+    needs:
+      - build
+    strategy:
+      fail-fast: false
+      matrix:  
+        item:
+          - {sq_version: "DEV", maven_version: 4.0.0-rc-2}
+          - {sq_version: "DEV", maven_version: 3.9.4}
+          - {sq_version: "DEV", maven_version: 3.8.8}
+          - {sq_version: "DEV", maven_version: 3.6.3}
+          - {sq_version: "LATEST_RELEASE", maven_version: 3.9.4}
+          - {sq_version: "LATEST_RELEASE", maven_version: 3.8.8}
+          - {sq_version: "LATEST_RELEASE", maven_version: 3.6.3}
+          - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.9.4}
+          - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.8.8}
+          - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.6.3}
+          - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.5.4}
+          - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.3.9}
+          - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.2.5}
+    runs-on: github-ubuntu-latest-s
+    name: QA Tests
+    permissions:
+      id-token: write  # Required for Vault OIDC authentication
+      contents: write  # Required for repository access
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Download maven ${{ matrix.item.maven_version }}
+        id: download_maven
+        env:
+          MAVEN_VERSION: ${{ matrix.item.maven_version }}
+        run: |
+          MAVEN_HOME_IT="${GITHUB_WORKSPACE}/target/downloaded-maven-${MAVEN_VERSION}"
+          mkdir -p "${MAVEN_HOME_IT}"
+          MAVEN_BINARY_URL="https://repo1.maven.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+          curl -sSL "${MAVEN_BINARY_URL}" | tar zx --strip-components 1 -C "${MAVEN_HOME_IT}"
+          echo "maven_it_path=$MAVEN_HOME_IT" >> $GITHUB_OUTPUT
+      - name: Configure Maven
+        uses: SonarSource/ci-github-actions/config-maven@v1
+        with:
+          artifactory-reader-role: private-reader
+          common-mvn-flags: -Dmaven.home="${{ steps.download_maven.outputs.maven_it_path }}"
+      - name: Run QA Tests
+        env:
+          SQ_VERSION: LATEST_RELEASE
+        run: >
+            mvn --batch-mode --errors
+            --projects '!sonar-maven-plugin'
+            --activate-profiles its
+            -Dsonar.runtimeVersion="${SQ_VERSION}"
+            -Dmaven.test.redirectTestOutputToFile=false
+            verify
+
   promote:
     needs:
       - build
+      - qa
     runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners  
     name: Promote
     permissions:

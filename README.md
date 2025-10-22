@@ -1,6 +1,6 @@
 # SonarQube Scanner for Maven
 
-[![Build](https://github.com/SonarSource/sonar-scanner-maven/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/SonarSource/sonar-scanner-maven/actions/workflows/build.yml) [![Quality Gate Status](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.scanner.maven%3Asonar-scanner-maven&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.scanner.maven%3Asonar-scanner-maven)
+[![Build Status](https://github.com/SonarSource/sonar-scanner-maven/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/SonarSource/sonar-scanner-maven/actions/workflows/build.yml) [![Quality Gate Status](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.scanner.maven%3Asonar-scanner-maven&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.scanner.maven%3Asonar-scanner-maven)
 
 Sonar's integrated code quality and code security solutions help developers deliver high-quality, efficient code standards that benefit the entire team or organization.
 

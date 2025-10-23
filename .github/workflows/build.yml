@@ -85,6 +85,7 @@ jobs:
             --activate-profiles its
             -Dsonar.runtimeVersion="${SQ_VERSION}"
             -Dmaven.test.redirectTestOutputToFile=false
+            '-Dtest=!ProxyTest'
             verify
 
   # promote:

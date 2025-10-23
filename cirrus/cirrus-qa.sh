@@ -27,6 +27,11 @@ set -euo pipefail
   curl -sSL "${MAVEN_BINARY_URL}" | tar zx --strip-components 1 -C "${MAVEN_HOME_IT}"
   cp -f "${HOME}/.m2/settings.xml" "${MAVEN_HOME_IT}/conf/"
 
+  echo "maven version"
+  mvn --version
+
+  echo "Now running QA"
+
   mvn --batch-mode --errors \
     --projects '!sonar-maven-plugin' \
     --activate-profiles its \

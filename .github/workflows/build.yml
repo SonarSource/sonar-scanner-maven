@@ -77,7 +77,7 @@ jobs:
       - name: Run QA Tests
         env:
           SQ_VERSION: LATEST_RELEASE
-        # ProxyTest fails in GitHub actions environment, so it's disabled temporarily.
+        # ProxyTest fails in GitHub actions environment, so it's disabled temporarily. See BUILD-9499.
         run: >
             mvn --batch-mode --errors
             --projects '!sonar-maven-plugin'

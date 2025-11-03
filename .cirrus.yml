@@ -115,7 +115,7 @@ qa_task:
   env:
     matrix:
       - SQ_VERSION: DEV
-        MAVEN_VERSION: 4.0.0-rc-2
+        MAVEN_VERSION: 4.0.0-rc-4
       - SQ_VERSION: DEV
         MAVEN_VERSION: 3.9.4
       - SQ_VERSION: DEV

@@ -579,7 +579,9 @@ public class MavenProjectConverter {
   }
 
   private List<File> testSources(MavenProject pom) throws MojoExecutionException {
-    return sourcePaths(pom, AnalysisProperties.PROJECT_TEST_DIRS, pom.getTestCompileSourceRoots());
+    List<String> mutableTestCompileSourceRoots = new ArrayList<>();
+    mutableTestCompileSourceRoots.addAll(pom.getTestCompileSourceRoots());
+    return sourcePaths(pom, AnalysisProperties.PROJECT_TEST_DIRS, mutableTestCompileSourceRoots);
   }
 
   private List<File> sourcePaths(MavenProject pom, String propertyKey, Collection<String> mavenPaths) throws MojoExecutionException {

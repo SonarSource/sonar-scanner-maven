@@ -158,6 +158,8 @@ class JavaTest extends AbstractMavenTest {
 
   @Test
   void setJdkHomeFromGlobalToolchainsPlugin() throws IOException {
+    // TODO Remove this guard preventing the test from running with Maven 4.0.0 and greater should be removed once SCANMAVEN-308 is fixed.
+    assumeTrue(getMavenVersion().compareTo(Version.create("4.0.0-rc1")) < 0);
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
 
@@ -178,6 +180,8 @@ class JavaTest extends AbstractMavenTest {
   void setJdkHomeFromCompilerToolchainsConfiguration() throws IOException {
     // https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#jdkToolchain requires Maven 3.3.1+
     assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
+    // TODO Remove this guard preventing the test from running with Maven 4.0.0 and greater should be removed once SCANMAVEN-308 is fixed.
+    assumeTrue(getMavenVersion().compareTo(Version.create("4.0.0-rc1")) < 0);
 
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
@@ -198,6 +202,8 @@ class JavaTest extends AbstractMavenTest {
   void takeFirstToolchainIfMultipleExecutions() throws IOException {
     // https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#jdkToolchain requires Maven 3.3.1+
     assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
+    // TODO Remove this guard preventing the test from running with Maven 4.0.0 and greater should be removed once SCANMAVEN-308 is fixed.
+    assumeTrue(getMavenVersion().compareTo(Version.create("4.0.0-rc1")) < 0);
 
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();

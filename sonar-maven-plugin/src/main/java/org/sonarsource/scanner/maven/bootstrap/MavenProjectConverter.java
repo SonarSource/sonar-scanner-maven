@@ -526,16 +526,16 @@ public class MavenProjectConverter {
     return result;
   }
 
-  private static void removeTarget(MavenProject pom, Collection<String> relativeOrAbsolutePaths) {
+  private static Collection<String> removeBuildDir(MavenProject pom, Collection<String> relativeOrAbsolutePaths) {
     final Path baseDir = pom.getBasedir().toPath().toAbsolutePath().normalize();
-    final Path target = Paths.get(pom.getBuild().getDirectory()).toAbsolutePath().normalize();
-    final Path targetRelativePath = baseDir.relativize(target);
+    final Path buildDir = Paths.get(pom.getBuild().getDirectory()).toAbsolutePath().normalize();
+    final Path buildDirRelativePath = baseDir.relativize(buildDir);
 
-    relativeOrAbsolutePaths.removeIf(pathStr -> {
+    return relativeOrAbsolutePaths.stream().filter(pathStr -> {
       Path path = Paths.get(pathStr).toAbsolutePath().normalize();
       Path relativePath = baseDir.relativize(path);
-      return relativePath.startsWith(targetRelativePath);
-    });
+      return !relativePath.startsWith(buildDirRelativePath);
+    }).collect(Collectors.toList());
   }
 
   private List<File> mainSources(MavenProject pom) throws MojoExecutionException {
@@ -579,9 +579,7 @@ public class MavenProjectConverter {
   }
 
   private List<File> testSources(MavenProject pom) throws MojoExecutionException {
-    List<String> mutableTestCompileSourceRoots = new ArrayList<>();
-    mutableTestCompileSourceRoots.addAll(pom.getTestCompileSourceRoots());
-    return sourcePaths(pom, AnalysisProperties.PROJECT_TEST_DIRS, mutableTestCompileSourceRoots);
+    return sourcePaths(pom, AnalysisProperties.PROJECT_TEST_DIRS, pom.getTestCompileSourceRoots());
   }
 
   private List<File> sourcePaths(MavenProject pom, String propertyKey, Collection<String> mavenPaths) throws MojoExecutionException {
@@ -598,8 +596,8 @@ public class MavenProjectConverter {
       sourceDirsIsOverridden |= propertyKey.equals(AnalysisProperties.PROJECT_SOURCE_DIRS);
       testDirsIsOverridden |= propertyKey.equals(AnalysisProperties.PROJECT_TEST_DIRS);
     } else {
-      removeTarget(pom, mavenPaths);
-      filesOrDirs = resolvePaths(mavenPaths, pom.getBasedir());
+      Collection<String> mavenPathsWithoutBuildDir = removeBuildDir(pom, mavenPaths);
+      filesOrDirs = resolvePaths(mavenPathsWithoutBuildDir, pom.getBasedir());
     }
 
     if (userDefined && !MAVEN_PACKAGING_POM.equals(pom.getModel().getPackaging())) {

@@ -87,6 +87,7 @@
     -->
     <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
     <license.name>GNU LGPL v3</license.name>
+    <sonar.sca.exclusions>its/projects/**,sonar-maven-plugin/src/it/**,sonar-maven-plugin/src/test/projects/**</sonar.sca.exclusions>
   </properties>
 
   <dependencyManagement>

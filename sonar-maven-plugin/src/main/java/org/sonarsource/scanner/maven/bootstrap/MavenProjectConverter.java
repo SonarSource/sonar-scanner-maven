@@ -338,7 +338,7 @@ public class MavenProjectConverter {
   }
 
   private static void populateJavaAnalyzerJdkHome(MavenCompilerConfiguration config, Map<String, String> props) {
-    config.getJdkHome().ifPresent(jdkHome -> props.put(SONAR_JAVA_JDK_HOME_PROPERTY, jdkHome));
+    config.getJdkHome().ifPresent(jdkHome -> props.put(SONAR_JAVA_JDK_HOME_PROPERTY, jdkHome.toString()));
   }
 
   private static void populateJavaAnalyzerSourceAndTarget(MavenCompilerConfiguration config, Map<String, String> props) {

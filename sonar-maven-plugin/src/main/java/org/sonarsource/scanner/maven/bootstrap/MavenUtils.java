@@ -34,7 +34,15 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.MojoExecution;
+import org.apache.maven.plugin.PluginParameterExpressionEvaluator;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.component.configurator.ComponentConfigurationException;
+import org.codehaus.plexus.component.configurator.converters.basic.StringConverter;
+import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluator;
+import org.codehaus.plexus.configuration.PlexusConfiguration;
 
 /**
  * An utility class to manipulate Maven concepts
@@ -178,6 +186,25 @@ public final class MavenUtils {
     }
 
     return collected;
+  }
+
+  public static String convertString(MavenSession session, Log log, MojoExecution exec, PlexusConfiguration config) {
+    ExpressionEvaluator expressionEvaluator = new PluginParameterExpressionEvaluator(session, exec);
+    BasicStringConverter converter = new BasicStringConverter();
+    try {
+      return converter.fromExpression(config, expressionEvaluator);
+    } catch (ComponentConfigurationException e) {
+      log.warn(e.getMessage(), e);
+      return null;
+    }
+  }
+
+  private static class BasicStringConverter extends StringConverter {
+    @Override
+    public String fromExpression(PlexusConfiguration configuration, ExpressionEvaluator expressionEvaluator) throws ComponentConfigurationException {
+      return (String) super.fromExpression(configuration, expressionEvaluator);
+    }
+
   }
 
 }

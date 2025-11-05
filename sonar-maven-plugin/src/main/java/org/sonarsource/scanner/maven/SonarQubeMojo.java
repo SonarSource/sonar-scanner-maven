@@ -43,6 +43,7 @@ import org.apache.maven.toolchain.ToolchainManager;
 import org.sonarsource.scanner.lib.EnvironmentConfig;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
 import org.sonarsource.scanner.lib.ScannerProperties;
+import org.sonarsource.scanner.maven.bootstrap.Maven3ToolchainResolver;
 import org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver;
 import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
 import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
@@ -57,9 +58,10 @@ import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 public class SonarQubeMojo extends AbstractMojo {
 
+  // Visible for testing
+  Map<String, String> environmentVariables = new HashMap<>(System.getenv());
   @Parameter(defaultValue = "${session}", required = true, readonly = true)
   private MavenSession session;
-
   /**
    * Set this to 'true' to skip analysis.
    *
@@ -67,24 +69,31 @@ public class SonarQubeMojo extends AbstractMojo {
    */
   @Parameter(alias = "sonar.skip", property = "sonar.skip", defaultValue = "false")
   private boolean skip;
-
   @Component
   private LifecycleExecutor lifecycleExecutor;
-
   @Component(hint = "mng-4384")
   private SecDispatcher securityDispatcher;
-
   @Component
   private RuntimeInformation runtimeInformation;
-
   @Parameter(defaultValue = "${mojoExecution}", required = true, readonly = true)
   private MojoExecution mojoExecution;
-
   @Component
   private ToolchainManager toolchainManager;
 
-  // Visible for testing
-  Map<String, String> environmentVariables = new HashMap<>(System.getenv());
+  @VisibleForTesting
+  static boolean isPluginVersionDefinedInTheProject(MavenProject project, String groupId, String artifactId) {
+    Stream<Plugin> pluginStream = project.getBuildPlugins().stream();
+    PluginManagement pluginManagement = project.getPluginManagement();
+    pluginStream = pluginManagement != null ? Stream.concat(pluginStream, pluginManagement.getPlugins().stream()) : pluginStream;
+    return pluginStream.anyMatch(plugin -> (plugin.getGroupId() == null || groupId.equals(plugin.getGroupId())) &&
+      artifactId.equals(plugin.getArtifactId()) &&
+      (plugin.getVersion() != null && !plugin.getVersion().isBlank()));
+  }
+
+  private static boolean isVersionMissingFromSonarGoal(List<String> goals, String groupId, String artifactId) {
+    List<String> sonarGoalsWithoutVersion = Arrays.asList("sonar:sonar", groupId + ":" + artifactId + ":sonar");
+    return goals.stream().anyMatch(sonarGoalsWithoutVersion::contains);
+  }
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -98,7 +107,7 @@ public class SonarQubeMojo extends AbstractMojo {
 
     Map<String, String> envProps = EnvironmentConfig.load(environmentVariables);
 
-    MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), toolchainManager);
+    MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), new Maven3ToolchainResolver(session, getLog(), toolchainManager));
     MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), mavenCompilerResolver, envProps);
 
     PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
@@ -135,21 +144,6 @@ public class SonarQubeMojo extends AbstractMojo {
           "It is highly recommended to use an explicit version, e.g. '%s:%s:%s'.", invalidPluginVersion, groupId, artifactId, effectivePluginVersion));
       }
     }
-  }
-
-  @VisibleForTesting
-  static boolean isPluginVersionDefinedInTheProject(MavenProject project, String groupId, String artifactId) {
-    Stream<Plugin> pluginStream = project.getBuildPlugins().stream();
-    PluginManagement pluginManagement = project.getPluginManagement();
-    pluginStream = pluginManagement != null ? Stream.concat(pluginStream, pluginManagement.getPlugins().stream()) : pluginStream;
-    return pluginStream.anyMatch(plugin -> (plugin.getGroupId() == null || groupId.equals(plugin.getGroupId())) &&
-      artifactId.equals(plugin.getArtifactId()) &&
-      (plugin.getVersion() != null && !plugin.getVersion().isBlank()));
-  }
-
-  private static boolean isVersionMissingFromSonarGoal(List<String> goals, String groupId, String artifactId) {
-    List<String> sonarGoalsWithoutVersion = Arrays.asList("sonar:sonar", groupId + ":" + artifactId + ":sonar");
-    return goals.stream().anyMatch(sonarGoalsWithoutVersion::contains);
   }
 
   /**

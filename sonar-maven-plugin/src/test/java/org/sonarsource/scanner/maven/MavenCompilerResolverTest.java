@@ -20,6 +20,7 @@
 package org.sonarsource.scanner.maven;
 
 
+import java.nio.file.Path;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -36,9 +37,9 @@ class MavenCompilerResolverTest {
     MavenCompilerConfiguration conf2 = mock(MavenCompilerConfiguration.class);
 
     assertThat(MavenCompilerConfiguration.same(conf1, conf2)).isTrue();
-    when(conf1.getJdkHome()).thenReturn(Optional.of("JDK_8"));
+    when(conf1.getJdkHome()).thenReturn(Optional.of(Path.of("JDK_8")));
     assertThat(MavenCompilerConfiguration.same(conf1, conf2)).isFalse();
-    when(conf2.getJdkHome()).thenReturn(Optional.of("JDK_8"));
+    when(conf2.getJdkHome()).thenReturn(Optional.of(Path.of("JDK_8")));
     assertThat(MavenCompilerConfiguration.same(conf1, conf2)).isTrue();
     when(conf1.getRelease()).thenReturn(Optional.of("8"));
     assertThat(MavenCompilerConfiguration.same(conf1, conf2)).isFalse();

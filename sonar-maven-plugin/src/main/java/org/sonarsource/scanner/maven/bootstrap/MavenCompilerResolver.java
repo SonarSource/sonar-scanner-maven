@@ -20,35 +20,26 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.LifecycleExecutor;
 import org.apache.maven.plugin.MojoExecution;
-import org.apache.maven.plugin.PluginParameterExpressionEvaluator;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.toolchain.Toolchain;
-import org.apache.maven.toolchain.ToolchainManager;
-import org.apache.maven.toolchain.java.DefaultJavaToolChain;
-import org.codehaus.plexus.component.configurator.ComponentConfigurationException;
-import org.codehaus.plexus.component.configurator.converters.basic.StringConverter;
-import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluator;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.configuration.xml.XmlPlexusConfiguration;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
+
+import static org.sonarsource.scanner.maven.bootstrap.MavenUtils.convertString;
 
 public class MavenCompilerResolver {
   private static final String DEFAULT_COMPILE_EXECUTION_ID = "default-compile";
@@ -59,14 +50,14 @@ public class MavenCompilerResolver {
 
   private final MavenSession session;
   private final Log log;
-  private final ToolchainManager toolchainManager;
+  private final ToolchainResolver toolchainResolver;
   private final LifecycleExecutor lifecycleExecutor;
 
-  public MavenCompilerResolver(MavenSession session, LifecycleExecutor lifecycleExecutor, Log log, ToolchainManager toolchainManager) {
+  public MavenCompilerResolver(MavenSession session, LifecycleExecutor lifecycleExecutor, Log log, ToolchainResolver toolchainResolver) {
     this.session = session;
     this.lifecycleExecutor = lifecycleExecutor;
     this.log = log;
-    this.toolchainManager = toolchainManager;
+    this.toolchainResolver = toolchainResolver;
   }
 
   private static int defaultCompileFirstThenCompileFirst(MojoExecution a, MojoExecution b) {
@@ -81,188 +72,26 @@ public class MavenCompilerResolver {
     }
   }
 
-  public static class MavenCompilerConfiguration {
-    private Optional<String> release;
-    private Optional<String> target;
-    private Optional<String> source;
-    private Optional<String> jdkHome;
-    private Optional<String> enablePreview;
-    private final String executionId;
-
-    private MavenCompilerConfiguration(String executionId) {
-      this.executionId = executionId;
-    }
-
-    public Optional<String> getRelease() {
-      return release;
-    }
-
-    public Optional<String> getTarget() {
-      return target;
-    }
-
-    public Optional<String> getSource() {
-      return source;
-    }
-
-    public Optional<String> getJdkHome() {
-      return jdkHome;
-    }
-
-    public Optional<String> getEnablePreview() {
-      return enablePreview;
-    }
-
-    public String getExecutionId() {
-      return executionId;
-    }
-
-    public static boolean same(MavenCompilerConfiguration one, MavenCompilerConfiguration two) {
-      return Objects.equals(one.getJdkHome(), two.getJdkHome())
-        && Objects.equals(one.getRelease(), two.getRelease())
-        && Objects.equals(one.getSource(), two.getSource())
-        && Objects.equals(one.getTarget(), two.getTarget())
-        && Objects.equals(one.getEnablePreview(), two.getEnablePreview());
-    }
-
-  }
-
-  public Optional<MavenCompilerConfiguration> extractConfiguration(MavenProject pom) {
-    MavenProject oldProject = session.getCurrentProject();
-    try {
-      // Switch to the project for which we try to resolve the configuration.
-      session.setCurrentProject(pom);
-      List<MojoExecution> allCompilerExecutions = lifecycleExecutor.calculateExecutionPlan(session, true, TEST_COMPILE_PHASE)
-        .getMojoExecutions()
-        .stream()
-        .filter(MavenCompilerResolver::isMavenCompilerGoal)
-        .sorted(MavenCompilerResolver::defaultCompileFirstThenCompileFirst)
-        .collect(Collectors.toList());
-      if (allCompilerExecutions.isEmpty()) {
-        return Optional.empty();
-      }
-      List<MavenCompilerConfiguration> allCompilerConfigurations = allCompilerExecutions.stream().map(this::extractConfiguration).collect(Collectors.toList());
-      MavenCompilerConfiguration first = allCompilerConfigurations.get(0);
-
-      if (!allCompilerConfigurations.stream().allMatch(config -> MavenCompilerConfiguration.same(config, first))) {
-        log.warn("Heterogeneous compiler configuration has been detected. Using compiler configuration from execution: '" + first.getExecutionId() + "'");
-      }
-
-      return Optional.of(first);
-
-    } catch (Exception e) {
-      log.warn("Failed to collect configuration from the maven-compiler-plugin", e);
-      return Optional.empty();
-    } finally {
-      session.setCurrentProject(oldProject);
-    }
-
-  }
-
   private static boolean isMavenCompilerGoal(MojoExecution e) {
     return e.getArtifactId().equals(MAVEN_COMPILER_PLUGIN)
       && e.getGroupId().equals(MavenUtils.GROUP_ID_APACHE_MAVEN)
       && (e.getGoal().equals(COMPILE_GOAL) || e.getGoal().equals(TEST_COMPILE_GOAL));
   }
 
-  private MavenCompilerConfiguration extractConfiguration(MojoExecution compilerExecution) {
-    MavenCompilerConfiguration result = new MavenCompilerConfiguration(compilerExecution.getExecutionId());
-    result.release = getStringConfiguration(compilerExecution, "release");
-    result.target = getStringConfiguration(compilerExecution, "target");
-    result.source = getStringConfiguration(compilerExecution, "source");
-    result.enablePreview = getStringConfiguration(compilerExecution, "enablePreview");
-    result.jdkHome = getJdkHome(compilerExecution);
-    return result;
-  }
-
-  private Optional<String> getStringConfiguration(MojoExecution exec, String parameterName) {
-    Xpp3Dom configuration = exec.getConfiguration();
-    PlexusConfiguration pomConfiguration = new XmlPlexusConfiguration(configuration);
-    PlexusConfiguration config = pomConfiguration.getChild(parameterName, false);
-    if (config == null) {
-      return Optional.empty();
-    }
-    return Optional.ofNullable(convertString(exec, config));
-  }
-
-  private String convertString(MojoExecution exec, PlexusConfiguration config) {
-    ExpressionEvaluator expressionEvaluator = new PluginParameterExpressionEvaluator(session, exec);
-    BasicStringConverter converter = new BasicStringConverter();
-    try {
-      return converter.fromExpression(config, expressionEvaluator);
-    } catch (ComponentConfigurationException e) {
-      log.warn(e.getMessage(), e);
-      return null;
-    }
-  }
-
-  private Optional<Map<String, String>> getMapConfiguration(MojoExecution exec, String parameterName) {
-    Xpp3Dom configuration = exec.getConfiguration();
-    PlexusConfiguration pomConfiguration = new XmlPlexusConfiguration(configuration);
-    PlexusConfiguration config = pomConfiguration.getChild(parameterName, false);
-    if (config == null) {
-      return Optional.empty();
-    }
-    return Optional.of(Stream.of(config.getChildren())
-      .collect(Collectors.toMap(PlexusConfiguration::getName, c -> convertString(exec, config.getChild(c.getName(), false)))));
-  }
-
-  private Optional<String> getJdkHome(MojoExecution compilerExecution) {
-
-    Optional<String> executable = getStringConfiguration(compilerExecution, "executable");
-    if (executable.isPresent()) {
-      return getJavaHomeFromJavac(executable.get());
-    }
-
-    // Inspired by
-    // https://github.com/apache/maven-compiler-plugin/blob/dc4a5635ba4eb2ba5e461fa53b2c47c58d7fa397/src/main/java/org/apache/maven/plugin/compiler/AbstractCompilerMojo.java#L1418
-    Toolchain tc = null;
-
-    // Maven 3.3.1 has plugin execution scoped Toolchain Support
-    Optional<Map<String, String>> jdkToolchain = getMapConfiguration(compilerExecution, "jdkToolchain");
-    if (jdkToolchain.isPresent() && !jdkToolchain.get().isEmpty()) {
-      List<Toolchain> tcs = collectMatchingToolchains(jdkToolchain.get());
-      if (!tcs.isEmpty()) {
-        tc = tcs.get(0);
-      }
-    }
-
-    // Fallback on the global jdk toolchain
-    if (tc == null) {
-      tc = toolchainManager.getToolchainFromBuildContext("jdk", session);
-    }
-
-    if (tc instanceof DefaultJavaToolChain) {
-      return Optional.of(((DefaultJavaToolChain) tc).getJavaHome());
-    }
-
-    // Like m-compiler-p, last fallback is to compile with the runtime JDK
-    Optional<String> runtimeCompiler = getJavacExecutableFromRuntimeJdk();
-    if (runtimeCompiler.isPresent()) {
-      return getJavaHomeFromJavac(runtimeCompiler.get());
-    }
-
-    return Optional.empty();
-  }
-
   /**
-   * @param javacPath Should be something like <jdk home>/bin/javac[.exe]
-   * @return <jdk home>
+   * If {@code javacExecutable} is <code>/jdk/bin/javac</code> then the absolute path to JDK home is returned <code>/jdk</code>.
+   * <br>
+   * Empty is returned if {@code javacExecutable} is incorrect.
+   *
+   * @param javacExecutable    /jdk/bin/java*
+   * @return path to jdk directory; or <code>empty</code> if wrong path or directory layout of JDK installation.
    */
-  private static Optional<String> getJavaHomeFromJavac(String javacPath) {
-    return Optional.of(Paths.get(javacPath).getParent().getParent().toString());
-  }
-
-  @SuppressWarnings("unchecked")
-  private List<Toolchain> collectMatchingToolchains(Map<String, String> jdkToolchain) {
-    // getToolchains method only added in Maven 3.3.1, so use reflection
-    try {
-      Method getToolchainsMethod = toolchainManager.getClass().getMethod("getToolchains", MavenSession.class, String.class, Map.class);
-      return (List<Toolchain>) getToolchainsMethod.invoke(toolchainManager, session, "jdk", jdkToolchain);
-    } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-      // ignore
-      return Collections.emptyList();
+  static Optional<Path> toJdkHomeFromJavacExec(String javacExecutable) {
+    Path bin = Path.of(javacExecutable).toAbsolutePath().getParent();
+    if ("bin".equals(bin.getFileName().toString())) {
+      return Optional.of(bin.getParent());
     }
+    return Optional.empty();
   }
 
   /**
@@ -300,11 +129,124 @@ public class MavenCompilerResolver {
     return Optional.of(javacExe.toAbsolutePath().toString());
   }
 
-  private static class BasicStringConverter extends StringConverter {
-    @Override
-    public String fromExpression(PlexusConfiguration configuration, ExpressionEvaluator expressionEvaluator) throws ComponentConfigurationException {
-      return (String) super.fromExpression(configuration, expressionEvaluator);
+  public Optional<MavenCompilerConfiguration> extractConfiguration(MavenProject pom) {
+    MavenProject oldProject = session.getCurrentProject();
+    try {
+      // Switch to the project for which we try to resolve the configuration.
+      session.setCurrentProject(pom);
+      List<MojoExecution> allCompilerExecutions = lifecycleExecutor.calculateExecutionPlan(session, true, TEST_COMPILE_PHASE)
+        .getMojoExecutions()
+        .stream()
+        .filter(MavenCompilerResolver::isMavenCompilerGoal)
+        .sorted(MavenCompilerResolver::defaultCompileFirstThenCompileFirst)
+        .collect(Collectors.toList());
+      if (allCompilerExecutions.isEmpty()) {
+        return Optional.empty();
+      }
+      List<MavenCompilerConfiguration> allCompilerConfigurations = allCompilerExecutions.stream().map(this::extractConfiguration).collect(Collectors.toList());
+      MavenCompilerConfiguration first = allCompilerConfigurations.get(0);
+
+      if (!allCompilerConfigurations.stream().allMatch(config -> MavenCompilerConfiguration.same(config, first))) {
+        log.warn("Heterogeneous compiler configuration has been detected. Using compiler configuration from execution: '" + first.getExecutionId() + "'");
+      }
+
+      return Optional.of(first);
+
+    } catch (Exception e) {
+      log.warn("Failed to collect configuration from the maven-compiler-plugin", e);
+      return Optional.empty();
+    } finally {
+      session.setCurrentProject(oldProject);
     }
 
   }
+
+  private MavenCompilerConfiguration extractConfiguration(MojoExecution compilerExecution) {
+    MavenCompilerConfiguration result = new MavenCompilerConfiguration(compilerExecution.getExecutionId());
+    result.release = getStringConfiguration(compilerExecution, "release");
+    result.target = getStringConfiguration(compilerExecution, "target");
+    result.source = getStringConfiguration(compilerExecution, "source");
+    result.enablePreview = getStringConfiguration(compilerExecution, "enablePreview");
+    result.jdkHome = getJdkHome(compilerExecution);
+    return result;
+  }
+
+  private Optional<String> getStringConfiguration(MojoExecution exec, String parameterName) {
+    Xpp3Dom configuration = exec.getConfiguration();
+    PlexusConfiguration pomConfiguration = new XmlPlexusConfiguration(configuration);
+    PlexusConfiguration config = pomConfiguration.getChild(parameterName, false);
+    if (config == null) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(convertString(session, log, exec, config));
+  }
+
+  private Optional<Path> getJdkHome(MojoExecution compilerExecution) {
+
+    Optional<String> executable = getStringConfiguration(compilerExecution, "executable");
+    if (executable.isPresent()) {
+      return toJdkHomeFromJavacExec(executable.get());
+    }
+
+    Optional<Path> jdkHomeFromToolchain = toolchainResolver.getJdkHomeFromToolchains(compilerExecution);
+    if (jdkHomeFromToolchain.isPresent()) {
+      return jdkHomeFromToolchain;
+    }
+
+    // Like m-compiler-p, last fallback is to compile with the runtime JDK
+    Optional<String> runtimeCompiler = getJavacExecutableFromRuntimeJdk();
+    if (runtimeCompiler.isPresent()) {
+      return toJdkHomeFromJavacExec(runtimeCompiler.get());
+    }
+
+    return Optional.empty();
+  }
+
+  public static class MavenCompilerConfiguration {
+    private final String executionId;
+    private Optional<String> release;
+    private Optional<String> target;
+    private Optional<String> source;
+    private Optional<Path> jdkHome;
+    private Optional<String> enablePreview;
+
+    private MavenCompilerConfiguration(String executionId) {
+      this.executionId = executionId;
+    }
+
+    public static boolean same(MavenCompilerConfiguration one, MavenCompilerConfiguration two) {
+      return Objects.equals(one.getJdkHome(), two.getJdkHome())
+        && Objects.equals(one.getRelease(), two.getRelease())
+        && Objects.equals(one.getSource(), two.getSource())
+        && Objects.equals(one.getTarget(), two.getTarget())
+        && Objects.equals(one.getEnablePreview(), two.getEnablePreview());
+    }
+
+    public Optional<String> getRelease() {
+      return release;
+    }
+
+    public Optional<String> getTarget() {
+      return target;
+    }
+
+    public Optional<String> getSource() {
+      return source;
+    }
+
+    public Optional<Path> getJdkHome() {
+      return jdkHome;
+    }
+
+    public Optional<String> getEnablePreview() {
+      return enablePreview;
+    }
+
+    public String getExecutionId() {
+      return executionId;
+    }
+
+  }
+
+
 }

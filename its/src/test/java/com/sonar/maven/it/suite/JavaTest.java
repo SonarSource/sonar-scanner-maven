@@ -152,14 +152,12 @@ class JavaTest extends AbstractMavenTest {
     executeBuildAndAssertWithoutCE(build);
 
     Properties props = getProps(outputProps);
-    String expected = "path/to/java_executable".replace('/', File.separatorChar);
+    String expected = (ItUtils.locateHome().toString() + '/' + "path/to/java_executable").replace('/', File.separatorChar);
     assertThat(props).contains(entry("sonar.java.jdkHome", expected));
   }
 
   @Test
   void setJdkHomeFromGlobalToolchainsPlugin() throws IOException {
-    // TODO Remove this guard preventing the test from running with Maven 4.0.0 and greater should be removed once SCANMAVEN-308 is fixed.
-    assumeTrue(getMavenVersion().compareTo(Version.create("4.0.0-rc1")) < 0);
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
 
@@ -173,15 +171,16 @@ class JavaTest extends AbstractMavenTest {
     executeBuildAndAssertWithoutCE(build);
 
     Properties props = getProps(outputProps);
-    assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_1.5"));
+    String baseDirectory = pom.getParent().replace('/', File.separatorChar);
+    String expected = baseDirectory + File.separatorChar + "fake_jdk_1.5";
+
+    assertThat(props).contains(entry("sonar.java.jdkHome", expected));
   }
 
   @Test
   void setJdkHomeFromCompilerToolchainsConfiguration() throws IOException {
     // https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#jdkToolchain requires Maven 3.3.1+
     assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
-    // TODO Remove this guard preventing the test from running with Maven 4.0.0 and greater should be removed once SCANMAVEN-308 is fixed.
-    assumeTrue(getMavenVersion().compareTo(Version.create("4.0.0-rc1")) < 0);
 
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
@@ -195,15 +194,16 @@ class JavaTest extends AbstractMavenTest {
     executeBuildAndAssertWithoutCE(build);
 
     Properties props = getProps(outputProps);
-    assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_1.6"));
+    String baseDirectory = pom.getParent().replace('/', File.separatorChar);
+    String expected = baseDirectory + File.separatorChar + "fake_jdk_1.6";
+
+    assertThat(props).contains(entry("sonar.java.jdkHome", expected));
   }
 
   @Test
   void takeFirstToolchainIfMultipleExecutions() throws IOException {
     // https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#jdkToolchain requires Maven 3.3.1+
     assumeTrue(getMavenVersion().compareTo(Version.create("3.3.1")) >= 0);
-    // TODO Remove this guard preventing the test from running with Maven 4.0.0 and greater should be removed once SCANMAVEN-308 is fixed.
-    assumeTrue(getMavenVersion().compareTo(Version.create("4.0.0-rc1")) < 0);
 
     File outputProps = temp.resolve("out.properties").toFile();
     outputProps.createNewFile();
@@ -217,7 +217,10 @@ class JavaTest extends AbstractMavenTest {
     executeBuildAndAssertWithoutCE(build);
 
     Properties props = getProps(outputProps);
-    assertThat(props).contains(entry("sonar.java.jdkHome", "fake_jdk_9"));
+    String baseDirectory = pom.getParent().replace('/', File.separatorChar);
+    String expected = baseDirectory + File.separatorChar + "fake_jdk_9";
+
+    assertThat(props).contains(entry("sonar.java.jdkHome", expected));
   }
 
   private Properties getProps(File outputProps) throws IOException {

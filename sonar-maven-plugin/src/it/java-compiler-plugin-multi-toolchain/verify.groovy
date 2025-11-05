@@ -4,5 +4,7 @@ propertiesFile.withInputStream {
     properties.load(it)
 }
 
+def projectBaseDir = 'sonar.projectBaseDir'
+def sep = File.separator
 def jdkHome = 'sonar.java.jdkHome'
-assert properties."$jdkHome" == 'fake_jdk_1.7'
+assert properties."$jdkHome" == properties."$projectBaseDir" + "${sep}fake_jdk_1.7"

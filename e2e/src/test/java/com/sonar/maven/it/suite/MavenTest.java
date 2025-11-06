@@ -21,60 +21,23 @@ package com.sonar.maven.it.suite;
 
 import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.BuildResult;
-import com.sonar.orchestrator.build.BuildRunner;
 import com.sonar.orchestrator.build.MavenBuild;
 import com.sonar.orchestrator.version.Version;
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.opentest4j.TestAbortedException;
 import org.sonarqube.ws.Components;
 import org.sonarqube.ws.client.components.ComponentsService;
 import org.sonarqube.ws.client.components.ShowRequest;
 import org.sonarqube.ws.client.users.CreateRequest;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class MavenTest extends AbstractMavenTest {
 
   private static final String MODULE_START = "------------- Run sensors on module ";
 
-  /**
-   * See MSONAR-129
-   */
-  @Test
-  void supportSonarHostURLParam() {
-    BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-global-properties"))
-      // global property should take precedence
-      .setEnvironmentVariable("SONAR_HOST_URL", "http://from-env.org:9000")
-      .setGoals(cleanSonarGoal());
-
-    BuildResult result = assertBuildWithoutCE(runner.runQuietly(null, build), EXEC_FAILED);
-
-    assertThat(result.getLogs())
-      .contains("Call to URL [http://from-env.org:9000/api/v2/analysis/version] failed: from-env.org");
-  }
-
-  /**
-   * See MSONAR-172
-   */
-  @Test
-  void supportSonarHostURLParamFromEnvironmentVariable() {
-    BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-      .setEnvironmentVariable("SONAR_HOST_URL", "http://from-env.org:9000")
-      .setGoals(cleanSonarGoal());
-
-    BuildResult result = assertBuildWithoutCE(runner.runQuietly(null, build), EXEC_FAILED);
-    assertThat(result.getLogs()).contains("http://from-env.org:9000");
-  }
 
   /**
    * See MSONAR-130

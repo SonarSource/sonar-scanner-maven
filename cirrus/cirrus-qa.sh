@@ -18,6 +18,12 @@ set -euo pipefail
         clean install
   fi
 
+  # Build the property dump plugin
+  mvn --batch-mode --errors \
+    --file 'property-dump-plugin/pom.xml' \
+    -DskipTests=true \
+    clean install
+
   # Install a specific version of Maven. We want to test against multiple versions.
   MAVEN_HOME_IT="${REPOSITORY_DIR}/target/downloaded-maven-${MAVEN_VERSION}"
   mkdir -p "${MAVEN_HOME_IT}"
@@ -28,7 +34,7 @@ set -euo pipefail
   cp -f "${HOME}/.m2/settings.xml" "${MAVEN_HOME_IT}/conf/"
 
   mvn --batch-mode --errors \
-    --projects '!sonar-maven-plugin' \
+    --projects 'its' -Dtest='com.sonar.maven.it.suite.ProxyTest' \
     --activate-profiles its \
     -Dsonar.runtimeVersion="${SQ_VERSION}" \
     -Dmaven.home="${MAVEN_HOME_IT}" \

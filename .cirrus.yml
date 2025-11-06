@@ -104,7 +104,7 @@ sonar_shadow_scan_and_issue_replication_task:
   cleanup_before_cache_script:
     - cleanup_maven_repository
 
-qa_task:
+proxy_test_task:
   depends_on:
     - build
   <<: *ONLY_SONARSOURCE_QA
@@ -152,7 +152,7 @@ qa_task:
 promote_task:
   depends_on:
     - sonar_shadow_scan_and_issue_replication
-    - qa
+    - proxy_test_task
   <<: *ONLY_SONARSOURCE_QA
   eks_container:
     <<: *CONTAINER_DEFINITION

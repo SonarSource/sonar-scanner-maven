@@ -24,7 +24,7 @@ There are 3 type of tests:
 #### Unit Tests
 The Unit Tests are located in `sonar-maven-plugin/src/test/java`, and they can be run with `mvn test`
 
-#### Invoker Tests
+#### Invoker Integration Tests
 The Invoker tests are located in `sonar-maven-plugin/src/it`, and they can be run with `mvn verify`
 
 The [maven-invoker-plugin](https://maven.apache.org/plugins/maven-invoker-plugin/) allows to debug single tests from the cli with `mvn invoker:run -Dinvoker.test=<test-name> -Dinvoker.mavenExecutable=mvnDebug`.
@@ -33,14 +33,11 @@ For example, in order to debug the test [java-compiler-executable](src/it/java-c
 
 *Note* that you have to run `mvn invoker:install` to debug the latest changes in your code!
 
-#### Integration Tests
-The Integration tests are located in `its`.
+#### End-to-end Tests
+The E2E tests are located in `e2e`.
 
-* Configure Java 17
-* Execute: `./cirrus/cirrus-qa.sh`
-* Or, to use a specific version of SonarQube and Maven, you can also specify:
 ```bash
-SQ_VERSION="LATEST_RELEASE[9.9]" MAVEN_VERSION="3.8.8" ./cirrus/cirrus-qa.sh
+mvn -P e2e -Dsonar.runtimeVersion="LATEST_RELEASE" verify
 ```
 
 ### Change the maven scanner version

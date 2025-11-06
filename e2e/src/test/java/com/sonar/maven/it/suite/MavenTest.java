@@ -23,12 +23,12 @@ import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.BuildRunner;
 import com.sonar.orchestrator.build.MavenBuild;
+import com.sonar.orchestrator.version.Version;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
-
-import com.sonar.orchestrator.version.Version;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -44,29 +44,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MavenTest extends AbstractMavenTest {
 
   private static final String MODULE_START = "------------- Run sensors on module ";
-
-  /**
-   * See MSONAR-129
-   */
-  @Test
-  void useUserPropertiesGlobalConfig(@TempDir Path temp) throws Exception {
-    BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-      .setGoals(cleanSonarGoal());
-
-    Path settingsXml = temp.resolve("settings.xml").toAbsolutePath();
-    Map<String, String> props = ORCHESTRATOR.getDatabase().getSonarProperties();
-    props.put("sonar.host.url", ORCHESTRATOR.getServer().getUrl());
-    props.put("sonar.login", ORCHESTRATOR.getDefaultAdminToken());
-    Files.write(settingsXml, ItUtils.createSettingsXml(props).getBytes(UTF_8));
-
-    build.addArgument("--settings=" + settingsXml);
-    build.addArgument("-Psonar");
-    // we build without sonarqube server settings, it will need to fetch it from the profile defined in the settings xml file
-    BuildResult result = runner.run(null, build);
-
-    assertThat(result.getLogs()).contains(ORCHESTRATOR.getServer().getUrl());
-  }
 
   /**
    * See MSONAR-129

@@ -51,7 +51,7 @@
   </developers>
 
   <modules>
-    <module>its</module>
+    <module>e2e</module>
     <module>property-dump-plugin</module>
     <module>sonar-maven-plugin</module>
   </modules>

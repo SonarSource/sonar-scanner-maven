@@ -29,7 +29,7 @@ set -euo pipefail
 
   mvn --batch-mode --errors \
     --projects '!sonar-maven-plugin' \
-    --activate-profiles its \
+    --activate-profiles e2e \
     -Dsonar.runtimeVersion="${SQ_VERSION}" \
     -Dmaven.home="${MAVEN_HOME_IT}" \
     -Dmaven.test.redirectTestOutputToFile=false \

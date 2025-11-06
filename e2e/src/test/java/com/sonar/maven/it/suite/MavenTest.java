@@ -141,27 +141,6 @@ class MavenTest extends AbstractMavenTest {
     assertThat(getComponent("org.sonar.tests.modules-order:root:module_b/src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
   }
 
-  @Test
-  void shouldEvaluateSourceVersionOnEachModule() {
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/modules-source-versions"))
-      .setGoals(cleanSonarGoal());
-    BuildResult buildResult = executeBuildAndAssertWithCE(build);
-
-    assertThat(findScanSectionOfModule(buildResult.getLogs(), "higher-version")).contains("Configured Java source version (sonar.java.source): 8");
-    assertThat(findScanSectionOfModule(buildResult.getLogs(), "same-version")).contains("Configured Java source version (sonar.java.source): 6");
-  }
-
-  private String findScanSectionOfModule(String logs, String moduleName) {
-    String start = MODULE_START;
-    int startSection = logs.indexOf(start + moduleName);
-    assertThat(startSection).isNotEqualTo(-1);
-    // This will match either a next section or the end of a maven plugin execution
-    int endSection = logs.indexOf("-------------", startSection + start.length());
-    assertThat(endSection).isNotEqualTo(-1);
-
-    return logs.substring(startSection, endSection);
-  }
-
   // MSONAR-158
   @Test
   void shouldAnalyzeMultiModulesAttachedToPhase() {

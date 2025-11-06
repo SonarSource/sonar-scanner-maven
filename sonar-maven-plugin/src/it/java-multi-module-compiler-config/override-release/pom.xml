@@ -5,17 +5,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.johnnei</groupId>
-        <artifactId>sonarqube-bugs</artifactId>
+        <groupId>org.sonarsource</groupId>
+        <artifactId>java-multi-module-compiler-config</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>same-version</artifactId>
+    <artifactId>override-release</artifactId>
 
     <properties>
-        <!-- The base project is in Java 6 but some of the modules are newer -->
-        <maven.compiler.target>1.6</maven.compiler.target>
-        <maven.compiler.source>1.6</maven.compiler.source>
+        <maven.compiler.release>21</maven.compiler.release>
     </properties>
 
 </project>

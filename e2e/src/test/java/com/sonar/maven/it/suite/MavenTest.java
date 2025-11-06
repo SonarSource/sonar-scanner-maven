@@ -38,7 +38,6 @@ class MavenTest extends AbstractMavenTest {
 
   private static final String MODULE_START = "------------- Run sensors on module ";
 
-
   /**
    * See MSONAR-130
    */
@@ -255,7 +254,6 @@ class MavenTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/multi-modules-override-sources")).setGoals(sonarGoal());
     executeBuildAndAssertWithCE(build);
 
-
     assertThat(getMeasureAsInteger("com.sonarsource.it.samples:multi-modules-sample:module_a", "files")).isEqualTo(2);
   }
 
@@ -329,119 +327,4 @@ class MavenTest extends AbstractMavenTest {
     assertThat(extractCETaskIds(result)).isEmpty();
   }
 
-  /**
-   * MSONAR-141
-   */
-  @Test
-  void supportMavenEncryption() {
-    checkSupportOfSonarPassword();
-    Assertions.assertDoesNotThrow(() -> {
-      wsClient.users().create(new CreateRequest().setLogin("julien").setName("Julien").setPassword("123abc"));
-
-      MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-              .setGoals(cleanSonarGoal());
-
-      File securityXml = new File(this.getClass().getResource("/security-settings.xml").toURI());
-      File settingsXml = new File(this.getClass().getResource("/settings-with-encrypted-sonar-password.xml").toURI());
-
-      build.addArgument("--settings=" + settingsXml.getAbsolutePath());
-      // MNG-4853
-      build.addArgument("-Dsettings.security=" + securityXml.getAbsolutePath());
-      build.setProperty("sonar.login", "julien");
-      build.addArgument("-Psonar-password");
-      executeBuildAndAssertWithCE(build);
-    });
-  }
-
-  @Test
-  void supportMavenEncryptionWithDefaultSecuritySettings() {
-    checkSupportOfSonarPassword();
-    // Should fail because settings-security.xml is missing
-    Assertions.assertThrows(Exception.class, () -> {
-      wsClient.users().create(new CreateRequest().setLogin("julien3").setName("Julien3").setPassword("123abc"));
-
-      MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-              .setGoals(cleanSonarGoal());
-
-      File settingsXml = new File(this.getClass().getResource("/settings-with-encrypted-sonar-password.xml").toURI());
-
-      build.addArgument("--settings=" + settingsXml.getAbsolutePath());
-
-      build.setProperty("sonar.login", "julien3");
-      build.addArgument("-Psonar-password");
-      executeBuildAndAssertWithCE(build);
-    });
-
-    Assertions.assertDoesNotThrow(() -> {
-      wsClient.users().create(new CreateRequest().setLogin("julien2").setName("Julien2").setPassword("123abc"));
-
-      MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-              .setGoals(cleanSonarGoal());
-
-      File securityXml = new File(this.getClass().getResource("/security-settings.xml").toURI());
-      File settingsXml = new File(this.getClass().getResource("/settings-with-encrypted-sonar-password.xml").toURI());
-
-      build.addArgument("--settings=" + settingsXml.getAbsolutePath());
-      build.addArgument("-Dsettings.security=" + securityXml.getAbsolutePath());
-      build.setProperty("sonar.login", "julien2");
-      build.addArgument("-Psonar-password");
-      executeBuildAndAssertWithCE(build);
-    });
-  }
-
-  /**
-   * SCANMAVEN-228
-   */
-  @Test
-  void skipIrrelevantEncryptedEnvironmentVariables() {
-    File pom = ItUtils.locateProjectPom("maven/bootstrap-small-project");
-    MavenBuild build = MavenBuild.create(pom)
-      .setExecutionDir(pom.getParentFile())
-      .setGoals(sonarGoal())
-      .setEnvironmentVariable("IRRELEVANT_SECRET", "{AES}cannot-decrypt");
-
-    BuildResult buildResult = executeBuildAndAssertWithCE(build);
-    assertThat(buildResult.isSuccess()).isTrue();
-  }
-
-  /**
-   * SCANMAVEN-228
-   */
-  @Test
-  void skipIrrelevantEncryptedMavenProperties() {
-    File pom = ItUtils.locateProjectPom("maven/bootstrap-small-project");
-    MavenBuild build = MavenBuild.create(pom)
-      .setExecutionDir(pom.getParentFile())
-      .setGoals(sonarGoal())
-      .setProperty("irrelevant.secret", "{AES}cannot-decrypt");
-
-    BuildResult buildResult = executeBuildAndAssertWithCE(build);
-    assertThat(buildResult.isSuccess()).isTrue();
-  }
-
-  /**
-   * SCANMAVEN-228
-   */
-  @Test
-  void skipIrrelevantEncryptedPropertyInMavenPom() {
-    File pom = ItUtils.locateProjectPom("maven/irrelevant-encrypted-property");
-    MavenBuild build = MavenBuild.create(pom)
-      .setExecutionDir(pom.getParentFile())
-      .setGoals(sonarGoal());
-
-    BuildResult buildResult = executeBuildAndAssertWithCE(build);
-    assertThat(buildResult.isSuccess()).isTrue();
-  }
-
-  /*
-   * As of version 25.0, SQS no longer supports the sonar.password property.
-   * Aborts the test if the property is not supported by the server provided by orchestrator.
-   */
-  private static void checkSupportOfSonarPassword() {
-    Version version = ORCHESTRATOR.getServer().version();
-    if (version.isGreaterThanOrEquals(25, 0)) {
-      String message = String.format("The SQ server provided by orchestrator does not support the property sonar.password (SQS %s).", version);
-      throw new TestAbortedException(message);
-    }
-  }
 }

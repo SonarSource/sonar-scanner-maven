@@ -22,21 +22,15 @@ package com.sonar.maven.it.suite;
 import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.MavenBuild;
-import com.sonar.orchestrator.version.Version;
 import java.io.File;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.opentest4j.TestAbortedException;
 import org.sonarqube.ws.Components;
 import org.sonarqube.ws.client.components.ComponentsService;
 import org.sonarqube.ws.client.components.ShowRequest;
-import org.sonarqube.ws.client.users.CreateRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class MavenTest extends AbstractMavenTest {
-
-  private static final String MODULE_START = "------------- Run sensors on module ";
 
   /**
    * See MSONAR-130

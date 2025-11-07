@@ -22,6 +22,7 @@ package com.sonar.maven.it.suite;
 import com.sonar.orchestrator.build.Build;
 import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.MavenBuild;
+import com.sonar.orchestrator.container.Edition;
 import com.sonar.orchestrator.container.Server;
 import com.sonar.orchestrator.junit5.OrchestratorExtension;
 import com.sonar.orchestrator.locator.FileLocation;
@@ -32,10 +33,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,9 +72,13 @@ public abstract class AbstractMavenTest {
 
   private static int orchestratorAccessingClassCount = 0;
 
+  public static final String LATEST_RELEASE = "LATEST_RELEASE";
+  public static final String DEV = "DEV";
+
   // @RegisterExtension was removed because it did not properly support parallel execution
   public static final OrchestratorExtension ORCHESTRATOR = OrchestratorExtension.builderEnv()
     .setSonarVersion(getSonarVersion())
+    .setEdition(Set.of(LATEST_RELEASE, DEV).contains(getSonarVersion()) ? Edition.COMMUNITY : Edition.DEVELOPER)
     .useDefaultAdminCredentialsForBuilds(true)
     .addBundledPluginToKeep("sonar-java-plugin")
     .addBundledPluginToKeep("sonar-xml-plugin")
@@ -89,6 +95,9 @@ public abstract class AbstractMavenTest {
       orchestratorAccessingClassCount++;
       if (orchestratorAccessingClassCount == 1) {
         ORCHESTRATOR.start();
+        if (ORCHESTRATOR.getServer().getEdition() != Edition.COMMUNITY) {
+          ORCHESTRATOR.activateLicense();
+        }
       }
     }
   }
@@ -201,7 +210,7 @@ public abstract class AbstractMavenTest {
 
   private static String getSonarVersion() {
     String versionProperty = System.getProperty("sonar.runtimeVersion");
-    return versionProperty != null ? versionProperty : "LATEST_RELEASE";
+    return versionProperty != null ? versionProperty : LATEST_RELEASE;
   }
 
   public BuildResult executeBuildAndAssertWithCE(Build<?> build) {

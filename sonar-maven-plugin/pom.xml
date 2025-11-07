@@ -12,6 +12,10 @@
   <name>SonarQube Scanner for Maven</name>
   <packaging>maven-plugin</packaging>
 
+  <prerequisites>
+    <maven>3.0</maven>
+  </prerequisites>
+
   <properties>
     <!--
       We can't update the Maven core dependencies unless we remove the dependency on SecDispatcher

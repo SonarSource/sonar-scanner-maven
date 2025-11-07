@@ -15,9 +15,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  quick-build-deploy:
     runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners
-    name: Build, UTs + ITs, SQ Analysis
+    name: Build + UTs + Deploy
     permissions:
       id-token: write  # Required for Vault OIDC authentication
       contents: write  # Required for repository access and tagging
@@ -31,6 +31,23 @@ jobs:
           deploy-pull-request: true
           artifactory-reader-role: private-reader    # Override default public-reader
           artifactory-deployer-role: qa-deployer     # Override default public-deployer
+          sonar-platform: none
+          maven-args: -Dinvoker.skip=true
+
+  scan:
+    runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners
+    name: SQ Analysis
+    permissions:
+      id-token: write  # Required for Vault OIDC authentication
+      contents: write  # Required for repository access and tagging
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
+        with:
+          version: 2025.7.12
+      - uses: SonarSource/ci-github-actions/build-maven@v1
+        with:
+          deploy: false
 
   invoker-integration-tests:
     strategy:
@@ -71,7 +88,7 @@ jobs:
 
   e2e-tests:
     needs:
-      - build
+      - quick-build-deploy
     strategy:
       fail-fast: false
       matrix:  
@@ -114,9 +131,9 @@ jobs:
 
   promote:
     needs:
-      - build
       - invoker-integration-tests
       - e2e-tests
+      - scan
     runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners  
     name: Promote
     permissions:

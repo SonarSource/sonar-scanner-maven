@@ -56,10 +56,6 @@
     <module>sonar-maven-plugin</module>
   </modules>
 
-  <prerequisites>
-    <maven>3.0</maven>
-  </prerequisites>
-
   <scm>
     <connection>scm:git:https://github.com/SonarSource/sonar-scanner-maven.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/SonarSource/sonar-scanner-maven.git</developerConnection>

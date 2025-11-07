@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BootstrapTest extends AbstractMavenTest {
 
   private static final String EFFECTIVE_JRE_PROVISIONING_LOG = "JRE provisioning:";
-  private static final String COMMUNICATING_WITH_SONARQUBE = "Communicating with SonarQube Community Build";
+  private static final String COMMUNICATING_WITH_SONARQUBE = "Communicating with SonarQube";
   private static final String STARTING_SCANNER_ENGINE = "Starting SonarScanner Engine";
   private static final String SKIPPING_ANALYSIS = "Skipping analysis";
   public static final String JRE_PROVISIONING_IS_DISABLED = "JRE provisioning is disabled";
@@ -49,7 +49,7 @@ class BootstrapTest extends AbstractMavenTest {
     String unsupportedOS = "unsupportedOS";
     String arch = "amd64";
 
-    BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
+    BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration(), ORCHESTRATOR.getLocators());
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/bootstrap-small-project"))
       .setProperty("sonar.scanner.os", unsupportedOS)
       .setProperty("sonar.scanner.arch", arch)
@@ -156,7 +156,7 @@ class BootstrapTest extends AbstractMavenTest {
 
   @Test
   void test_supported_arch_to_assert_jre_used() throws IOException {
-    BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
+    BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration(), ORCHESTRATOR.getLocators());
     String projectName = "maven/bootstrap-small-project";
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom(projectName))
       .setProperty("sonar.login", ORCHESTRATOR.getDefaultAdminToken())

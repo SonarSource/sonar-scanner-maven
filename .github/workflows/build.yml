@@ -128,19 +128,24 @@ jobs:
       - *checkout
       - *mise
       - *download_maven_matrix
+      - name: Vault (GITHUB Token)
+        id: secrets-gh
+        uses: SonarSource/vault-action-wrapper@320bd31b03e5dacaac6be51bbbb15adf7caccc32 # v3.1.0
+        with:
+          secrets: |
+            development/github/token/licenses-ro token | GITHUB_TOKEN;
       - name: Configure Maven
         uses: SonarSource/ci-github-actions/config-maven@v1
         with:
           artifactory-reader-role: private-reader
       - name: Run Orchestrator E2E Tests
         env:
-          # FIXME
-          SQ_VERSION: LATEST_RELEASE
+          GITHUB_TOKEN: ${{ fromJSON(steps.secrets-gh.outputs.vault).GITHUB_TOKEN }}
         run: >
             mvn
             --projects '!sonar-maven-plugin'
             --activate-profiles e2e
-            -Dsonar.runtimeVersion="${SQ_VERSION}"
+            -Dsonar.runtimeVersion="${{ matrix.item.sq_version }}"
             -Dmaven.home="${{ steps.download_maven.outputs.maven_it_path }}"
             verify
 

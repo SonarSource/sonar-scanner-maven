@@ -97,7 +97,7 @@ jobs:
           artifactory-reader-role: private-reader    # Override default public-reader
           artifactory-deployer-role: qa-deployer     # Override default public-deployer
           sonar-platform: none
-          maven-args: -DskipTests -Dinvoker.mavenHome="${{ steps.download_maven.outputs.maven_it_path }}"
+          maven-args: -DskipTests -Dinvoker.mavenHome=${{ steps.download_maven.outputs.maven_it_path }}
 
   e2e-tests:
     needs:

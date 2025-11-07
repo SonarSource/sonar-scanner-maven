@@ -83,21 +83,31 @@ jobs:
       - &download_maven_matrix
         name: Download maven ${{ matrix.item.maven_version }}
         id: download_maven
-        env:
-          MAVEN_VERSION: ${{ matrix.item.maven_version }}
         run: |
+          MAVEN_VERSION="${{ matrix.item.maven_version }}"
           MAVEN_HOME_IT="${GITHUB_WORKSPACE}/target/downloaded-maven-${MAVEN_VERSION}"
           mkdir -p "${MAVEN_HOME_IT}"
           MAVEN_BINARY_URL="https://repo1.maven.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
           curl -sSL "${MAVEN_BINARY_URL}" | tar zx --strip-components 1 -C "${MAVEN_HOME_IT}"
           echo "maven_it_path=$MAVEN_HOME_IT" >> $GITHUB_OUTPUT
-      - uses: SonarSource/ci-github-actions/build-maven@v1
+      - name: Cache Maven artifacts
+        id: maven-its-cache
+        uses: SonarSource/ci-github-actions/cache@v1
         with:
-          deploy: false
-          artifactory-reader-role: private-reader    # Override default public-reader
-          artifactory-deployer-role: qa-deployer     # Override default public-deployer
-          sonar-platform: none
-          maven-args: -DskipTests -Dinvoker.mavenHome=${{ steps.download_maven.outputs.maven_it_path }}
+          path: ~/.m2/repository
+          key: maven-its-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-its-${{ runner.os }}-
+      - name: Configure Maven
+        uses: SonarSource/ci-github-actions/config-maven@v1
+        with:
+          artifactory-reader-role: private-reader
+          disable-caching: true
+      - name: Run Invoker Tests
+        run: >
+          mvn
+          -DskipTests
+          -Dinvoker.mavenHome="${{ steps.download_maven.outputs.maven_it_path }}"
+          verify      
 
   e2e-tests:
     needs:
@@ -123,11 +133,19 @@ jobs:
         with:
           path: ~/.sonar/orchestrator/cache
           key: orchestrator-${{ runner.os }}-{{ matrix.item.sq_version }}
+      - name: Cache Maven artifacts
+        id: maven-e2e-cache
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.m2/repository
+          key: maven-e2e-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-e2e-${{ runner.os }}-
       - name: Configure Maven
         uses: SonarSource/ci-github-actions/config-maven@v1
         with:
           deploy: false
           artifactory-reader-role: private-reader
+          disable-caching: true
       - name: Run Orchestrator E2E Tests
         env:
           # FIXME
@@ -136,7 +154,7 @@ jobs:
           mvn
           --projects '!sonar-maven-plugin'
           --activate-profiles e2e
-          -Dsonar.runtimeVersion="${SQ_VERSION}"
+          -Dsonar.runtimeVersion="$SQ_VERSION"
           -Dmaven.home="${{ steps.download_maven.outputs.maven_it_path }}"
           verify
 

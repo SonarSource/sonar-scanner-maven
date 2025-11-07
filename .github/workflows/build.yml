@@ -18,12 +18,15 @@ jobs:
   quick-build-deploy:
     runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners
     name: Build + UTs + Deploy
-    permissions:
+    permissions: &write_permissions
       id-token: write  # Required for Vault OIDC authentication
       contents: write  # Required for repository access and tagging
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
+      - &checkout
+        name: Checkout source code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - &mise
+        uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
         with:
           version: 2025.7.12
       - uses: SonarSource/ci-github-actions/build-maven@v1
@@ -37,17 +40,20 @@ jobs:
   scan:
     runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners
     name: SQ Analysis
-    permissions:
+    permissions: &read_permissions
       id-token: write  # Required for Vault OIDC authentication
-      contents: write  # Required for repository access and tagging
+      contents: read
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
-        with:
-          version: 2025.7.12
+      - *checkout
+      - *mise
       - uses: SonarSource/ci-github-actions/build-maven@v1
         with:
           deploy: false
+          artifactory-reader-role: private-reader    # Override default public-reader
+          artifactory-deployer-role: qa-deployer     # Override default public-deployer
+          cache-paths: |
+            ~/.m2/repository
+            ~/.sonar/cache
 
   invoker-integration-tests:
     strategy:
@@ -63,11 +69,10 @@ jobs:
           - {maven_version: 3.2.5}
     runs-on: github-ubuntu-latest-s
     name: Invoker Integration Tests
-    permissions:
-      id-token: write  # Required for Vault OIDC authentication
-      contents: read
+    permissions: *read_permissions
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - *checkout
+      - *mise
       - name: Download maven ${{ matrix.item.maven_version }}
         id: download_maven
         env:
@@ -99,11 +104,10 @@ jobs:
           - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.2.5}
     runs-on: github-ubuntu-latest-s
     name: E2E Tests
-    permissions:
-      id-token: write  # Required for Vault OIDC authentication
-      contents: read
+    permissions: *read_permissions
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - *checkout
+      - *mise
       - name: Download maven ${{ matrix.item.maven_version }}
         id: download_maven
         run: |
@@ -136,15 +140,10 @@ jobs:
       - scan
     runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners  
     name: Promote
-    permissions:
-      id-token: write
-      contents: write
+    permissions: *write_permissions
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
-        with:
-          cache_save: false
-          version: 2025.7.12
+      - *checkout
+      - *mise
       - uses: SonarSource/ci-github-actions/promote@v1
         with:
           promote-pull-request: true

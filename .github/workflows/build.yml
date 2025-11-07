@@ -38,6 +38,8 @@ jobs:
           maven-args: -Dinvoker.skip=true
 
   scan:
+    needs:
+      - quick-build-deploy
     runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners
     name: SQ Analysis
     permissions: &read_permissions
@@ -46,15 +48,20 @@ jobs:
     steps:
       - *checkout
       - *mise
+      - name: Cache Sonar Scanner artifacts
+        id: sonar-scanner-cache
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.sonar/cache
+          key: sonar-scanner-${{ runner.os }}
       - uses: SonarSource/ci-github-actions/build-maven@v1
         with:
           deploy: false
           artifactory-reader-role: private-reader
-          cache-paths: |
-            ~/.m2/repository
-            ~/.sonar/cache
 
   invoker-integration-tests:
+    needs:
+      - quick-build-deploy
     strategy:
       fail-fast: false
       matrix:
@@ -107,6 +114,13 @@ jobs:
     steps:
       - *checkout
       - *mise
+      - *download_maven_matrix
+      - name: Cache Orchestrator artifacts
+        id: orchestrator-cache
+        uses: SonarSource/ci-github-actions/cache@v1
+        with:
+          path: ~/.sonar/orchestrator/cache
+          key: orchestrator-${{ runner.os }}-{{ matrix.item.sq_version }}
       - name: Configure Maven
         uses: SonarSource/ci-github-actions/config-maven@v1
         with:
@@ -117,12 +131,12 @@ jobs:
           # FIXME
           SQ_VERSION: LATEST_RELEASE
         run: >
-            mvn
-            --projects '!sonar-maven-plugin'
-            --activate-profiles e2e
-            -Dsonar.runtimeVersion="${SQ_VERSION}"
-            -Dmaven.home="${{ steps.download_maven.outputs.maven_it_path }}"
-            verify
+          mvn
+          --projects '!sonar-maven-plugin'
+          --activate-profiles e2e
+          -Dsonar.runtimeVersion="${SQ_VERSION}"
+          -Dmaven.home="${{ steps.download_maven.outputs.maven_it_path }}"
+          verify
 
   promote:
     needs:

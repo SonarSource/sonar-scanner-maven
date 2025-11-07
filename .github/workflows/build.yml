@@ -57,7 +57,8 @@ jobs:
       - uses: SonarSource/ci-github-actions/build-maven@v1
         with:
           deploy: false
-          artifactory-reader-role: private-reader
+          artifactory-reader-role: private-reader    # Override default public-reader
+          artifactory-deployer-role: qa-deployer     # Override default public-deployer
 
   invoker-integration-tests:
     needs:
@@ -93,7 +94,8 @@ jobs:
       - uses: SonarSource/ci-github-actions/build-maven@v1
         with:
           deploy: false
-          artifactory-reader-role: private-reader
+          artifactory-reader-role: private-reader    # Override default public-reader
+          artifactory-deployer-role: qa-deployer     # Override default public-deployer
           sonar-platform: none
           maven-args: -DskipTests -Dinvoker.mavenHome="${{ steps.download_maven.outputs.maven_it_path }}"
 

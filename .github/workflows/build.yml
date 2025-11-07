@@ -89,9 +89,8 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Download maven ${{ matrix.item.maven_version }}
         id: download_maven
-        env:
-          MAVEN_VERSION: ${{ matrix.item.maven_version }}
         run: |
+          MAVEN_VERSION="${{ matrix.item.maven_version }}"
           MAVEN_HOME_IT="${GITHUB_WORKSPACE}/target/downloaded-maven-${MAVEN_VERSION}"
           mkdir -p "${MAVEN_HOME_IT}"
           MAVEN_BINARY_URL="https://repo1.maven.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
@@ -103,15 +102,14 @@ jobs:
           artifactory-reader-role: private-reader
       - name: Run Orchestrator E2E Tests
         env:
+          # FIXME
           SQ_VERSION: LATEST_RELEASE
-        # ProxyTest fails in GitHub actions environment, so it's disabled temporarily. See BUILD-9499.
         run: >
             mvn
             --projects '!sonar-maven-plugin'
             --activate-profiles e2e
             -Dsonar.runtimeVersion="${SQ_VERSION}"
             -Dmaven.home="${{ steps.download_maven.outputs.maven_it_path }}"
-            '-Dtest=!ProxyTest'
             verify
 
   promote:

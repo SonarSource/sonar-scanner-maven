@@ -25,17 +25,22 @@ import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.MavenBuild;
 import java.io.IOException;
 import java.net.Socket;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.stream.Collectors;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -56,17 +61,18 @@ class ProxyTest extends AbstractMavenTest {
   }
 
   @Test
-  void useActiveProxyInSettings(@TempDir Path temp) throws IOException, URISyntaxException, InterruptedException {
+  void useActiveProxyInSettings(@TempDir Path temp) throws Exception {
     waitForProxyToBeUpAndRunning(proxy.port());
-    Path proxyXml = Paths.get(this.getClass().getResource("/proxy-settings.xml").toURI());
-    Path proxyXmlPatched = temp.resolve("settings.xml");
-    proxyXmlPatched.toFile().createNewFile();
-    assertThat(proxyXml).exists();
-    replaceInFile(proxyXml, proxyXmlPatched, "__PORT__", String.valueOf(proxy.port()));
+
+    Path originalSettings = Path.of(System.getProperty("user.home")).resolve(".m2").resolve("settings.xml");
+    assertThat(originalSettings).exists();
+
+    Path mergedSettings = temp.resolve("settings.xml");
+    mergeProxyIntoSettings(originalSettings, mergedSettings, proxy.port());
 
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/many-source-dirs"))
       .setGoals(cleanPackageSonarGoal());
-    build.addArgument("--settings=" + proxyXmlPatched.toAbsolutePath().toString());
+    build.addArgument("--settings=" + mergedSettings.toAbsolutePath().toString());
     // "-X" can not be replaced with "--debug" because it causes the test to freeze with Maven 4
     build.addArgument("-X");
     build.addArgument("--update-snapshots");
@@ -76,13 +82,71 @@ class ProxyTest extends AbstractMavenTest {
     assertThat(proxy.seen()).isNotEmpty();
   }
 
-  private void replaceInFile(Path srcFilePath, Path dstFilePath, String str, String replacement) throws IOException {
-    List<String> lines = Files.readAllLines(srcFilePath, StandardCharsets.UTF_8);
-    lines = lines.stream().map(s -> s.replace(str, replacement)).collect(Collectors.toList());
-    Files.write(dstFilePath, lines);
+  private void mergeProxyIntoSettings(Path originalSettings, Path outputSettings, int proxyPort) throws Exception {
+    DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+    DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+    Document doc = dBuilder.parse(originalSettings.toFile());
+    doc.getDocumentElement().normalize();
+
+    Element root = doc.getDocumentElement();
+
+    // Remove existing <proxies> element if present
+    NodeList existingProxies = root.getElementsByTagName("proxies");
+    for (int i = 0; i < existingProxies.getLength(); i++) {
+      Node node = existingProxies.item(i);
+      root.removeChild(node);
+    }
+
+    // Create new <proxies> element
+    Element proxiesElt = doc.createElement("proxies");
+    Element proxyElt = doc.createElement("proxy");
+
+    Element id = doc.createElement("id");
+    id.setTextContent("example-proxy");
+    proxyElt.appendChild(id);
+
+    Element active = doc.createElement("active");
+    active.setTextContent("true");
+    proxyElt.appendChild(active);
+
+    Element protocol = doc.createElement("protocol");
+    protocol.setTextContent("http|https");
+    proxyElt.appendChild(protocol);
+
+    Element host = doc.createElement("host");
+    host.setTextContent("localhost");
+    proxyElt.appendChild(host);
+
+    Element port = doc.createElement("port");
+    port.setTextContent(String.valueOf(proxyPort));
+    proxyElt.appendChild(port);
+
+    Element username = doc.createElement("username");
+    username.setTextContent("scott");
+    proxyElt.appendChild(username);
+
+    Element password = doc.createElement("password");
+    password.setTextContent("tiger");
+    proxyElt.appendChild(password);
+
+    Element nonProxyHosts = doc.createElement("nonProxyHosts");
+    nonProxyHosts.setTextContent("");
+    proxyElt.appendChild(nonProxyHosts);
+
+    proxiesElt.appendChild(proxyElt);
+    root.appendChild(proxiesElt);
+
+    // Write the modified XML to the output file
+    TransformerFactory transformerFactory = TransformerFactory.newInstance();
+    Transformer transformer = transformerFactory.newTransformer();
+    transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+    transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+    DOMSource source = new DOMSource(doc);
+    StreamResult result = new StreamResult(outputSettings.toFile());
+    transformer.transform(source, result);
   }
 
-  private void waitForProxyToBeUpAndRunning(int port) throws InterruptedException {
+  private static void waitForProxyToBeUpAndRunning(int port) throws InterruptedException {
     for (int retryCount = 0; retryCount < 100; retryCount++) {
       try (Socket ignored = new Socket("localhost", port)) {
         // Proxy is up

@@ -25,9 +25,9 @@ jobs:
       - name: Run IRIS Analysis
         uses: SonarSource/unified-dogfooding-actions/run-iris@v1
         with:
-          primary_project_key: SonarSource_sonar-scanner-maven
-          primary_platform: "SQC-EU"
-          shadow1_project_key: SonarSource_sonar-scanner-maven
-          shadow1_platform: "Next"
-          shadow2_project_key: SonarSource_sonar-scanner-maven
+          primary_project_key: org.sonarsource.scanner.maven:sonar-scanner-maven
+          primary_platform: "Next"
+          shadow1_project_key: org.sonarsource.scanner.maven:sonar-scanner-maven
+          shadow1_platform: "SQC-EU"
+          shadow2_project_key: org.sonarsource.scanner.maven:sonar-scanner-maven
           shadow2_platform: "SQC-US"

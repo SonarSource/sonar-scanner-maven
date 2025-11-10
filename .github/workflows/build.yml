@@ -21,18 +21,25 @@ jobs:
     permissions:
       id-token: write  # Required for Vault OIDC authentication
       contents: write  # Required for repository access and tagging
+    outputs:
+      build-number: ${{ steps.build-maven.outputs.BUILD_NUMBER }}
+      deployed: ${{ steps.build-maven.outputs.deployed }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
         with:
           version: 2025.7.12
       - uses: SonarSource/ci-github-actions/build-maven@v1
+        id: build-maven
         with:
           deploy-pull-request: true
           artifactory-reader-role: private-reader    # Override default public-reader
           artifactory-deployer-role: qa-deployer     # Override default public-deployer
 
   invoker-integration-tests:
+    needs:
+      - build
+    if: ${{ needs.build.outputs.deployed }}
     strategy:
       fail-fast: false
       matrix:
@@ -49,6 +56,8 @@ jobs:
     permissions:
       id-token: write  # Required for Vault OIDC authentication
       contents: read
+    env:
+      BUILD_NUMBER: ${{ needs.build.outputs.build-number }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Download maven ${{ matrix.item.maven_version }}
@@ -72,6 +81,7 @@ jobs:
   e2e-tests:
     needs:
       - build
+    if: ${{ needs.build.outputs.deployed }}
     strategy:
       fail-fast: false
       matrix:  
@@ -85,6 +95,8 @@ jobs:
     permissions:
       id-token: write  # Required for Vault OIDC authentication
       contents: read
+    env:
+      BUILD_NUMBER: ${{ needs.build.outputs.build-number }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Download maven ${{ matrix.item.maven_version }}
@@ -117,17 +129,15 @@ jobs:
       - build
       - invoker-integration-tests
       - e2e-tests
+    if: ${{ needs.build.outputs.deployed }}
     runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners  
     name: Promote
     permissions:
       id-token: write
       contents: write
+    env:
+      BUILD_NUMBER: ${{ needs.build.outputs.build-number }}
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
-        with:
-          cache_save: false
-          version: 2025.7.12
       - uses: SonarSource/ci-github-actions/promote@v1
         with:
           promote-pull-request: true

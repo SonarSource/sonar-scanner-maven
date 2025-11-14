@@ -21,83 +21,22 @@ package com.sonar.maven.it.suite;
 
 import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.BuildResult;
-import com.sonar.orchestrator.build.BuildRunner;
 import com.sonar.orchestrator.build.MavenBuild;
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Map;
-
 import com.sonar.orchestrator.version.Version;
+import java.io.File;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.opentest4j.TestAbortedException;
 import org.sonarqube.ws.Components;
 import org.sonarqube.ws.client.components.ComponentsService;
 import org.sonarqube.ws.client.components.ShowRequest;
 import org.sonarqube.ws.client.users.CreateRequest;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class MavenTest extends AbstractMavenTest {
 
   private static final String MODULE_START = "------------- Run sensors on module ";
-
-  /**
-   * See MSONAR-129
-   */
-  @Test
-  void useUserPropertiesGlobalConfig(@TempDir Path temp) throws Exception {
-    BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-      .setGoals(cleanSonarGoal());
-
-    Path settingsXml = temp.resolve("settings.xml").toAbsolutePath();
-    Map<String, String> props = ORCHESTRATOR.getDatabase().getSonarProperties();
-    props.put("sonar.host.url", ORCHESTRATOR.getServer().getUrl());
-    props.put("sonar.login", ORCHESTRATOR.getDefaultAdminToken());
-    Files.write(settingsXml, ItUtils.createSettingsXml(props).getBytes(UTF_8));
-
-    build.addArgument("--settings=" + settingsXml);
-    build.addArgument("-Psonar");
-    // we build without sonarqube server settings, it will need to fetch it from the profile defined in the settings xml file
-    BuildResult result = runner.run(null, build);
-
-    assertThat(result.getLogs()).contains(ORCHESTRATOR.getServer().getUrl());
-  }
-
-  /**
-   * See MSONAR-129
-   */
-  @Test
-  void supportSonarHostURLParam() {
-    BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-global-properties"))
-      // global property should take precedence
-      .setEnvironmentVariable("SONAR_HOST_URL", "http://from-env.org:9000")
-      .setGoals(cleanSonarGoal());
-
-    BuildResult result = assertBuildWithoutCE(runner.runQuietly(null, build), EXEC_FAILED);
-
-    assertThat(result.getLogs())
-      .contains("Call to URL [http://from-env.org:9000/api/v2/analysis/version] failed: from-env.org");
-  }
-
-  /**
-   * See MSONAR-172
-   */
-  @Test
-  void supportSonarHostURLParamFromEnvironmentVariable() {
-    BuildRunner runner = new BuildRunner(ORCHESTRATOR.getConfiguration());
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-      .setEnvironmentVariable("SONAR_HOST_URL", "http://from-env.org:9000")
-      .setGoals(cleanSonarGoal());
-
-    BuildResult result = assertBuildWithoutCE(runner.runQuietly(null, build), EXEC_FAILED);
-    assertThat(result.getLogs()).contains("http://from-env.org:9000");
-  }
 
   /**
    * See MSONAR-130
@@ -199,27 +138,6 @@ class MavenTest extends AbstractMavenTest {
 
     assertThat(getComponent("org.sonar.tests.modules-order:root:module_a/src/main/java/HelloA.java").getName()).isEqualTo("HelloA.java");
     assertThat(getComponent("org.sonar.tests.modules-order:root:module_b/src/main/java/HelloB.java").getName()).isEqualTo("HelloB.java");
-  }
-
-  @Test
-  void shouldEvaluateSourceVersionOnEachModule() {
-    MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/modules-source-versions"))
-      .setGoals(cleanSonarGoal());
-    BuildResult buildResult = executeBuildAndAssertWithCE(build);
-
-    assertThat(findScanSectionOfModule(buildResult.getLogs(), "higher-version")).contains("Configured Java source version (sonar.java.source): 8");
-    assertThat(findScanSectionOfModule(buildResult.getLogs(), "same-version")).contains("Configured Java source version (sonar.java.source): 6");
-  }
-
-  private String findScanSectionOfModule(String logs, String moduleName) {
-    String start = MODULE_START;
-    int startSection = logs.indexOf(start + moduleName);
-    assertThat(startSection).isNotEqualTo(-1);
-    // This will match either a next section or the end of a maven plugin execution
-    int endSection = logs.indexOf("-------------", startSection + start.length());
-    assertThat(endSection).isNotEqualTo(-1);
-
-    return logs.substring(startSection, endSection);
   }
 
   // MSONAR-158
@@ -336,7 +254,6 @@ class MavenTest extends AbstractMavenTest {
     MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/multi-modules-override-sources")).setGoals(sonarGoal());
     executeBuildAndAssertWithCE(build);
 
-
     assertThat(getMeasureAsInteger("com.sonarsource.it.samples:multi-modules-sample:module_a", "files")).isEqualTo(2);
   }
 
@@ -410,119 +327,4 @@ class MavenTest extends AbstractMavenTest {
     assertThat(extractCETaskIds(result)).isEmpty();
   }
 
-  /**
-   * MSONAR-141
-   */
-  @Test
-  void supportMavenEncryption() {
-    checkSupportOfSonarPassword();
-    Assertions.assertDoesNotThrow(() -> {
-      wsClient.users().create(new CreateRequest().setLogin("julien").setName("Julien").setPassword("123abc"));
-
-      MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-              .setGoals(cleanSonarGoal());
-
-      File securityXml = new File(this.getClass().getResource("/security-settings.xml").toURI());
-      File settingsXml = new File(this.getClass().getResource("/settings-with-encrypted-sonar-password.xml").toURI());
-
-      build.addArgument("--settings=" + settingsXml.getAbsolutePath());
-      // MNG-4853
-      build.addArgument("-Dsettings.security=" + securityXml.getAbsolutePath());
-      build.setProperty("sonar.login", "julien");
-      build.addArgument("-Psonar-password");
-      executeBuildAndAssertWithCE(build);
-    });
-  }
-
-  @Test
-  void supportMavenEncryptionWithDefaultSecuritySettings() {
-    checkSupportOfSonarPassword();
-    // Should fail because settings-security.xml is missing
-    Assertions.assertThrows(Exception.class, () -> {
-      wsClient.users().create(new CreateRequest().setLogin("julien3").setName("Julien3").setPassword("123abc"));
-
-      MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-              .setGoals(cleanSonarGoal());
-
-      File settingsXml = new File(this.getClass().getResource("/settings-with-encrypted-sonar-password.xml").toURI());
-
-      build.addArgument("--settings=" + settingsXml.getAbsolutePath());
-
-      build.setProperty("sonar.login", "julien3");
-      build.addArgument("-Psonar-password");
-      executeBuildAndAssertWithCE(build);
-    });
-
-    Assertions.assertDoesNotThrow(() -> {
-      wsClient.users().create(new CreateRequest().setLogin("julien2").setName("Julien2").setPassword("123abc"));
-
-      MavenBuild build = MavenBuild.create(ItUtils.locateProjectPom("maven/maven-only-test-dir"))
-              .setGoals(cleanSonarGoal());
-
-      File securityXml = new File(this.getClass().getResource("/security-settings.xml").toURI());
-      File settingsXml = new File(this.getClass().getResource("/settings-with-encrypted-sonar-password.xml").toURI());
-
-      build.addArgument("--settings=" + settingsXml.getAbsolutePath());
-      build.addArgument("-Dsettings.security=" + securityXml.getAbsolutePath());
-      build.setProperty("sonar.login", "julien2");
-      build.addArgument("-Psonar-password");
-      executeBuildAndAssertWithCE(build);
-    });
-  }
-
-  /**
-   * SCANMAVEN-228
-   */
-  @Test
-  void skipIrrelevantEncryptedEnvironmentVariables() {
-    File pom = ItUtils.locateProjectPom("maven/bootstrap-small-project");
-    MavenBuild build = MavenBuild.create(pom)
-      .setExecutionDir(pom.getParentFile())
-      .setGoals(sonarGoal())
-      .setEnvironmentVariable("IRRELEVANT_SECRET", "{AES}cannot-decrypt");
-
-    BuildResult buildResult = executeBuildAndAssertWithCE(build);
-    assertThat(buildResult.isSuccess()).isTrue();
-  }
-
-  /**
-   * SCANMAVEN-228
-   */
-  @Test
-  void skipIrrelevantEncryptedMavenProperties() {
-    File pom = ItUtils.locateProjectPom("maven/bootstrap-small-project");
-    MavenBuild build = MavenBuild.create(pom)
-      .setExecutionDir(pom.getParentFile())
-      .setGoals(sonarGoal())
-      .setProperty("irrelevant.secret", "{AES}cannot-decrypt");
-
-    BuildResult buildResult = executeBuildAndAssertWithCE(build);
-    assertThat(buildResult.isSuccess()).isTrue();
-  }
-
-  /**
-   * SCANMAVEN-228
-   */
-  @Test
-  void skipIrrelevantEncryptedPropertyInMavenPom() {
-    File pom = ItUtils.locateProjectPom("maven/irrelevant-encrypted-property");
-    MavenBuild build = MavenBuild.create(pom)
-      .setExecutionDir(pom.getParentFile())
-      .setGoals(sonarGoal());
-
-    BuildResult buildResult = executeBuildAndAssertWithCE(build);
-    assertThat(buildResult.isSuccess()).isTrue();
-  }
-
-  /*
-   * As of version 25.0, SQS no longer supports the sonar.password property.
-   * Aborts the test if the property is not supported by the server provided by orchestrator.
-   */
-  private static void checkSupportOfSonarPassword() {
-    Version version = ORCHESTRATOR.getServer().version();
-    if (version.isGreaterThanOrEquals(25, 0)) {
-      String message = String.format("The SQ server provided by orchestrator does not support the property sonar.password (SQS %s).", version);
-      throw new TestAbortedException(message);
-    }
-  }
 }

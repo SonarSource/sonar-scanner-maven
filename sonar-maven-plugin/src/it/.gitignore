@@ -1,1 +1,2 @@
+# We need to put fake jdk bin folders under version control for integration tests to work
 !bin

@@ -1,3 +1,7 @@
 [tools]
-java = "17.0"
+java = ["21", "17"]
 maven = "3.9"
+
+[alias.java.versions]
+"17" = "corretto-17"
+"21" = "corretto-21"

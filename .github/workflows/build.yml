@@ -118,7 +118,7 @@ jobs:
           - {sq_version: "DEV", maven_version: 4.0.0-rc-5}
           - {sq_version: "LATEST_RELEASE", maven_version: 3.9.11}
           - {sq_version: "LATEST_RELEASE[2025.1]", maven_version: 3.8.9}
-          - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.2.5}
+          - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.2.5, java_version: "java@17"}
     runs-on: github-ubuntu-latest-s
     name: E2E Tests
     permissions: *read_permissions
@@ -127,6 +127,11 @@ jobs:
     steps:
       - *checkout
       - *mise
+      - name: Set Java Version
+        if: ${{ matrix.item.java_version != null }}
+        env:
+          JAVA_VERSION: ${{ matrix.item.java_version }}
+        run: mise use "${JAVA_VERSION}"
       - *download_maven_matrix
       - name: Vault (GITHUB Token)
         id: secrets-gh

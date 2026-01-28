@@ -1,0 +1,11 @@
+name: shorthand-tester.yml
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */3 * * *"  # Run every 3 hours, on the hour
+jobs:
+  test-shorthand:
+    runs-on: github-ubuntu-latest-s
+    steps:
+      - name: test shorthand
+        run: .github/scripts/shorthand-test.sh

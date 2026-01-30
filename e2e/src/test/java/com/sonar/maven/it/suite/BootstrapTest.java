@@ -225,14 +225,16 @@ class BootstrapTest extends AbstractMavenTest {
     softly.assertThat(props.getProperty("sonar.java.target")).isEqualTo( "11");
     softly.assertThat(props.getProperty("sonar.java.test.libraries")).contains("jsr305-3.0.2.jar");
     // sonar.java.jdkHome should be the one used by "mvn sonar:sonar"
-    softly.assertThat(props.getProperty("sonar.java.jdkHome")).isEqualTo(guessJavaHomeSelectedByMvn());
+    Path actualJdkHome = Path.of(props.getProperty("sonar.java.jdkHome")).toRealPath();
+    Path expectedJdkHome = Path.of(guessJavaHomeSelectedByMvn()).toRealPath();
+    softly.assertThat(actualJdkHome).isEqualTo(expectedJdkHome);
 
     StringAssert javaHomeAssertion = softly.assertThat(props.getProperty("java.home")).isNotEmpty();
     if (isSonarQubeSupportsJREProvisioning()) {
       //we test that we are actually using the JRE downloaded from SQ
       javaHomeAssertion
         .isNotEqualTo(System.getProperty("java.home"))
-        .isNotEqualTo(guessJavaHomeSelectedByMvn())
+        .isNotEqualTo(expectedJdkHome.toString())
         .contains(".sonar" + File.separator + "cache");
 
       // System properties of the initial JRE are intentionally not set on the provisioned JRE

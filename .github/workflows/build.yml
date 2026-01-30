@@ -14,6 +14,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  USE_DEVELOCITY: true
+  DEVELOCITY_URL: https://develocity-public.sonar.build/
+
 jobs:
   quick-build-deploy:
     runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners
@@ -40,6 +44,8 @@ jobs:
           artifactory-deployer-role: qa-deployer     # Override default public-deployer
           sonar-platform: none
           maven-args: -Dinvoker.skip=true
+          use-develocity: ${{ env.USE_DEVELOCITY }}
+          develocity-url: ${{ env.DEVELOCITY_URL }}
 
   scan:
     needs:
@@ -103,6 +109,8 @@ jobs:
         uses: SonarSource/ci-github-actions/config-maven@v1
         with:
           artifactory-reader-role: private-reader
+          use-develocity: ${{ env.USE_DEVELOCITY }}
+          develocity-url: ${{ env.DEVELOCITY_URL }}
       - name: Run Invoker Integration Tests
         run: >
           mvn verify -DskipTests -Dinvoker.mavenHome="${{ steps.download_maven.outputs.maven_it_path }}"
@@ -143,6 +151,8 @@ jobs:
         uses: SonarSource/ci-github-actions/config-maven@v1
         with:
           artifactory-reader-role: private-reader
+          use-develocity: ${{ env.USE_DEVELOCITY }}
+          develocity-url: ${{ env.DEVELOCITY_URL }}
       - name: Run Orchestrator E2E Tests
         env:
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets-gh.outputs.vault).GITHUB_TOKEN }}

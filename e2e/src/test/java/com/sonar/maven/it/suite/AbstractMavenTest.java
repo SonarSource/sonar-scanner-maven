@@ -214,6 +214,7 @@ public abstract class AbstractMavenTest {
   }
 
   public BuildResult executeBuildAndAssertWithCE(Build<?> build) {
+    build.setProperty("aether.remoteRepositoryFilter.prefixes", "false");
     return assertBuildWithCE(ORCHESTRATOR.executeBuild(build));
   }
 

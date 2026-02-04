@@ -10,4 +10,4 @@ jobs:
       - name: Checkout Sources
         uses: actions/checkout@v6
       - name: test shorthand
-        run: .github/scripts/shorthand-test.sh
+        run: ./.github/scripts/shorthand-test.sh

@@ -7,5 +7,7 @@ jobs:
   test-shorthand:
     runs-on: github-ubuntu-latest-s
     steps:
+      - name: Checkout Sources
+        uses: actions/checkout@v6
       - name: test shorthand
         run: .github/scripts/shorthand-test.sh

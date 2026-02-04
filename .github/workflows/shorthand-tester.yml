@@ -5,9 +5,23 @@ on:
     - cron: "0 */3 * * *"  # Run every 3 hours, on the hour
 jobs:
   test-shorthand:
+    defaults:
+      run:
+        shell: bash
     runs-on: github-ubuntu-latest-s
     steps:
-      - name: Checkout Sources
-        uses: actions/checkout@v6
       - name: Test mvn sonar:sonar shorthand
-        run: ./.github/scripts/shorthand-test.sh
+        run: |
+          COMMAND_LOG=$(mvn help:describe --define cmd='sonar:sonar' --update-snapshots --quiet)
+          EXIT_CODE="${?}"
+          if [[ "${EXIT_CODE}" -eq 0 ]]; then
+            echo "################################################################################" | tee --append "${GITHUB_STEP_SUMMARY}"
+            echo "#                        The shorthand is still working                        #" | tee --append "${GITHUB_STEP_SUMMARY}"
+            echo "################################################################################" | tee --append "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "################################################################################" | tee --append "${GITHUB_STEP_SUMMARY}"
+            echo "#                       The shorthand seems to be broken                       #" | tee --append "${GITHUB_STEP_SUMMARY}"
+            echo "################################################################################" | tee --append "${GITHUB_STEP_SUMMARY}"
+          fi
+          echo "${COMMAND_LOG}" | tee --append "${GITHUB_STEP_SUMMARY}"
+          exit "${EXIT_CODE}"

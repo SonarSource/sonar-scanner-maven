@@ -1,4 +1,4 @@
-name: shorthand-tester.yml
+name: Test mvn sonar:sonar shorthand
 on:
   workflow_dispatch:
   schedule:

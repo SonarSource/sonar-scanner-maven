@@ -8,4 +8,4 @@ jobs:
     runs-on: github-ubuntu-latest-s
     steps:
       - name: test shorthand
-        run: .github/scripts/shorthand-test.sh
+        run: ./.github/scripts/shorthand-test.sh

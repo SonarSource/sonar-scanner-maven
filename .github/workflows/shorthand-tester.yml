@@ -12,6 +12,7 @@ jobs:
     steps:
       - name: Test mvn sonar:sonar shorthand
         run: |
+          command -v mvn || exit 42
           COMMAND_LOG=$(mvn help:describe --define cmd='dorian:sonar' --update-snapshots --quiet 2>&1)
           EXIT_CODE="${?}"
           if [[ "${EXIT_CODE}" -eq 0 ]]; then

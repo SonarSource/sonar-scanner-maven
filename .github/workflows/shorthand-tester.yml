@@ -15,13 +15,18 @@ jobs:
           COMMAND_LOG=$(mvn help:describe --define cmd='sonar:sonar' --update-snapshots --quiet)
           EXIT_CODE="${?}"
           if [[ "${EXIT_CODE}" -eq 0 ]]; then
-            echo "################################################################################" | tee --append "${GITHUB_STEP_SUMMARY}"
-            echo "#                        The shorthand is still working                        #" | tee --append "${GITHUB_STEP_SUMMARY}"
-            echo "################################################################################" | tee --append "${GITHUB_STEP_SUMMARY}"
+            echo "################################################################################"
+            echo "#                        The shorthand is still working                        #"
+            echo "################################################################################"
+            echo "# The shorthand is still working :white_check_mark:" >> "${GITHUB_STEP_SUMMARY}"
           else
-            echo "################################################################################" | tee --append "${GITHUB_STEP_SUMMARY}"
-            echo "#                       The shorthand seems to be broken                       #" | tee --append "${GITHUB_STEP_SUMMARY}"
-            echo "################################################################################" | tee --append "${GITHUB_STEP_SUMMARY}"
+            echo "################################################################################" >&2
+            echo "#                           The shorthand is broken                            #" >&2
+            echo "################################################################################" >&2
+            echo "${COMMAND_LOG}"                                                                   >&2
+            echo "# The shorthand is broken :boom:" >> "${GITHUB_STEP_SUMMARY}"
           fi
-          echo "${COMMAND_LOG}" | tee --append "${GITHUB_STEP_SUMMARY}"
+          echo "```"            >> "${GITHUB_STEP_SUMMARY}"
+          echo "${COMMAND_LOG}" >> "${GITHUB_STEP_SUMMARY}"
+          echo "```"            >> "${GITHUB_STEP_SUMMARY}"
           exit "${EXIT_CODE}"

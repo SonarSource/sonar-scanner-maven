@@ -15,17 +15,11 @@ jobs:
           command -v mvn
       - name: Test mvn sonar:sonar shorthand
         run: |
-          COMMAND_LOG=$(mvn help:describe --define cmd='dorian:sonar' --update-snapshots --quiet 2>&1)
+          COMMAND_LOG=$(mvn help:describe --define cmd='sonar:sonar' --update-snapshots --quiet)
           EXIT_CODE="${?}"
           if [[ "${EXIT_CODE}" -eq 0 ]]; then
-            echo "################################################################################"
-            echo "#                        The shorthand is still working                        #"
-            echo "################################################################################"
             echo "# The shorthand is still working :white_check_mark:" >> "${GITHUB_STEP_SUMMARY}"
           else
-            echo "################################################################################" >&2
-            echo "#                           The shorthand is broken                            #" >&2
-            echo "################################################################################" >&2
             echo "${COMMAND_LOG}"                                                                   >&2
             echo "# The shorthand is broken :boom:" >> "${GITHUB_STEP_SUMMARY}"
           fi

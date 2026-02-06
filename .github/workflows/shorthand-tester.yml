@@ -1,11 +1,29 @@
-name: shorthand-tester.yml
+name: Test mvn sonar:sonar shorthand
 on:
   workflow_dispatch:
   schedule:
     - cron: "0 */3 * * *"  # Run every 3 hours, on the hour
 jobs:
   test-shorthand:
+    defaults:
+      run:
+        shell: bash
     runs-on: github-ubuntu-latest-s
     steps:
-      - name: test shorthand
-        run: .github/scripts/shorthand-test.sh
+      - name: Test mvn command is defined
+        run: |
+          command -v mvn
+      - name: Test mvn sonar:sonar shorthand
+        run: |
+          COMMAND_LOG=$(mvn help:describe --define cmd='sonar:sonar' --update-snapshots --quiet)
+          EXIT_CODE="${?}"
+          if [[ "${EXIT_CODE}" -eq 0 ]]; then
+            echo "# The shorthand is still working :white_check_mark:" >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "${COMMAND_LOG}"                                                                   >&2
+            echo "# The shorthand is broken :boom:" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+          echo "```"            >> "${GITHUB_STEP_SUMMARY}"
+          echo "${COMMAND_LOG}" >> "${GITHUB_STEP_SUMMARY}"
+          echo "```"            >> "${GITHUB_STEP_SUMMARY}"
+          exit "${EXIT_CODE}"

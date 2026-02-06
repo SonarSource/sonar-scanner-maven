@@ -1,5 +1,5 @@
 /*
- * SonarSource :: E2E :: SonarQube Maven
+ * SonarSource :: IT :: SonarQube Maven
  * Copyright (C) 2009-2025 SonarSource Sàrl
  * mailto:info AT sonarsource DOT com
  *

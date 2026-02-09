@@ -102,4 +102,13 @@
     </pluginManagement>
   </build>
 
+  <profiles>
+    <profile>
+      <id>qa</id>
+      <properties>
+        <skipTests>false</skipTests>
+      </properties>
+    </profile>
+  </profiles>
+
 </project>

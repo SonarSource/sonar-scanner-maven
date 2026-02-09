@@ -88,7 +88,7 @@
     <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*</sonar.exclusions>
     <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
     <license.name>GNU LGPL v3</license.name>
-    <sonar.sca.exclusions>e2e/projects/**,sonar-maven-plugin/src/it/**,sonar-maven-plugin/src/test/projects/**</sonar.sca.exclusions>
+    <sonar.sca.exclusions>its/projects/**,src/it/**,src/test/projects/**</sonar.sca.exclusions>
   </properties>
 
   <dependencies>

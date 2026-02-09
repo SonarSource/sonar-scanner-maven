@@ -44,13 +44,6 @@ jobs:
       fail-fast: false
       matrix:  
         item:
-          - {sq_version: "DEV", maven_version: 4.0.0-rc-2}
-          - {sq_version: "DEV", maven_version: 3.9.4}
-          - {sq_version: "DEV", maven_version: 3.8.8}
-          - {sq_version: "DEV", maven_version: 3.6.3}
-          - {sq_version: "LATEST_RELEASE", maven_version: 3.9.4}
-          - {sq_version: "LATEST_RELEASE", maven_version: 3.8.8}
-          - {sq_version: "LATEST_RELEASE", maven_version: 3.6.3}
           - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.9.4}
           - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.8.8}
           - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.6.3}

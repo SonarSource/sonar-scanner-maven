@@ -84,6 +84,7 @@
     <mavenVersion>3.6.3</mavenVersion>
     <mojo.java.target>11</mojo.java.target>
     <maven.compiler.release>11</maven.compiler.release>
+    <sonar.projectKey>org.sonarsource.scanner.maven:sonar-scanner-maven</sonar.projectKey>
     <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*</sonar.exclusions>
     <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
     <license.name>GNU LGPL v3</license.name>

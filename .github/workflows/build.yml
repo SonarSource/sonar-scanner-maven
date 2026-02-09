@@ -84,11 +84,12 @@ jobs:
       - name: Run QA Tests
         env:
           SQ_VERSION: LATEST_RELEASE
-        # ProxyTest fails in GitHub actions environment, so it's disabled temporarily. See BUILD-9499.
-        run: >
-          mvn --batch-mode --errors
-            -Dsonar.runtimeVersion="${SQ_VERSION}"
-            -Dmaven.test.redirectTestOutputToFile=false
+        run: |
+          cd its && \
+          mvn --batch-mode --errors \
+            -Dsonar.runtimeVersion="${SQ_VERSION}" \
+            -Dmaven.test.redirectTestOutputToFile=false \
+            --activate-profiles qa \
             verify
 
   promote:

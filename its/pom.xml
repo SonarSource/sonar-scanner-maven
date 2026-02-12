@@ -26,7 +26,7 @@
     <dependency>
       <groupId>org.sonarsource.orchestrator</groupId>
       <artifactId>sonar-orchestrator-junit5</artifactId>
-      <version>4.8.0.1898</version>
+      <version>4.9.0.1920</version>
       <scope>test</scope>
     </dependency>
     <dependency>

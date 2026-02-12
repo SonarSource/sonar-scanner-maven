@@ -65,7 +65,7 @@ public abstract class AbstractMavenTest {
 
   @RegisterExtension
   public static final OrchestratorExtension ORCHESTRATOR = OrchestratorExtension.builderEnv()
-    .setSonarVersion(getSonarVersion())
+    .setSonarVersion("LATEST_RELEASE[9.9]")
     .useDefaultAdminCredentialsForBuilds(true)
     .addBundledPluginToKeep("sonar-java-plugin")
     .addBundledPluginToKeep("sonar-xml-plugin")
@@ -215,10 +215,4 @@ public abstract class AbstractMavenTest {
     }
     throw new IllegalStateException("Could not find maven version: " + logs);
   }
-
-  private static String getSonarVersion() {
-    String versionProperty = System.getProperty("sonar.runtimeVersion");
-    return versionProperty != null ? versionProperty : "LATEST_RELEASE[9.9]";
-  }
-
 }

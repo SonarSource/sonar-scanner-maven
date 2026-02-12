@@ -218,7 +218,7 @@ public abstract class AbstractMavenTest {
 
   private static String getSonarVersion() {
     String versionProperty = System.getProperty("sonar.runtimeVersion");
-    return versionProperty != null ? versionProperty : "DEV";
+    return versionProperty != null ? versionProperty : "LATEST_RELEASE[9.9]";
   }
 
 }

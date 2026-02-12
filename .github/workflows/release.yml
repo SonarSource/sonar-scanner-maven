@@ -10,14 +10,14 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@v5
+    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@v6
     with:
       publishToBinaries: true
       mavenCentralSync: true
-      slackChannel: team-lang-java-notifs
+      slackChannel: squad-jvm-notifs
   relocation-pom:
     name: Publish relocation POM
-    runs-on: ubuntu-latest
+    runs-on: github-ubuntu-latest-s
     needs:
       - release
     permissions:
@@ -67,12 +67,3 @@ jobs:
         env:
           OSSRH_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ossrh_username }}
           OSSRH_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ossrh_password }}
-      - name: Notify on failure
-        if: failure()
-        uses: 8398a7/action-slack@v3
-        with:
-          channel: team-lang-java-notifs
-          status: failure
-          fields: repo,author,eventName
-        env:
-          SLACK_WEBHOOK_URL: ${{ fromJSON(steps.secrets.outputs.vault).slack_webhook }}

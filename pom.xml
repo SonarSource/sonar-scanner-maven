@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.sonarsource.parent</groupId>
     <artifactId>parent</artifactId>
-    <version>74.0.0.1768</version>
+    <version>84.0.0.3027</version>
     <relativePath />
   </parent>
 
@@ -15,7 +15,6 @@
 
   <name>SonarQube Scanner for Maven</name>
   <description>Trigger SonarQube analysis on Maven projects</description>
-  <url>http://sonarsource.github.io/sonar-scanner-maven/</url>
   <inceptionYear>2009</inceptionYear>
 
   <licenses>
@@ -85,8 +84,11 @@
     <mavenVersion>3.6.3</mavenVersion>
     <mojo.java.target>11</mojo.java.target>
     <maven.compiler.release>11</maven.compiler.release>
+    <sonar.projectKey>org.sonarsource.scanner.maven:sonar-scanner-maven</sonar.projectKey>
     <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*</sonar.exclusions>
     <gitRepositoryName>sonar-scanner-maven</gitRepositoryName>
+    <license.name>GNU LGPL v3</license.name>
+    <sonar.sca.exclusions>its/projects/**,src/it/**,src/test/projects/**</sonar.sca.exclusions>
   </properties>
 
   <dependencies>
@@ -134,9 +136,9 @@
     </dependency>
 
     <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>2.6</version>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.14.0</version>
     </dependency>
 
     <dependency>
@@ -245,23 +247,6 @@
         <version>3.0.1</version>
         <configuration>
           <goals>deploy site site:stage</goals>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-site-plugin</artifactId>
-        <version>4.0.0-M14</version>
-        <executions>
-          <execution>
-            <id>stage-for-scm-publish</id>
-            <phase>post-site</phase>
-            <goals>
-              <goal>stage</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <skipDeploy>true</skipDeploy>
         </configuration>
       </plugin>
       <plugin>

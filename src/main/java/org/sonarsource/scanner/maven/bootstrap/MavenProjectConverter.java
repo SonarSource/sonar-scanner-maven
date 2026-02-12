@@ -1,6 +1,6 @@
 /*
  * SonarQube Scanner for Maven
- * Copyright (C) 2009-2024 SonarSource SA
+ * Copyright (C) 2009-2025 SonarSource Sàrl
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -33,13 +33,14 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.model.CiManagement;
 import org.apache.maven.model.IssueManagement;
@@ -394,7 +395,7 @@ public class MavenProjectConverter {
 
   private static void setPropertyIfNotAlreadyExists(Map<String, String> props, String propertyKey, String propertyValue) {
     if (StringUtils.isBlank(props.get(propertyKey))) {
-      props.put(propertyKey, StringUtils.defaultString(propertyValue));
+      props.put(propertyKey, Objects.toString(propertyValue, ""));
     }
   }
 

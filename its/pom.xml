@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.sonarsource.parent</groupId>
     <artifactId>parent</artifactId>
-    <version>71.0.0.1292</version>
+    <version>86.0.0.3040</version>
     <relativePath/>
   </parent>
 
@@ -16,14 +16,17 @@
 
   <properties>
     <jetty.version>9.4.51.v20230217</jetty.version>
-    <maven.compiler.release>8</maven.compiler.release>
+    <maven.compiler.release>17</maven.compiler.release>
+    <license.name>GNU LGPL v3</license.name>
+    <skipTests>true</skipTests>
+    <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
   
   <dependencies>
     <dependency>
       <groupId>org.sonarsource.orchestrator</groupId>
       <artifactId>sonar-orchestrator-junit5</artifactId>
-      <version>4.8.0.1898</version>
+      <version>4.9.0.1920</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -98,5 +101,14 @@
       </plugins>
     </pluginManagement>
   </build>
+
+  <profiles>
+    <profile>
+      <id>qa</id>
+      <properties>
+        <skipTests>false</skipTests>
+      </properties>
+    </profile>
+  </profiles>
 
 </project>

@@ -1,6 +1,6 @@
 /*
  * SonarQube Scanner for Maven
- * Copyright (C) 2009-2024 SonarSource SA
+ * Copyright (C) 2009-2025 SonarSource Sàrl
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,10 +23,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.logging.Log;
@@ -128,8 +128,8 @@ public class ScannerFactory {
   }
 
   private static void setCommonHttpProperties(Proxy proxy) {
-    System.setProperty("http.proxyUser", StringUtils.defaultString(proxy.getUsername(), ""));
-    System.setProperty("http.proxyPassword", StringUtils.defaultString(proxy.getPassword(), ""));
-    System.setProperty("http.nonProxyHosts", StringUtils.defaultString(proxy.getNonProxyHosts(), ""));
+    System.setProperty("http.proxyUser", Objects.toString(proxy.getUsername(), ""));
+    System.setProperty("http.proxyPassword", Objects.toString(proxy.getPassword(), ""));
+    System.setProperty("http.nonProxyHosts", Objects.toString(proxy.getNonProxyHosts(), ""));
   }
 }

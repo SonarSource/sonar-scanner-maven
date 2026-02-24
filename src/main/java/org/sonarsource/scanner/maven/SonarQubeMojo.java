@@ -33,6 +33,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -93,7 +94,7 @@ public class SonarQubeMojo extends AbstractMojo {
       return;
     }
 
-    warnAboutUnspecifiedSonarPluginVersion();
+    warnAboutUnspecifiedSonarPluginVersion(mojoExecution, session, getLog());
 
     Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
 
@@ -113,7 +114,8 @@ public class SonarQubeMojo extends AbstractMojo {
     new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, propertyDecryptor).execute();
   }
 
-  private void warnAboutUnspecifiedSonarPluginVersion() {
+  @VisibleForTesting
+  static void warnAboutUnspecifiedSonarPluginVersion(MojoExecution mojoExecution, MavenSession session, Log log) {
     String effectivePluginVersion = mojoExecution.getVersion();
     String groupId = mojoExecution.getGroupId();
     String artifactId = mojoExecution.getArtifactId();
@@ -130,7 +132,7 @@ public class SonarQubeMojo extends AbstractMojo {
         invalidPluginVersion = "an unspecified version";
       }
       if (invalidPluginVersion != null) {
-        getLog().warn(String.format("Using %s instead of an explicit plugin version may introduce breaking analysis changes at an unwanted time. " +
+        log.error(String.format("Using %s instead of an explicit plugin version may introduce breaking analysis changes at an unwanted time. " +
           "It is highly recommended to use an explicit version, e.g. '%s:%s:%s'.", invalidPluginVersion, groupId, artifactId, effectivePluginVersion));
       }
     }

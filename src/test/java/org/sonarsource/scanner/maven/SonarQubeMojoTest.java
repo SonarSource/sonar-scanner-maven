@@ -34,15 +34,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.execution.ProjectDependencyGraph;
 import org.apache.maven.graph.GraphBuilder;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginManagement;
 import org.apache.maven.model.building.Result;
-import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.testing.MojoRule;
 import org.apache.maven.project.MavenProject;
 import org.assertj.core.data.MapEntry;
@@ -52,16 +49,13 @@ import org.sonarsource.scanner.maven.TimestampLoggerTest.TestLog;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 public class SonarQubeMojoTest {
 
-  private static final String UNSPECIFIED_VERSION_WARNING_SUFFIX = "instead of an explicit plugin version may introduce breaking analysis changes at an unwanted time. " +
-    "It is highly recommended to use an explicit version, e.g. 'org.sonarsource.scanner.maven:sonar-maven-plugin:";
+  private static final String UNSPECIFIED_VERSION_WARNING_SUFFIX =
+    "instead of an explicit plugin version may introduce breaking analysis changes at an unwanted time. " +
+    "Starting May 1st 2026, an explicit plugin version will be required as the non-versioned 'sonar:sonar' shorthand mechanism will be taken offline. " +
+    "To ensure your analysis experience remains stable, please make sure you explicitly version the plugin in your command";
 
   private static final String DEFAULT_GOAL = "org.sonarsource.scanner.maven:sonar-maven-plugin:sonar";
 
@@ -292,38 +286,6 @@ public class SonarQubeMojoTest {
     logger.setLogLevel(TestLog.LogLevel.DEBUG);
     executeProject("project-with-findbugs-reporting");
     assertThat(readProps("target/dump.properties")).contains((entry("sonar.verbose", "true")));
-  }
-
-  @Test
-  public void error_logs_are_produced_when_the_plugin_is_not_versioned() {
-    String expectedErrorMessage = "Using %s instead of an explicit plugin version may introduce breaking analysis changes at an unwanted time."
-      + " "
-      + "It is highly recommended to use an explicit version, e.g. 'org.sonarsource.scanner.maven:sonar-maven-plugin:%s'.";
-    test_error_logs("4.0.1-SNAPSHOT", String.format(expectedErrorMessage, "an unspecified version", "4.0.1-SNAPSHOT"));
-    test_error_logs("LATEST", String.format(expectedErrorMessage, "LATEST", "LATEST"));
-    test_error_logs("RELEASE", String.format(expectedErrorMessage, "RELEASE", "RELEASE"));
-  }
-
-  static void test_error_logs(String version, String expectedErrorMessage) {
-    Log log = spy(new TestLog(TestLog.LogLevel.ERROR));
-
-    Plugin plugin = mock(Plugin.class);
-    doReturn(version).when(plugin).getVersion();
-
-    MojoExecution execution = mock(MojoExecution.class);
-    doReturn("org.sonarsource.scanner.maven").when(execution).getGroupId();
-    doReturn("sonar-maven-plugin").when(execution).getArtifactId();
-    doReturn(version).when(execution).getVersion();
-    doReturn(plugin).when(execution).getPlugin();
-
-    MavenProject project = mock(MavenProject.class);
-
-    MavenSession session = mock(MavenSession.class);
-    doReturn(project).when(session).getTopLevelProject();
-    doReturn(List.of("sonar:sonar")).when(session).getGoals();
-
-    SonarQubeMojo.warnAboutUnspecifiedSonarPluginVersion(execution, session, log);
-    verify(log, times(1)).error(expectedErrorMessage);
   }
 
   private File executeProject(String projectName) throws Exception {

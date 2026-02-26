@@ -33,7 +33,6 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -94,7 +93,7 @@ public class SonarQubeMojo extends AbstractMojo {
       return;
     }
 
-    warnAboutUnspecifiedSonarPluginVersion(mojoExecution, session, getLog());
+    warnAboutUnspecifiedSonarPluginVersion();
 
     Properties envProps = Utils.loadEnvironmentProperties(System.getenv());
 
@@ -114,8 +113,7 @@ public class SonarQubeMojo extends AbstractMojo {
     new ScannerBootstrapper(getLog(), session, runner, mavenProjectConverter, propertyDecryptor).execute();
   }
 
-  @VisibleForTesting
-  static void warnAboutUnspecifiedSonarPluginVersion(MojoExecution mojoExecution, MavenSession session, Log log) {
+  private void warnAboutUnspecifiedSonarPluginVersion() {
     String effectivePluginVersion = mojoExecution.getVersion();
     String groupId = mojoExecution.getGroupId();
     String artifactId = mojoExecution.getArtifactId();
@@ -132,8 +130,12 @@ public class SonarQubeMojo extends AbstractMojo {
         invalidPluginVersion = "an unspecified version";
       }
       if (invalidPluginVersion != null) {
-        log.error(String.format("Using %s instead of an explicit plugin version may introduce breaking analysis changes at an unwanted time. " +
-          "It is highly recommended to use an explicit version, e.g. '%s:%s:%s'.", invalidPluginVersion, groupId, artifactId, effectivePluginVersion));
+        getLog().error(String.format(
+          "Using %s instead of an explicit plugin version may introduce breaking analysis changes at an unwanted time. " +
+          "Starting May 1st 2026, an explicit plugin version will be required as the non-versioned 'sonar:sonar' shorthand mechanism will be taken offline. " +
+          "To ensure your analysis experience remains stable, please make sure you explicitly version the plugin in your command, e.g. '%s:%s:%s', or in your build configuration.",
+          invalidPluginVersion, groupId, artifactId, effectivePluginVersion)
+        );
       }
     }
   }

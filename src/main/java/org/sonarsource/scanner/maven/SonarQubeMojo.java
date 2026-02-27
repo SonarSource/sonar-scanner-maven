@@ -133,7 +133,10 @@ public class SonarQubeMojo extends AbstractMojo {
         getLog().error(String.format(
           "Using %s instead of an explicit plugin version may introduce breaking analysis changes at an unwanted time. " +
           "Starting May 1st 2026, an explicit plugin version will be required as the non-versioned 'sonar:sonar' shorthand mechanism will be taken offline. " +
-          "To ensure your analysis experience remains stable, please make sure you explicitly version the plugin in your command, e.g. '%s:%s:%s', or in your build configuration.",
+          "To ensure your analysis experience remains stable, please make sure you explicitly version the plugin in your command, " +
+          "e.g. '%s:%s:%s', or in your build configuration. " +
+          "For further information, please refer to the official documentation at " +
+          "https://docs.sonarsource.com/sonarqube-cloud/advanced-setup/ci-based-analysis/sonarscanner-for-maven.",
           invalidPluginVersion, groupId, artifactId, effectivePluginVersion)
         );
       }

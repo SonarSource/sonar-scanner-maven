@@ -4,6 +4,20 @@ on:
   release:
     types:
       - published
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: Version
+        required: true
+      releaseId:
+        type: string
+        description: Release ID
+        required: true
+      dryRun:
+        type: boolean
+        description: Flag to enable the dry-run execution
+        default: false
 
 jobs:
   release:
@@ -15,6 +29,10 @@ jobs:
       publishToBinaries: true
       mavenCentralSync: true
       slackChannel: squad-jvm-notifs
+      # We do not have any inputs if this workflow is triggered by a release event, hence we have to use a fallback for all inputs
+      version: ${{ inputs.version || github.event.release.tag_name }}
+      releaseId: ${{ inputs.releaseId || github.event.release.id }}
+      dryRun: ${{ inputs.dryRun == true }}
   relocation-pom:
     name: Publish relocation POM
     runs-on: github-ubuntu-latest-s
@@ -41,10 +59,10 @@ jobs:
         run: |
           GROUP_ID=$(mvn --batch-mode org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression="project.groupId" -q -DforceStdout)
           ARTIFACT_ID=$(mvn --batch-mode org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression="project.artifactId" -q -DforceStdout)
-          _PATH="local_repo/${GROUP_ID//.//}/${ARTIFACT_ID}/${{ github.event.release.tag_name }}"
-          POM_PATH="${_PATH}/${ARTIFACT_ID}-${{ github.event.release.tag_name }}.pom"
+          _PATH="local_repo/${GROUP_ID//.//}/${ARTIFACT_ID}/${{ inputs.version || github.event.release.tag_name }}"
+          POM_PATH="${_PATH}/${ARTIFACT_ID}-${{ inputs.version || github.event.release.tag_name }}.pom"
           mkdir --parent "${_PATH}"
-          sed 's|REPLACE_ME|${{ github.event.release.tag_name }}|' pom.xml > "${POM_PATH}"
+          sed 's|REPLACE_ME|${{ inputs.version || github.event.release.tag_name }}|' pom.xml > "${POM_PATH}"
           md5sum "${POM_PATH}"    | cut -d\  -f1 > "${POM_PATH}.md5"
           sha1sum "${POM_PATH}"   | cut -d\  -f1 > "${POM_PATH}.sha1"
           sha256sum "${POM_PATH}" | cut -d\  -f1 > "${POM_PATH}.sha256"

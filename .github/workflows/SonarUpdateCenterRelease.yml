@@ -1,0 +1,75 @@
+name: Sonar Update Center Release
+
+# Adds a new section to https://github.com/SonarSource/sonar-update-center-properties/blob/master/scannermaven.properties.
+# This workflow can be launched manually (workflow_dispatch) or from another workflow (workflow_call).
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "New version field, e.g. '5.5.0.6356'"
+        required: true
+        type: string
+      description:
+        description: "Description field"
+        required: true
+        type: string
+      changelog-url:
+        description: "changelogUrl field. If not provided, Jira link with appropriate fix version will be used."
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: "New version field, e.g. '5.5.0.6356'"
+        required: true
+        type: string
+      description:
+        description: "Description field"
+        required: true
+        type: string
+      changelog-url:
+        description: "changelogUrl field. If not provided, Jira link with appropriate fix version will be used."
+        required: false
+        type: string
+
+jobs:
+  update-center-release:
+    runs-on: github-ubuntu-latest-s
+    name: Sonar Update Center Release
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Generate Changelog URL
+        id: generate-changelog-url
+        if: inputs.changelog-url == ''
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          IFS='.' read -ra PARTS <<< "$VERSION"
+          MAJOR="${PARTS[0]}"
+          MINOR="${PARTS[1]}"
+          PATCH="${PARTS[2]}"
+          if [ "$PATCH" = "0" ]; then
+            JIRA_VERSION="${MAJOR}.${MINOR}"
+          else
+            JIRA_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          fi
+          echo "url=https://sonarsource.atlassian.net/issues/?jql=project%20%3D%2010140%20AND%20fixVersion%20%3D%20${JIRA_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Sonar Update Center Release
+        id: sonar-update-center-release
+        uses: SonarSource/release-github-actions/sonar-update-center-release@master
+        with:
+          file: "scannermaven.properties"
+          version: ${{ inputs.version }}
+          description: ${{ inputs.description }}
+          changelog-url: ${{ inputs.changelog-url || steps.generate-changelog-url.outputs.url }}
+          download-url: "https://central.sonatype.com/artifact/org.sonarsource.scanner.maven/sonar-maven-plugin/versions"
+
+      - name: Summary
+        run: |
+          echo "## Sonar Update Center Release" >> $GITHUB_STEP_SUMMARY
+          echo "Pull Request: ${{ steps.sonar-update-center-release.outputs.pull-request-url }}" >> $GITHUB_STEP_SUMMARY

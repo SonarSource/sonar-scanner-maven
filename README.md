@@ -14,6 +14,13 @@ Be aware that this forum is a community, so the standard pleasantries ("Hi", "Th
 
 * [develop.md](develop.md)
 
+### Updating licenses:
+When dependencies change, update the committed license files using the `updateLicenses` profile:
+```sh
+mvn clean package -PupdateLicenses
+```
+This regenerates licenses in `sonar-java-plugin/src/main/resources/licenses/` based on current project dependencies.
+
 ## Contributing
 
 * [contributing.md](contributing.md)

@@ -284,7 +284,7 @@
             <licensesOutputDirectory>${project.build.directory}/temp-licenses/THIRD_PARTY_LICENSES</licensesOutputDirectory>
             <licensesOutputFile>${project.build.directory}/licenses.xml</licensesOutputFile>
             <organizeLicensesByDependencies>true</organizeLicensesByDependencies>
-            <excludedGroups>com.sonarsource|org.sonarsource.java</excludedGroups>
+            <excludedGroups>com.sonarsource|org.sonarsource.scanner</excludedGroups>
             <licenseUrlReplacements>
                <licenseUrlReplacement>
                     <regexp>http://www.gnu.org/licenses/lgpl.txt</regexp>

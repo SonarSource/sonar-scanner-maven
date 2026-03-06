@@ -11,7 +11,7 @@ on:
         required: true
         type: string
       description:
-        description: "Description field"
+        description: "A single sentence describing the highlights of the release"
         required: true
         type: string
       changelog-url:

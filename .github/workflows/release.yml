@@ -37,8 +37,8 @@ jobs:
   relocation-pom:
     name: Publish relocation POM
     runs-on: github-ubuntu-latest-s
-    # Do not fail the workflow if this job fails. We want this for integration with automated release.
-    continue-on-error: true
+    # This step will be removed soon. Skip it in the automated release.
+    if: ${{ github.event_name != 'workflow_dispatch' }}
     needs:
       - release
     permissions:
@@ -59,17 +59,13 @@ jobs:
             development/kv/data/sign passphrase | sign_passphrase;
       - name: Prepare repo for uploading
         working-directory: relocation/
-        env:
-          VERSION: ${{ inputs.version || github.event.release.tag_name }}
-          GPG_PRIVATE_KEY_BASE64: ${{ fromJSON(steps.secrets.outputs.vault).sign_key }}
-          GPG_PRIVATE_KEY_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).sign_passphrase }}
         run: |
           GROUP_ID=$(mvn --batch-mode org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression="project.groupId" -q -DforceStdout)
           ARTIFACT_ID=$(mvn --batch-mode org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression="project.artifactId" -q -DforceStdout)
-          _PATH="local_repo/${GROUP_ID//.//}/${ARTIFACT_ID}/${VERSION}"
-          POM_PATH="${_PATH}/${ARTIFACT_ID}-${VERSION}.pom"
+          _PATH="local_repo/${GROUP_ID//.//}/${ARTIFACT_ID}/${{ github.event.release.tag_name }}"
+          POM_PATH="${_PATH}/${ARTIFACT_ID}-${{ github.event.release.tag_name }}.pom"
           mkdir --parent "${_PATH}"
-          sed "s|REPLACE_ME|${VERSION}|" pom.xml > "${POM_PATH}"
+          sed 's|REPLACE_ME|${{ github.event.release.tag_name }}|' pom.xml > "${POM_PATH}"
           md5sum "${POM_PATH}"    | cut -d\  -f1 > "${POM_PATH}.md5"
           sha1sum "${POM_PATH}"   | cut -d\  -f1 > "${POM_PATH}.sha1"
           sha256sum "${POM_PATH}" | cut -d\  -f1 > "${POM_PATH}.sha256"
@@ -79,9 +75,11 @@ jobs:
           echo "${GPG_PRIVATE_KEY_PASSPHRASE}" | gpg --batch --pinentry-mode loopback --passphrase-fd 0 --quiet --import <(echo "${GPG_PRIVATE_KEY_BASE64}")
           echo "${GPG_PRIVATE_KEY_PASSPHRASE}" | gpg --batch --pinentry-mode loopback --passphrase-fd 0 --quiet --detach-sign --armor "${POM_PATH}"
           rm -rf "${GNUPGHOMEDIR}"
+        env:
+          GPG_PRIVATE_KEY_BASE64: ${{ fromJSON(steps.secrets.outputs.vault).sign_key }}
+          GPG_PRIVATE_KEY_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).sign_passphrase }}
       - name: Maven Central Sync
         id: maven-central-sync
-        if: ${{ inputs.dryRun != true }}
         uses: SonarSource/gh-action_release/maven-central-sync@v5
         with:
           local-repo-dir: relocation/local_repo/

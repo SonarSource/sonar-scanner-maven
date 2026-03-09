@@ -1,10 +1,15 @@
 name: Prepare Next Development Iteration
 
 on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
-      nextVersion:
-        description: Version number of the next iteration
+      version:
+        description: The new version (without -SNAPSHOT)
         required: true
 
 jobs:
@@ -18,26 +23,32 @@ jobs:
     steps:
 
       - name: Checkout Sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Normalize Version
+        id: version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            VERSION="${VERSION}.0"
+          fi
+          echo "full-version=${VERSION}-SNAPSHOT" >> $GITHUB_OUTPUT
 
       - name: Update Version Number
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NEXT_VERSION: ${{ inputs.nextVersion }}
         run: |
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git config --global core.autocrlf input
-          git config --global core.safecrlf true
-          BRANCH="gh-action/next-iteration.${{ github.run_id }}"
-          git checkout -b "$BRANCH"
-          mvn versions:set -DgenerateBackupPoms=false -DnewVersion="${NEXT_VERSION}"
-          git commit -m "Prepare next development iteration ${NEXT_VERSION}" -a
-          git push --set-upstream origin "$BRANCH"
+          mvn versions:set -DgenerateBackupPoms=false -DnewVersion="${{ steps.version.outputs.full-version }}"
 
       - name: Create Pull Request
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NEXT_VERSION: ${{ inputs.nextVersion }}
+        uses: SonarSource/release-github-actions/create-pull-request@v1
+        id: create-pr
+        with:
+          commit-message: "Prepare next development iteration ${{ steps.version.outputs.full-version }}"
+          title: "Prepare next development iteration ${{ steps.version.outputs.full-version }}"
+          branch: gh-action/next-iteration
+          branch-suffix: timestamp
+
+      - name: Summary
         run: |
-          gh pr create --base master --title "Prepare next development iteration ${NEXT_VERSION}" --body ''
+          echo "Generated ${{steps.create-pr.outputs.pull-request-url}}." >> $GITHUB_STEP_SUMMARY
+          echo "New version set to ${{ steps.version.outputs.full-version }}." >> $GITHUB_STEP_SUMMARY

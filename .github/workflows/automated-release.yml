@@ -1,0 +1,89 @@
+name: Automated Release
+on:
+  workflow_dispatch:
+    inputs:
+      short-description:
+        description: "Short description for the REL ticket"
+        required: true
+        type: string
+      changelog-url:
+        description: "Link to the list of changes used in SonarSource/sonar-update-center-properties, e.g, https://sonarsource.atlassian.net/issues/?jql=project%20%3D%2010140%20AND%20fixversion%20%3D%205.3"
+        required: true
+        type: string
+      branch:
+        description: "Branch from which to do the release"
+        required: true
+        default: "master"
+        type: string
+      new-version:
+        description: "New version to release (without -SNAPSHOT; if left empty, the current minor version will be auto-incremented)"
+        required: false
+        type: string
+      verbose:
+        description: "Enable verbose logging"
+        type: boolean
+        default: false
+      dry-run:
+        description: "Test mode: uses Jira sandbox and creates draft GitHub release"
+        type: boolean
+        default: true
+      bump-version:
+        description: "Create a PR for the next iteration"
+        type: boolean
+        default: true
+      sonar-update-center-integration:
+        description: "Create a PR in SonarQube Update Center Properties repository"
+        type: boolean
+        default: true
+
+jobs:
+  release:
+    name: Release
+    uses: SonarSource/release-github-actions/.github/workflows/automated-release.yml@v1
+    permissions:
+      statuses: read
+      id-token: write
+      contents: write
+      actions: write
+      pull-requests: write
+    with:
+      project-name: "SonarScanner for Maven"
+      plugin-name: "scanner-maven"
+      jira-project-key: "SCANMAVEN"
+      rule-props-changed: false
+      short-description: ${{ github.event.inputs.short-description }}
+      new-version: ${{ github.event.inputs.new-version }}
+      sqc-integration: false
+      sqs-integration: false
+      branch: ${{ github.event.inputs.branch }}
+      pm-email: "jean.jimbo@sonarsource.com"
+      slack-channel: "squad-jvm-releases"
+      verbose: ${{ github.event.inputs.verbose == 'true' }}
+      use-jira-sandbox: ${{ github.event.inputs.dry-run == 'true' }}
+      is-draft-release: ${{ github.event.inputs.dry-run == 'true' }}
+      bump-version: false
+  
+  bump_versions:
+    name: Bump versions
+    if: ${{ github.event.inputs.bump-version == 'true' }}
+    needs: release
+    uses: ./.github/workflows/PrepareNextIteration.yml
+    permissions:
+      contents: write
+      pull-requests: write
+    with:
+      version: ${{ needs.release.outputs.new-version }}
+
+  sonar-update-center-integration:
+    name: SonarQube Update Center Integration
+    if: ${{ github.event.inputs.sonar-update-center-integration == 'true' }}
+    needs: release
+    uses: ./.github/workflows/SonarUpdateCenterRelease.yml
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    with:
+      version: ${{ needs.release.outputs.release-version }}
+      description: ${{ github.event.inputs.short-description }}
+      changelog-url: ${{ github.event.inputs.changelog-url }}

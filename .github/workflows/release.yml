@@ -22,7 +22,7 @@ jobs:
       - release
     permissions:
       id-token: write
-      contents: read
+      contents: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
@@ -32,8 +32,6 @@ jobs:
         with:
           secrets: |
             development/kv/data/slack webhook | slack_webhook;
-            development/kv/data/ossrh username | ossrh_username;
-            development/kv/data/ossrh password | ossrh_password;
             development/kv/data/sign key | sign_key;
             development/kv/data/sign passphrase | sign_passphrase;
       - name: Prepare repo for uploading
@@ -59,11 +57,7 @@ jobs:
           GPG_PRIVATE_KEY_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).sign_passphrase }}
       - name: Maven Central Sync
         id: maven-central-sync
-        uses: SonarSource/gh-action_release/maven-central-sync@v5
+        uses: SonarSource/gh-action_release/.github/workflows/main.yaml@v6
         with:
-          local-repo-dir: relocation/local_repo/
-          nexus-url: https://oss.sonatype.org/
-          staging-profile-id: 23a95768f56d42
-        env:
-          OSSRH_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ossrh_username }}
-          OSSRH_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ossrh_password }}
+          mavenCentralSync: true
+          slackChannel: squad-jvm-notifs

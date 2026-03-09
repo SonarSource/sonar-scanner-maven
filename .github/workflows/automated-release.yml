@@ -50,6 +50,7 @@ jobs:
       project-name: "SonarScanner for Maven"
       plugin-name: "scanner-maven"
       jira-project-key: "SCANMAVEN"
+      runner-environment: "github-ubuntu-latest-s"
       rule-props-changed: false
       short-description: ${{ github.event.inputs.short-description }}
       new-version: ${{ github.event.inputs.new-version }}

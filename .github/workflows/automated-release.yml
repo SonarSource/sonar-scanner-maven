@@ -62,6 +62,7 @@ jobs:
       verbose: ${{ github.event.inputs.verbose == 'true' }}
       use-jira-sandbox: ${{ github.event.inputs.dry-run == 'true' }}
       is-draft-release: ${{ github.event.inputs.dry-run == 'true' }}
+      issue-categories: "Feature,False Positive,False Negative,Bug,Security,Maintenance"
       bump-version: false
   
   bump_versions:

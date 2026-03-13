@@ -234,7 +234,7 @@ public class MavenProjectConverter {
   private void configureModules(List<MavenProject> mavenProjects, Map<MavenProject, Map<String, String>> propsByModule)
     throws MojoExecutionException {
     for (MavenProject pom : mavenProjects) {
-      boolean skipped = "true".equals(pom.getModel().getProperties().getProperty("sonar.skip"));
+      boolean skipped = "true".equals(getPropertyByKey("sonar.skip", pom));
       if (skipped) {
         skippedBasedDirs.add(pom.getBasedir().toPath());
         log.info("Module " + pom + " skipped by property 'sonar.skip'");

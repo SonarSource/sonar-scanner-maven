@@ -158,6 +158,16 @@ public class MavenProjectConverter {
     return new HashMap<>(envProperties);
   }
 
+  /**
+   * Configures the Maven project hierarchy and generates properties for analysis.
+   * Cleans irrelevant pom-defined project properties via {@link org.sonarsource.scanner.maven.bootstrap.MavenUtils#isIrrelevantEncryptedProperty}.
+   *
+   * @param mavenProjects   the list of Maven projects (including submodules) to configure
+   * @param root            the root Maven project of the hierarchy
+   * @param userProperties  the user-provided properties to customize the configuration
+   * @return a map containing the generated properties for the root project
+   * @throws MojoExecutionException if an error occurs during project configuration or property generation
+   */
   Map<String, String> configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties) throws MojoExecutionException {
     this.userProperties = userProperties;
     this.specifiedProjectKey = specifiedProjectKey(userProperties, root);
@@ -189,8 +199,11 @@ public class MavenProjectConverter {
     if (currentProps == null) {
       throw new IllegalStateException(UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE);
     }
+    // include only relevant properties
     for (Map.Entry<String, String> prop : currentProps.entrySet()) {
-      properties.put(prefix + prop.getKey(), prop.getValue());
+      if (!MavenUtils.isIrrelevantEncryptedProperty(prop.getKey(), prop.getValue())) {
+        properties.put(prefix + prop.getKey(), prop.getValue());
+      }
     }
     propsByModule.remove(current);
     Path topLevelDir = current.getBasedir().toPath().toAbsolutePath();

@@ -41,4 +41,4 @@ mvn -P e2e -Dsonar.runtimeVersion="LATEST_RELEASE" verify
 ```
 
 ### Change the maven scanner version
-Use `mvn versions:set -DgenerateBackupPoms=false -DnewVersion=X.Y.Z-SNAPSHOT` to change te project version.
+Use `mvn versions:set -DgenerateBackupPoms=false -DnewVersion=X.Y.Z-SNAPSHOT` to change the project version.

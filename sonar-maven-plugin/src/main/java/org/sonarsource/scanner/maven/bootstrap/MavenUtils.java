@@ -110,13 +110,6 @@ public final class MavenUtils {
     putRelevant(src::stringPropertyNames, src::getProperty, dest::put);
   }
 
-  /**
-   * See {@link #putRelevant(Properties, Properties)}.
-   */
-  static void putRelevant(Map<String, String> src, Map<String, String> dest) {
-    putRelevant(src::keySet, src::get, dest::put);
-  }
-
   private static void putRelevant(Supplier<Set<String>> propertyNames, UnaryOperator<String> getProperty, BiConsumer<String, String> dest) {
     for (String name : propertyNames.get()) {
       String value = getProperty.apply(name);
@@ -127,9 +120,9 @@ public final class MavenUtils {
     }
   }
 
-  private static boolean isIrrelevantEncryptedProperty(String name, String value) {
+  static boolean isIrrelevantEncryptedProperty(String name, String value) {
     return ENCRYPTED_VALUE.matcher(value).matches()
-      && !name.toLowerCase(Locale.US).contains("sonar");
+      && !name.toLowerCase(Locale.ROOT).contains("sonar");
   }
 
   /**

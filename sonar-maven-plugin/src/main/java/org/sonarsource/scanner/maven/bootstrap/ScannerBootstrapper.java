@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -105,8 +104,7 @@ public class ScannerBootstrapper {
 
     Properties userProperties = new Properties();
     MavenUtils.putRelevant(session.getUserProperties(), userProperties);
-    Map<String, String> props = new HashMap<>();
-    MavenUtils.putRelevant(mavenProjectConverter.configure(sortedProjects, topLevelProject, userProperties), props);
+    Map<String, String> props = mavenProjectConverter.configure(sortedProjects, topLevelProject, userProperties);
     props.putAll(propertyDecryptor.decryptProperties(props));
     if (shouldCollectAllSources(userProperties)) {
       log.info("Parameter " + MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES + " is enabled. The scanner will attempt to collect additional sources.");
@@ -124,7 +122,7 @@ public class ScannerBootstrapper {
   }
 
   private static boolean shouldCollectAllSources(Properties userProperties) {
-    return Boolean.TRUE.equals(Boolean.parseBoolean(userProperties.getProperty(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES)));
+    return Boolean.parseBoolean(userProperties.getProperty(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES));
   }
 
   private static String notCollectingAdditionalSourcesBecauseOf(String overriddenProperty) {

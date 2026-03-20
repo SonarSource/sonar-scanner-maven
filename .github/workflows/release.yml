@@ -80,7 +80,7 @@ jobs:
           GPG_PRIVATE_KEY_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).sign_passphrase }}
       - name: Maven Central Sync
         id: maven-central-sync
-        uses: SonarSource/gh-action_release/maven-central-sync@v5
+        uses: SonarSource/gh-action_release/maven-central-sync@v6
         with:
           local-repo-dir: relocation/local_repo/
           nexus-url: https://oss.sonatype.org/

@@ -186,11 +186,14 @@ jobs:
         with:
           secrets: |
             development/github/token/licenses-ro token | GITHUB_TOKEN;
-      - name: Disable Develocity Extensions.
-        # Develocity extensions are not compatible with Maven 4 and cause build failure
-        # even if they are not used.
+      - name: Maven 4 Workarounds
+        # * Develocity extensions are not compatible with Maven 4 and cause build failure
+        #   even if they are not used, so we remove them.
+        # * Remote Repository Filtering does not work for us, so disable it. The ideal fix
+        #   is to change prefixes.txt in repox. See PREQ-3882.
         run: |
           echo '<extensions/>' > .mvn/extensions.xml
+          echo '-Daether.remoteRepositoryFilter.prefixes=false' >> .mvn/maven.config
       - name: Configure Maven
         uses: SonarSource/ci-github-actions/config-maven@v1
         with:

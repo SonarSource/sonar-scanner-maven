@@ -152,6 +152,10 @@ jobs:
           artifactory-reader-role: private-reader
           use-develocity: ${{ env.USE_DEVELOCITY }}
           develocity-url: ${{ env.DEVELOCITY_URL }}
+      - name: Orchestrator Cache
+        uses: ./.github/actions/orchestrator-cache
+        with:
+          sq-version: ${{ matrix.item.sq_version }}
       - name: Run Orchestrator E2E Tests
         env:
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets-gh.outputs.vault).GITHUB_TOKEN }}
@@ -199,6 +203,10 @@ jobs:
         with:
           artifactory-reader-role: private-reader
           use-develocity: false
+      - name: Orchestrator Cache
+        uses: ./.github/actions/orchestrator-cache
+        with:
+          sq-version: ${{ matrix.item.sq_version }}
       - name: Run Orchestrator E2E Tests
         env:
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets-gh.outputs.vault).GITHUB_TOKEN }}

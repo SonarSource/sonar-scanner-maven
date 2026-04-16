@@ -290,6 +290,10 @@
                     <regexp>http://www.gnu.org/licenses/lgpl.txt</regexp>
                     <replacement>${project.baseUri}/license-resources/lgpl.txt</replacement>
                 </licenseUrlReplacement>
+                <licenseUrlReplacement>
+                    <regexp>https://opensource.org/licenses/MIT</regexp>
+                    <replacement>${project.baseUri}/license-resources/mit.txt</replacement>
+                </licenseUrlReplacement>
               <licenseUrlReplacement>
                     <regexp>http://www.opensource.org/licenses/mit-license.php</regexp>
                     <replacement>${project.baseUri}/license-resources/mit.txt</replacement>

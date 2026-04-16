@@ -64,7 +64,7 @@
     <dependency>
       <groupId>org.sonarsource.scanner.lib</groupId>
       <artifactId>sonar-scanner-java-library</artifactId>
-      <version>3.5.2.1586</version>
+      <version>4.1.0.1619</version>
     </dependency>
 
     <dependency>
@@ -289,6 +289,10 @@
                <licenseUrlReplacement>
                     <regexp>http://www.gnu.org/licenses/lgpl.txt</regexp>
                     <replacement>${project.baseUri}/license-resources/lgpl.txt</replacement>
+                </licenseUrlReplacement>
+                <licenseUrlReplacement>
+                    <regexp>https://opensource.org/licenses/MIT</regexp>
+                    <replacement>${project.baseUri}/license-resources/mit.txt</replacement>
                 </licenseUrlReplacement>
               <licenseUrlReplacement>
                     <regexp>http://www.opensource.org/licenses/mit-license.php</regexp>

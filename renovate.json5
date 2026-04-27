@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  // FIXME: Define and use a custom preset for JVM projects.
+  "extends": [
+    "github>SonarSource/renovate-config:languages-team",
+  ],
+  "timezone": "Europe/Berlin",
+  "enabledManagers": [
+    "maven",
+    "github-actions",
+  ],
+  "ignorePaths": [
+    "e2e/projects/**",
+    "property-dump-plugin/**",
+    "sonar-maven-plugin/src/it/**",
+  ],
+  "reviewers": [
+    "team:quality-jvm-squad",
+  ]
+}

@@ -142,7 +142,7 @@ jobs:
       - *download_maven_matrix
       - name: Vault (GITHUB Token)
         id: secrets-gh
-        uses: SonarSource/vault-action-wrapper@320bd31b03e5dacaac6be51bbbb15adf7caccc32 # v3.1.0
+        uses: SonarSource/vault-action-wrapper@v3
         with:
           secrets: |
             development/github/token/licenses-ro token | GITHUB_TOKEN;
@@ -186,7 +186,7 @@ jobs:
       - *download_maven_matrix
       - name: Vault (GITHUB Token)
         id: secrets-gh
-        uses: SonarSource/vault-action-wrapper@320bd31b03e5dacaac6be51bbbb15adf7caccc32 # v3.1.0
+        uses: SonarSource/vault-action-wrapper@v3
         with:
           secrets: |
             development/github/token/licenses-ro token | GITHUB_TOKEN;

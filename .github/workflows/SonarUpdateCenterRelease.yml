@@ -45,7 +45,7 @@ jobs:
 
       - name: Sonar Update Center Release
         id: sonar-update-center-release
-        uses: SonarSource/release-github-actions/sonar-update-center-release@master
+        uses: SonarSource/release-github-actions/sonar-update-center-release@v1
         with:
           file: "scannermaven.properties"
           version: ${{ inputs.version }}

@@ -14,15 +14,15 @@
     },
     {
       matchPackageNames: [ "org.apache.maven:*" ],
-      groupName: "Maven",
-      groupSlug: "maven",
+      groupName: "Apache Maven",
+      groupSlug: "apache-maven",
     },
     {
       matchPackageNames: [
         "org.apache.maven.plugin*"
       ],
-      groupName: "Maven Plugins",
-      groupSlug: "maven-plugins",
+      groupName: "Apache Maven Plugins",
+      groupSlug: "apache-maven-plugins",
     },
   ],
 }

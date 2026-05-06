@@ -9,6 +9,10 @@
   ],
   packageRules: [
     {
+      matchPackageNames: [ "org.example.integration*" ],
+      enabled: false,
+    },
+    {
       matchPackageNames: [ "org.apache.maven:*" ],
       groupName: "Maven",
       groupSlug: "maven",

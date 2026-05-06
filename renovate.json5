@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [ "github>SonarSource/renovate-config:quality-jvm-squad" ],
+  ignorePaths: [
+    "e2e/projects/**",
+    "property-dump-plugin/**",
+    "sonar-maven-plugin/src/it/**",
+    "sonar-maven-plugin/src/test/projects/**",
+  ],
+  packageRules: [
+    {
+      matchPackageNames: [ "org.example.integration*" ],
+      enabled: false,
+    },
+    {
+      matchPackageNames: [ "org.apache.maven:*" ],
+      groupName: "Apache Maven",
+      groupSlug: "apache-maven",
+    },
+    {
+      matchPackageNames: [
+        "org.apache.maven.plugin*"
+      ],
+      groupName: "Apache Maven Plugins",
+      groupSlug: "apache-maven-plugins",
+    },
+  ],
+}

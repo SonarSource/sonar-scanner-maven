@@ -359,6 +359,43 @@ class MavenProjectConverterTest {
   }
 
   @Test
+  void childModuleShouldNotBeSkippedWhenParentIsSkipped() throws Exception {
+    File baseDir = temp.toAbsolutePath().toFile();
+
+    // Parent has sonar.skip=true
+    Properties parentProps = new Properties();
+    parentProps.setProperty("sonar.skip", "true");
+    MavenProject parent = createProject(parentProps, "pom");
+
+    // Child has sonar.skip=false (explicit override to NOT skip)
+    Properties childProps = new Properties();
+    childProps.setProperty("sonar.skip", "false");
+    File childBaseDir = new File(baseDir, "child");
+    childBaseDir.mkdir();
+    MavenProject child = createProject(new File(childBaseDir, "pom.xml"), childProps, "jar");
+    child.getModel().setArtifactId("child");
+    child.getModel().setName("My Project - Child");
+    child.getModel().setDescription("My sample project - Child");
+    child.setParent(parent);
+    parent.getModules().add("child");
+
+    Map<String, String> props = projectConverter.configure(Arrays.asList(child, parent), parent, new Properties());
+
+    assertThat(props).containsEntry("sonar.projectKey", "com.foo:myProject")
+      .containsEntry("sonar.projectName", "My Project")
+      .containsEntry("sonar.projectVersion", "2.1")
+      .containsEntry("sonar.projectBaseDir", baseDir.getAbsolutePath());
+
+    String childKey = "com.foo:child";
+    // Child module should NOT be skipped despite parent being skipped
+    assertThat(props.get("sonar.modules")).contains(childKey);
+    assertThat(props).containsEntry(childKey + ".sonar.projectBaseDir", childBaseDir.getAbsolutePath());
+
+    // Verify the parent is skipped but child is not
+    assertThat(projectConverter.getSkippedBasedDirs()).isEmpty();
+  }
+
+  @Test
   void overrideSourcesSingleModuleProject() throws Exception {
     File srcMainDir = temp.resolve(Paths.get("src", "main")).toAbsolutePath().toFile();
     srcMainDir.mkdirs();

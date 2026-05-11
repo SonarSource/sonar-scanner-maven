@@ -39,6 +39,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.settings.crypto.MavenSecDispatcher;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.sonarsource.scanner.lib.EnvironmentConfig;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
@@ -49,7 +50,6 @@ import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
 import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
 import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper;
 import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapperFactory;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 /**
  * Analyze project. SonarQube server must be started.
@@ -71,14 +71,14 @@ public class SonarQubeMojo extends AbstractMojo {
   private boolean skip;
   @Component
   private LifecycleExecutor lifecycleExecutor;
-  @Component(hint = "mng-4384")
-  private SecDispatcher securityDispatcher;
   @Component
   private RuntimeInformation runtimeInformation;
   @Parameter(defaultValue = "${mojoExecution}", required = true, readonly = true)
   private MojoExecution mojoExecution;
   @Component
   private ToolchainManager toolchainManager;
+  @Component
+  private MavenSecDispatcher securityDispatcher;
 
   @VisibleForTesting
   static boolean isPluginVersionDefinedInTheProject(MavenProject project, String groupId, String artifactId) {

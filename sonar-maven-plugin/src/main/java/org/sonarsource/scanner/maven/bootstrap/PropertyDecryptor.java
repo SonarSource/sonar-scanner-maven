@@ -19,18 +19,18 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.maven.settings.crypto.MavenSecDispatcher;
 import org.apache.maven.plugin.logging.Log;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
+import org.codehaus.plexus.components.secdispatcher.SecDispatcherException;
 
 public class PropertyDecryptor {
   private final Log log;
+  private final MavenSecDispatcher securityDispatcher;
 
-  private final SecDispatcher securityDispatcher;
-
-  public PropertyDecryptor(Log log, SecDispatcher securityDispatcher) {
+  public PropertyDecryptor(Log log, MavenSecDispatcher securityDispatcher) {
     this.log = log;
     this.securityDispatcher = securityDispatcher;
   }
@@ -46,7 +46,7 @@ public class PropertyDecryptor {
   private String decrypt(String key, String value) {
     try {
       return securityDispatcher.decrypt(value);
-    } catch (SecDispatcherException e) {
+    } catch (SecDispatcherException | IOException e) {
       log.debug("Unable to decrypt property " + key, e);
       return value;
     }

@@ -19,15 +19,13 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import org.apache.maven.plugin.logging.Log;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
 public class PropertyDecryptor {
-
   private final Log log;
 
   private final SecDispatcher securityDispatcher;
@@ -38,17 +36,11 @@ public class PropertyDecryptor {
   }
 
   public Map<String, String> decryptProperties(Map<String, String> properties) {
-    Map<String, String> newProperties = new HashMap<>();
-    try {
-      for (Entry<String, String> entry : properties.entrySet()) {
-        if (entry.getKey().contains(".password") || entry.getKey().contains(".login")) {
-          newProperties.put(entry.getKey(), decrypt(entry.getKey(), entry.getValue()));
-        }
-      }
-    } catch (Exception e) {
-      log.warn("Unable to decrypt properties", e);
-    }
-    return newProperties;
+    return properties.entrySet()
+      .stream()
+      .filter(entry -> entry.getKey().startsWith("sonar."))
+      .map(entry -> Map.entry(entry.getKey(), decrypt(entry.getKey(), entry.getValue())))
+      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private String decrypt(String key, String value) {

@@ -39,7 +39,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
-import org.apache.maven.settings.crypto.MavenSecDispatcher;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.sonarsource.scanner.lib.EnvironmentConfig;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
@@ -78,7 +78,7 @@ public class SonarQubeMojo extends AbstractMojo {
   @Component
   private ToolchainManager toolchainManager;
   @Component
-  private MavenSecDispatcher securityDispatcher;
+  private SettingsDecrypter settingsDecrypter;
 
   @VisibleForTesting
   static boolean isPluginVersionDefinedInTheProject(MavenProject project, String groupId, String artifactId) {
@@ -97,6 +97,7 @@ public class SonarQubeMojo extends AbstractMojo {
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
+    String mavenVersion = runtimeInformation.getMavenVersion();
 
     if (shouldDelayExecution()) {
       getLog().info("Delaying SonarQube Scanner to the end of multi-module project");
@@ -110,7 +111,7 @@ public class SonarQubeMojo extends AbstractMojo {
     MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), new Maven3ToolchainResolver(session, getLog(), toolchainManager));
     MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), mavenCompilerResolver, envProps);
 
-    PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
+    PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), settingsDecrypter);
 
     ScannerBootstrapperFactory bootstrapperFactory = new ScannerBootstrapperFactory(getLog(), runtimeInformation, mojoExecution, session, envProps, propertyDecryptor);
 

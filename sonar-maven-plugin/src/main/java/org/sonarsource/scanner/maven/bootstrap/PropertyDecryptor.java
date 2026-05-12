@@ -22,17 +22,18 @@ package org.sonarsource.scanner.maven.bootstrap;
 import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.maven.settings.crypto.MavenSecDispatcher;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
+import org.apache.maven.settings.crypto.SettingsDecryptionRequest;
 import org.codehaus.plexus.components.secdispatcher.SecDispatcherException;
 
 public class PropertyDecryptor {
   private final Log log;
-  private final MavenSecDispatcher securityDispatcher;
+  private final SettingsDecrypter settingsDecrypter;
 
-  public PropertyDecryptor(Log log, MavenSecDispatcher securityDispatcher) {
+  public PropertyDecryptor(Log log, SettingsDecrypter settingsDecrypter) {
     this.log = log;
-    this.securityDispatcher = securityDispatcher;
+    this.settingsDecrypter = settingsDecrypter;
   }
 
   public Map<String, String> decryptProperties(Map<String, String> properties) {
@@ -44,11 +45,19 @@ public class PropertyDecryptor {
   }
 
   private String decrypt(String key, String value) {
-    try {
-      return securityDispatcher.decrypt(value);
-    } catch (SecDispatcherException | IOException e) {
-      log.debug("Unable to decrypt property " + key, e);
+    // SettingsDecrypter requires a Server or Proxy object to perform decryption
+    org.apache.maven.settings.Server server = new org.apache.maven.settings.Server();
+    server.setPassword(value);
+
+    SettingsDecryptionRequest request = new org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest(server);
+    org.apache.maven.settings.crypto.SettingsDecryptionResult result = settingsDecrypter.decrypt(request);
+
+    // Check if decryption encountered problems (e.g., missing master password)
+    if (!result.getProblems().isEmpty()) {
+      log.debug("Unable to decrypt property " + key);
       return value;
     }
+
+    return result.getServer().getPassword();
   }
 }

@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,7 +75,8 @@ class MavenUtilsTest {
     src.put("encrypted1", "{AES}hello1");
     src.put("encrypted2", "{b64}hello2");
     src.put("encrypted3", "{aes-gcm}hello3");
-    src.put("weird", "this{is}fine");
+    src.put("comments.around", "comment1{AES}comment2");
+    src.put("comment.before", "comment{AES}");
     src.put("sonar.ours", "{aes}let-it-pass");
     src.put("env.SONAR_VAR", "{aes}this-too");
 
@@ -85,12 +88,37 @@ class MavenUtilsTest {
 
     Map<String, String> expected = Map.of(
       "abc", "123",
-      "weird", "this{is}fine",
       "sonar.ours", "{aes}let-it-pass",
       "env.SONAR_VAR", "{aes}this-too"
     );
 
     assertThat(destMap).containsExactlyInAnyOrderEntriesOf(expected);
     assertThat(destProps).containsExactlyInAnyOrderEntriesOf(expected);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "{QwHYDk6iuGUHznl0utkKxm7JT8O/GoH2GtdvjEr/z1FAwwh7Ezaje5EQVVcJFIGc3++l6trbNMNLON9raqev2A==}",
+    "{[name=master,cipher=AES/GCM/NoPadding,version=4.1]uCO4dz5EbmShH1fFS7iZ1pVleaYjZBPYG2T+i6Vg6bwZ7eg0kRHBiS8dgjqU9zU+NJMZtsgLe8SWRc06ElnrfMrfbUuhqe3HGDqtJGTtuzu2hxlgZ2d14Q==}",
+    "{[name=master,cipher=AES/GCM/NoPadding,version=4]Y0z68Gt6+bNZRnBRB2LTwpSn1S/pWE4AyX4mAVZV48V5kOJrNjPATUCvof76niWjiw==}",
+    "{h79PWw5IoHYHmCAN9MfuaGSOcZ54HyOgD7PUCpOTvNo=}"
+  })
+  void testIrrelevantEncryptedValues(String encryptedString) {
+    var propertyName = "my.org.password";
+
+    // 1. Assert the raw encrypted string is considered irrelevant
+    assertThat(MavenUtils.isIrrelevantEncryptedProperty(propertyName, encryptedString))
+      .as("Should be true for exact encrypted format")
+      .isTrue();
+
+    // 2. Assert that prepending text makes it relevant (fails the check)
+    assertThat(MavenUtils.isIrrelevantEncryptedProperty(propertyName, "some comment" + encryptedString))
+      .as("Should be true when prefixed with text")
+      .isTrue();
+
+    // 3. Assert that appending text makes it relevant (fails the check)
+    assertThat(MavenUtils.isIrrelevantEncryptedProperty(propertyName, encryptedString + "some comment"))
+      .as("Should be true when suffixed with text")
+      .isTrue();
   }
 }

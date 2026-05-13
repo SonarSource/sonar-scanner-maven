@@ -113,12 +113,12 @@ class MavenUtilsTest {
 
     // 2. Assert that prepending text makes it relevant (fails the check)
     assertThat(MavenUtils.isIrrelevantEncryptedProperty(propertyName, "some comment" + encryptedString))
-      .as("Should be false when prefixed with text")
+      .as("Should be true when prefixed with text")
       .isTrue();
 
     // 3. Assert that appending text makes it relevant (fails the check)
     assertThat(MavenUtils.isIrrelevantEncryptedProperty(propertyName, encryptedString + "some comment"))
-      .as("Should be false when suffixed with text")
+      .as("Should be true when suffixed with text")
       .isTrue();
   }
 }

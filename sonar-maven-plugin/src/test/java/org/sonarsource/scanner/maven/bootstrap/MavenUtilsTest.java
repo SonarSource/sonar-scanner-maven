@@ -75,7 +75,8 @@ class MavenUtilsTest {
     src.put("encrypted1", "{AES}hello1");
     src.put("encrypted2", "{b64}hello2");
     src.put("encrypted3", "{aes-gcm}hello3");
-    src.put("weird", "this{is}fine");
+    src.put("comments.around", "comment1{AES}comment2");
+    src.put("comment.before", "comment{AES}");
     src.put("sonar.ours", "{aes}let-it-pass");
     src.put("env.SONAR_VAR", "{aes}this-too");
 
@@ -87,7 +88,6 @@ class MavenUtilsTest {
 
     Map<String, String> expected = Map.of(
       "abc", "123",
-      "weird", "this{is}fine",
       "sonar.ours", "{aes}let-it-pass",
       "env.SONAR_VAR", "{aes}this-too"
     );

@@ -100,7 +100,8 @@ class MavenUtilsTest {
   @ValueSource(strings = {
     "{QwHYDk6iuGUHznl0utkKxm7JT8O/GoH2GtdvjEr/z1FAwwh7Ezaje5EQVVcJFIGc3++l6trbNMNLON9raqev2A==}",
     "{[name=master,cipher=AES/GCM/NoPadding,version=4.1]uCO4dz5EbmShH1fFS7iZ1pVleaYjZBPYG2T+i6Vg6bwZ7eg0kRHBiS8dgjqU9zU+NJMZtsgLe8SWRc06ElnrfMrfbUuhqe3HGDqtJGTtuzu2hxlgZ2d14Q==}",
-    "{[name=master,cipher=AES/GCM/NoPadding,version=4]Y0z68Gt6+bNZRnBRB2LTwpSn1S/pWE4AyX4mAVZV48V5kOJrNjPATUCvof76niWjiw==}"
+    "{[name=master,cipher=AES/GCM/NoPadding,version=4]Y0z68Gt6+bNZRnBRB2LTwpSn1S/pWE4AyX4mAVZV48V5kOJrNjPATUCvof76niWjiw==}",
+    "{h79PWw5IoHYHmCAN9MfuaGSOcZ54HyOgD7PUCpOTvNo=}"
   })
   void testIrrelevantEncryptedValues(String encryptedString) {
     var propertyName = "my.org.password";
@@ -111,13 +112,13 @@ class MavenUtilsTest {
       .isTrue();
 
     // 2. Assert that prepending text makes it relevant (fails the check)
-    assertThat(MavenUtils.isIrrelevantEncryptedProperty(propertyName, "comment" + encryptedString))
+    assertThat(MavenUtils.isIrrelevantEncryptedProperty(propertyName, "some comment" + encryptedString))
       .as("Should be false when prefixed with text")
-      .isFalse();
+      .isTrue();
 
     // 3. Assert that appending text makes it relevant (fails the check)
-    assertThat(MavenUtils.isIrrelevantEncryptedProperty(propertyName, encryptedString + "comment"))
+    assertThat(MavenUtils.isIrrelevantEncryptedProperty(propertyName, encryptedString + "some comment"))
       .as("Should be false when suffixed with text")
-      .isFalse();
+      .isTrue();
   }
 }

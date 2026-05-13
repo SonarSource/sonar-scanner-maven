@@ -56,7 +56,7 @@ public final class MavenUtils {
   public static final String GROUP_ID_CODEHAUS_MOJO = "org.codehaus.mojo";
 
   // Matches strings starting with "{AES}", "{b64}", "{anything}", etc.
-  private static final Pattern ENCRYPTED_VALUE = Pattern.compile("^\\{(?:\\[[^]]++])?[a-zA-Z0-9+/=_-]++}$");
+  private static final Pattern ENCRYPTED_VALUE = Pattern.compile("\\{(?:\\[[^]]++])?[a-zA-Z0-9+/=_-]++}");
 
   private MavenUtils() {
     // utility class with only static methods
@@ -121,7 +121,7 @@ public final class MavenUtils {
   }
 
   static boolean isIrrelevantEncryptedProperty(String name, String value) {
-    return ENCRYPTED_VALUE.matcher(value).matches()
+    return ENCRYPTED_VALUE.matcher(value).find()
       && !name.toLowerCase(Locale.ROOT).contains("sonar");
   }
 

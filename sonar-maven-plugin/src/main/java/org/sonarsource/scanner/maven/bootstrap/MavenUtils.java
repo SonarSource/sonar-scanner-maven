@@ -57,8 +57,8 @@ public final class MavenUtils {
 
   /**
    * Matches Maven 3 and Maven 4 encrypted string formats.
-   *  - Maven 3: {<base64>}, example : {QwHYDk6iuGUHznl0utkKxm7JT8O/GoH2GtdvjEr/z1FAwwh7Ezaje5EQVVcJFIGc3++l6trbNMNLON9raqev2A==}
-   *  - Maven 4: {[metadata]<base64>}, example : {[name=master,cipher=AES/GCM/NoPadding,version=4]Y0z68Gt6+bNZRnBRB2LTwpSn1S/pWE4AyX4mAVZV48V5kOJrNjPATUCvof76niWjiw==}
+   *  - Maven 3: {<base64>}, example : {QwHY...ev2A==}
+   *  - Maven 4: {[metadata]<base64>}, example : {[name=master,cipher=AES/GCM/NoPadding,version=4]Y0z6...niWjiw==}
    */
   private static final Pattern ENCRYPTED_VALUE = Pattern.compile("\\{(?:\\[[^]]++])?[a-zA-Z0-9+/=_-]++}");
 

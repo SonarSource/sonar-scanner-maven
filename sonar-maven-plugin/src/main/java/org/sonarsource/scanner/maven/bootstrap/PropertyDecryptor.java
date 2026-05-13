@@ -19,13 +19,13 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
-import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.settings.Server;
 import org.apache.maven.settings.crypto.SettingsDecrypter;
 import org.apache.maven.settings.crypto.SettingsDecryptionRequest;
-import org.codehaus.plexus.components.secdispatcher.SecDispatcherException;
 
 public class PropertyDecryptor {
   private final Log log;
@@ -37,27 +37,34 @@ public class PropertyDecryptor {
   }
 
   public Map<String, String> decryptProperties(Map<String, String> properties) {
-    return properties.entrySet()
-      .stream()
-      .filter(entry -> entry.getKey().startsWith("sonar."))
-      .map(entry -> Map.entry(entry.getKey(), decrypt(entry.getKey(), entry.getValue())))
-      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-  }
+    // 1. Identify and wrap encrypted sonar properties into Server objects
+    List<Server> serversToDecrypt = properties.entrySet().stream()
+      .filter(entry -> entry.getKey().startsWith("sonar.") && entry.getValue()!= null)
+      .map(entry -> {
+        org.apache.maven.settings.Server s = new org.apache.maven.settings.Server();
+        s.setId(entry.getKey()); // Use the key as the ID to track it
+        s.setPassword(entry.getValue());
+        return s;
+      })
+      .collect(java.util.stream.Collectors.toList());
 
-  private String decrypt(String key, String value) {
-    // SettingsDecrypter requires a Server or Proxy object to perform decryption
-    org.apache.maven.settings.Server server = new org.apache.maven.settings.Server();
-    server.setPassword(value);
-
-    SettingsDecryptionRequest request = new org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest(server);
+    // 2. Perform batch decryption in one call
+    SettingsDecryptionRequest request = new org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest();
+    request.setServers(serversToDecrypt);
     org.apache.maven.settings.crypto.SettingsDecryptionResult result = settingsDecrypter.decrypt(request);
 
-    // Check if decryption encountered problems (e.g., missing master password)
-    if (!result.getProblems().isEmpty()) {
-      log.debug("Unable to decrypt property " + key);
-      return value;
-    }
+    // 3. Map decrypted results back to a lookup map
+    Map<String, String> decryptedMap = result.getServers().stream()
+      .collect(java.util.stream.Collectors.toMap(
+        org.apache.maven.settings.Server::getId,
+        org.apache.maven.settings.Server::getPassword
+      ));
 
-    return result.getServer().getPassword();
+    // 4. Return the original map with decrypted values where applicable
+    return properties.entrySet().stream()
+      .collect(java.util.stream.Collectors.toMap(
+        Map.Entry::getKey,
+        entry -> decryptedMap.getOrDefault(entry.getKey(), entry.getValue())
+      ));
   }
 }

@@ -25,7 +25,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
-import static org.sonarsource.scanner.maven.bootstrap.MavenUtils.isSonarProperty;
+import static org.sonarsource.scanner.maven.bootstrap.MavenUtils.isRelevantProperty;
 
 public class PropertyDecryptor {
 
@@ -41,7 +41,7 @@ public class PropertyDecryptor {
   public Map<String, String> decryptProperties(Map<String, String> properties) {
     return properties.entrySet()
       .stream()
-      .filter(entry -> isSonarProperty(entry.getKey()))
+      .filter(entry -> isRelevantProperty(entry.getKey()))
       .map(entry -> Map.entry(entry.getKey(), decrypt(entry.getKey(), entry.getValue())))
       .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }

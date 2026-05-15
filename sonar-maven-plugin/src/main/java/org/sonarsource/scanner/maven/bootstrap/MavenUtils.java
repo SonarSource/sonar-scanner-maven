@@ -109,14 +109,14 @@ public final class MavenUtils {
   private static void putRelevant(Supplier<Set<String>> propertyNames, UnaryOperator<String> getProperty, BiConsumer<String, String> dest) {
     for (String name : propertyNames.get()) {
       String value = getProperty.apply(name);
-      if (isSonarProperty(name)) {
+      if (isRelevantProperty(name)) {
         dest.accept(name, value);
       }
     }
   }
 
-  static boolean isSonarProperty(String name) {
-    return name.toLowerCase(Locale.ROOT).startsWith("sonar.");
+  static boolean isRelevantProperty(String name) {
+    return name.equals("maven.version") || name.toLowerCase(Locale.ROOT).startsWith("sonar.");
   }
 
   /**

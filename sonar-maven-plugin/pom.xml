@@ -17,7 +17,7 @@
       We can't update the Maven core dependencies unless we remove the dependency on SecDispatcher
       For more details see this ticket https://sonarsource.atlassian.net/browse/SCANMAVEN-222
     -->
-    <mavenVersion>3.6.3</mavenVersion>
+    <mavenVersion>4.0.0-rc-5</mavenVersion>
     <mojo.java.target>11</mojo.java.target>
     <maven.compiler.release>11</maven.compiler.release>
     <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*</sonar.exclusions>
@@ -49,9 +49,10 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-sec-dispatcher</artifactId>
-      <version>2.0</version>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-settings-builder</artifactId>
+      <version>${mavenVersion}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -123,6 +124,12 @@
       <version>${mavenVersion}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>33.6.0-jre</version>
+      <scope>compile</scope>
+    </dependency><dependency><groupId>org.apache.maven</groupId><artifactId>maven-compat</artifactId><version>4.0.0-rc-5</version><scope>compile</scope></dependency>
   </dependencies>
 
   <build>
@@ -291,7 +298,7 @@
                     <replacement>${project.baseUri}/license-resources/lgpl.txt</replacement>
                 </licenseUrlReplacement>
                 <licenseUrlReplacement>
-                    <regexp>https://opensource.org/licenses/MIT</regexp>
+                    <regexp>https://opensource.org/license/mit</regexp>
                     <replacement>${project.baseUri}/license-resources/mit.txt</replacement>
                 </licenseUrlReplacement>
               <licenseUrlReplacement>
@@ -299,8 +306,28 @@
                     <replacement>${project.baseUri}/license-resources/mit.txt</replacement>
                 </licenseUrlReplacement>
                 <licenseUrlReplacement>
+                    <regexp>https://opensource.org/licenses/MIT</regexp>
+                    <replacement>${project.baseUri}/license-resources/mit.txt</replacement>
+                </licenseUrlReplacement>
+                <licenseUrlReplacement>
                     <regexp>https://www.bouncycastle.org/licence.html</regexp>
                     <replacement>${project.baseUri}/license-resources/bouncycastle.txt</replacement>
+                </licenseUrlReplacement>
+                <licenseUrlReplacement>
+                    <regexp>http://aopalliance.sourceforge.net/</regexp>
+                    <replacement>${project.baseUri}/license-resources/bouncycastle.txt</replacement>
+                </licenseUrlReplacement>
+                <licenseUrlReplacement>
+                    <regexp>https://asm.ow2.io/license.html</regexp>
+                    <replacement>${project.baseUri}/license-resources/bsd3.txt</replacement>
+                </licenseUrlReplacement>
+                <licenseUrlReplacement>
+                    <regexp>http://www.opensource.org/licenses/bsd-license.php</regexp>
+                    <replacement>${project.baseUri}/license-resources/bsd2.txt</replacement>
+                </licenseUrlReplacement>
+                <licenseUrlReplacement>
+                    <regexp>https://www.eclipse.org/legal/epl-v20.html</regexp>
+                    <replacement>${project.baseUri}/license-resources/epl2.txt</replacement>
                 </licenseUrlReplacement>
             </licenseUrlReplacements>
             <licenseUrlFileNameSanitizers>

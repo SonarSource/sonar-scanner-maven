@@ -33,6 +33,8 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
+import org.apache.maven.settings.crypto.SettingsDecryptionResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -47,7 +49,6 @@ import org.sonarsource.scanner.lib.AnalysisProperties;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapResult;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
 import org.sonarsource.scanner.lib.ScannerEngineFacade;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -70,8 +71,7 @@ class ScannerBootstrapperTest {
   @Mock
   private MavenSession session;
 
-  @Mock
-  private SecDispatcher securityDispatcher;
+  private final SettingsDecrypter settingsDecrypter = settingsDecryptionRequest -> mock(SettingsDecryptionResult.class);
 
   @Mock
   private ScannerEngineBootstrapper scannerEngineBootstrapper;
@@ -126,7 +126,7 @@ class ScannerBootstrapperTest {
     when(scannerEngineBootstrapper.bootstrap()).thenReturn(scannerEngineBootstrapResult);
     when(scannerEngineBootstrapResult.isSuccessful()).thenReturn(true);
     when(scannerEngineFacade.analyze(any())).thenReturn(true);
-    scannerBootstrapper = new ScannerBootstrapper(log, session, scannerEngineBootstrapper, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher));
+    scannerBootstrapper = new ScannerBootstrapper(log, session, scannerEngineBootstrapper, mavenProjectConverter, new PropertyDecryptor(settingsDecrypter));
   }
 
   @Test
@@ -158,7 +158,7 @@ class ScannerBootstrapperTest {
     when(scannerEngineFacade.isSonarQubeCloud()).thenReturn(false);
     when(scannerEngineFacade.getServerVersion()).thenReturn("5.6");
 
-    assertThatThrownBy( () -> scannerBootstrapper.execute())
+    assertThatThrownBy(() -> scannerBootstrapper.execute())
       .isInstanceOf(MojoExecutionException.class)
       .hasMessage("The scanner bootstrapping has failed! See the logs for more details.");
   }
@@ -169,7 +169,7 @@ class ScannerBootstrapperTest {
     when(scannerEngineFacade.isSonarQubeCloud()).thenReturn(false);
     when(scannerEngineFacade.getServerVersion()).thenReturn("5.6");
 
-    assertThatThrownBy( () -> scannerBootstrapper.execute())
+    assertThatThrownBy(() -> scannerBootstrapper.execute())
       .isInstanceOf(MojoExecutionException.class)
       .hasMessage("The scanner analysis has failed! See the logs for more details.");
   }

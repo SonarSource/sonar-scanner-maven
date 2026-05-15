@@ -217,7 +217,7 @@ class BootstrapTest extends AbstractMavenTest {
     softly.assertThat(props.getProperty("sonar.working.directory")).isEqualTo( smallProjectDir.resolve("target").resolve("sonar").toString());
 
     // Any properties are present in the sensor context
-    softly.assertThat(props.getProperty("any.property.name")).contains("foo42");
+    softly.assertThat(props).doesNotContainKey("any.property.name");
 
     // Java analyzers properties
     softly.assertThat(props.getProperty("sonar.java.libraries")).contains("jsr305-3.0.2.jar");

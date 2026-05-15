@@ -65,9 +65,9 @@ class ScannerBootstrapperFactoryTest {
 
   private Proxy httpsProxy;
 
-  private final String SYSTEM = "sonar.system";
-  private final String USER  = "sonar.user";
-  private final String ROOT  = "sonar.root";
+  private static final String SYSTEM = "sonar.system";
+  private static final String USER  = "sonar.user";
+  private static final String ROOT  = "sonar.root";
 
   @BeforeEach
   void setUp() {

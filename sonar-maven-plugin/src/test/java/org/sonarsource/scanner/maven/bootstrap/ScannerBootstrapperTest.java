@@ -70,8 +70,7 @@ class ScannerBootstrapperTest {
   @Mock
   private MavenSession session;
 
-  @Mock
-  private SecDispatcher securityDispatcher;
+  private final SecDispatcher securityDispatcher = s -> s;
 
   @Mock
   private ScannerEngineBootstrapper scannerEngineBootstrapper;
@@ -158,7 +157,7 @@ class ScannerBootstrapperTest {
     when(scannerEngineFacade.isSonarQubeCloud()).thenReturn(false);
     when(scannerEngineFacade.getServerVersion()).thenReturn("5.6");
 
-    assertThatThrownBy( () -> scannerBootstrapper.execute())
+    assertThatThrownBy(() -> scannerBootstrapper.execute())
       .isInstanceOf(MojoExecutionException.class)
       .hasMessage("The scanner bootstrapping has failed! See the logs for more details.");
   }
@@ -169,7 +168,7 @@ class ScannerBootstrapperTest {
     when(scannerEngineFacade.isSonarQubeCloud()).thenReturn(false);
     when(scannerEngineFacade.getServerVersion()).thenReturn("5.6");
 
-    assertThatThrownBy( () -> scannerBootstrapper.execute())
+    assertThatThrownBy(() -> scannerBootstrapper.execute())
       .isInstanceOf(MojoExecutionException.class)
       .hasMessage("The scanner analysis has failed! See the logs for more details.");
   }

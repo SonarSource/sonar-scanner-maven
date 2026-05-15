@@ -43,7 +43,7 @@ public class PropertyDecryptor {
       .filter(entry -> isRelevantProperty(entry.getKey()))
       .map(entry -> {
         Server s = new Server();
-        s.setId(entry.getKey()); // Use the key as the ID to track it
+        s.setId(entry.getKey());
         s.setPassword(entry.getValue());
         return s;
       })

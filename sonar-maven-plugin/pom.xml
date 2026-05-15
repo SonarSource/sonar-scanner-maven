@@ -298,7 +298,7 @@
                     <replacement>${project.baseUri}/license-resources/lgpl.txt</replacement>
                 </licenseUrlReplacement>
                 <licenseUrlReplacement>
-                    <regexp>https://opensource.org/licenses/MIT</regexp>
+                    <regexp>https://opensource.org/license/mit</regexp>
                     <replacement>${project.baseUri}/license-resources/mit.txt</replacement>
                 </licenseUrlReplacement>
               <licenseUrlReplacement>
@@ -306,8 +306,28 @@
                     <replacement>${project.baseUri}/license-resources/mit.txt</replacement>
                 </licenseUrlReplacement>
                 <licenseUrlReplacement>
+                    <regexp>https://opensource.org/licenses/MIT</regexp>
+                    <replacement>${project.baseUri}/license-resources/mit.txt</replacement>
+                </licenseUrlReplacement>
+                <licenseUrlReplacement>
                     <regexp>https://www.bouncycastle.org/licence.html</regexp>
                     <replacement>${project.baseUri}/license-resources/bouncycastle.txt</replacement>
+                </licenseUrlReplacement>
+                <licenseUrlReplacement>
+                    <regexp>http://aopalliance.sourceforge.net/</regexp>
+                    <replacement>${project.baseUri}/license-resources/bouncycastle.txt</replacement>
+                </licenseUrlReplacement>
+                <licenseUrlReplacement>
+                    <regexp>https://asm.ow2.io/license.html</regexp>
+                    <replacement>${project.baseUri}/license-resources/bsd3.txt</replacement>
+                </licenseUrlReplacement>
+                <licenseUrlReplacement>
+                    <regexp>http://www.opensource.org/licenses/bsd-license.php</regexp>
+                    <replacement>${project.baseUri}/license-resources/bsd2.txt</replacement>
+                </licenseUrlReplacement>
+                <licenseUrlReplacement>
+                    <regexp>https://www.eclipse.org/legal/epl-v20.html</regexp>
+                    <replacement>${project.baseUri}/license-resources/epl2.txt</replacement>
                 </licenseUrlReplacement>
             </licenseUrlReplacements>
             <licenseUrlFileNameSanitizers>

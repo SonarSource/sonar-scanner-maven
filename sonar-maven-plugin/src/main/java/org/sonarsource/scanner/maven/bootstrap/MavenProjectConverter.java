@@ -160,7 +160,7 @@ public class MavenProjectConverter {
 
   /**
    * Configures the Maven project hierarchy and generates properties for analysis.
-   * Cleans irrelevant pom-defined project properties via {@link org.sonarsource.scanner.maven.bootstrap.MavenUtils#isIrrelevantEncryptedProperty}.
+   * Cleans irrelevant pom-defined project properties via {@link org.sonarsource.scanner.maven.bootstrap.MavenUtils#isSonarProperty}.
    *
    * @param mavenProjects   the list of Maven projects (including submodules) to configure
    * @param root            the root Maven project of the hierarchy
@@ -201,7 +201,7 @@ public class MavenProjectConverter {
     }
     // include only relevant properties
     for (Map.Entry<String, String> prop : currentProps.entrySet()) {
-      if (!MavenUtils.isIrrelevantEncryptedProperty(prop.getKey(), prop.getValue())) {
+      if (MavenUtils.isSonarProperty(prop.getKey())) {
         properties.put(prefix + prop.getKey(), prop.getValue());
       }
     }

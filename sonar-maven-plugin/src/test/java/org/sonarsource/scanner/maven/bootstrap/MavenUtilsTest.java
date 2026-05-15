@@ -68,14 +68,21 @@ class MavenUtilsTest {
 
   @Test
   void testPutRelevant() {
+    var b64 = "{base64}";
     Properties src = new Properties();
-    src.put("abc", "123");
-    src.put("encrypted1", "{AES}hello1");
-    src.put("encrypted2", "{b64}hello2");
-    src.put("encrypted3", "{aes-gcm}hello3");
-    src.put("weird", "this{is}fine");
-    src.put("sonar.ours", "{aes}let-it-pass");
-    src.put("env.SONAR_VAR", "{aes}this-too");
+
+    // prefix "sonar." -> should be in
+    src.put("sonar.login", b64);
+    src.put("sonar.password", b64);
+    src.put("sonar.token", b64);
+    src.put("sonar.scanner.keystorePassword", b64);
+    src.put("sonar.hello", b64);
+
+    // not prefix "sonar." -> should not be in
+    src.put("other.plugin.sonar.api.token", b64);
+    src.put("other.plugin.sonar.token", b64);
+    src.put("hello.sonar", b64);
+    src.put("hello", b64);
 
     Map<String, String> destMap = new HashMap<>();
     Properties destProps = new Properties();
@@ -84,10 +91,11 @@ class MavenUtilsTest {
     MavenUtils.putRelevant(src, destProps);
 
     Map<String, String> expected = Map.of(
-      "abc", "123",
-      "weird", "this{is}fine",
-      "sonar.ours", "{aes}let-it-pass",
-      "env.SONAR_VAR", "{aes}this-too"
+      "sonar.login", b64,
+      "sonar.password", b64,
+      "sonar.token", b64,
+      "sonar.scanner.keystorePassword", b64,
+      "sonar.hello", b64
     );
 
     assertThat(destMap).containsExactlyInAnyOrderEntriesOf(expected);

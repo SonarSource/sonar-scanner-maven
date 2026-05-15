@@ -36,7 +36,7 @@ jobs:
 
   relocation-pom:
     name: Publish relocation POM
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     # This step will be removed soon. Skip it in the automated release.
     if: ${{ github.event_name != 'workflow_dispatch' }}
     needs:

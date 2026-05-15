@@ -19,39 +19,53 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import org.apache.maven.plugin.logging.Log;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
+import org.apache.maven.settings.Server;
+import org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
+import org.apache.maven.settings.crypto.SettingsDecryptionRequest;
+import org.apache.maven.settings.crypto.SettingsDecryptionResult;
+
+import static org.sonarsource.scanner.maven.bootstrap.MavenUtils.isIrrelevantEncryptedProperty;
 
 public class PropertyDecryptor {
+  private final SettingsDecrypter settingsDecrypter;
 
-  private final Log log;
-
-  private final SecDispatcher securityDispatcher;
-
-  public PropertyDecryptor(Log log, SecDispatcher securityDispatcher) {
-    this.log = log;
-    this.securityDispatcher = securityDispatcher;
+  public PropertyDecryptor(SettingsDecrypter settingsDecrypter) {
+    this.settingsDecrypter = settingsDecrypter;
   }
+
 
   public Map<String, String> decryptProperties(Map<String, String> properties) {
-    var decryptedProperties = new HashMap<>(properties);
-    decryptedProperties.replaceAll((key, value) -> {
-      if (key.startsWith("sonar.") && value != null) {
-        return decrypt(key, value);
-      }
-      return value;
-    });
-    return decryptedProperties;
-  }
+    // 1. Identify and wrap encrypted sonar properties into Server objects
+    List<Server> serversToDecrypt = properties.entrySet().stream()
+      .filter(entry -> !isIrrelevantEncryptedProperty(entry.getKey(), entry.getValue()))
+      .map(entry -> {
+        Server s = new Server();
+        s.setId(entry.getKey());
+        s.setPassword(entry.getValue());
+        return s;
+      })
+      .collect(java.util.stream.Collectors.toList());
 
-  private String decrypt(String key, String value) {
-    try {
-      return securityDispatcher.decrypt(value);
-    } catch (Exception e) {
-      log.debug("Unable to decrypt property " + key, e);
-      return value;
-    }
+    // 2. Perform batch decryption in one call
+    SettingsDecryptionRequest request = new DefaultSettingsDecryptionRequest();
+    request.setServers(serversToDecrypt);
+    SettingsDecryptionResult result = settingsDecrypter.decrypt(request);
+
+    // 3. Map decrypted results back to a lookup map
+    Map<String, String> decryptedMap = result.getServers().stream()
+      .collect(java.util.stream.Collectors.toMap(
+        Server::getId,
+        Server::getPassword
+      ));
+
+    // 4. Return the original map with decrypted values where applicable
+    return properties.entrySet().stream()
+      .collect(java.util.stream.Collectors.toMap(
+        Map.Entry::getKey,
+        entry -> decryptedMap.getOrDefault(entry.getKey(), entry.getValue())
+      ));
   }
 }

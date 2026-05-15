@@ -31,6 +31,8 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.settings.Proxy;
 import org.apache.maven.settings.Settings;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
+import org.apache.maven.settings.crypto.SettingsDecryptionResult;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +40,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -55,7 +56,8 @@ class ScannerBootstrapperFactoryTest {
   private final MojoExecution mojoExecution = mock(MojoExecution.class);
   private final MavenSession mavenSession = mock(MavenSession.class);
   private final MavenProject rootProject = mock(MavenProject.class);
-  private final PropertyDecryptor propertyDecryptor = new PropertyDecryptor(mock(Log.class), mock(SecDispatcher.class));
+  private final SettingsDecrypter settingsDecrypter = settingsDecryptionRequest -> mock(SettingsDecryptionResult.class);
+  private final PropertyDecryptor propertyDecryptor = new PropertyDecryptor(settingsDecrypter);
   private final Map<String, String> envProps = new HashMap<>();
 
   private final Log log = mock(Log.class);
@@ -64,14 +66,18 @@ class ScannerBootstrapperFactoryTest {
 
   private Proxy httpsProxy;
 
+  private static final String SYSTEM = "sonar.system";
+  private static final String USER  = "sonar.user";
+  private static final String ROOT  = "sonar.root";
+
   @BeforeEach
   void setUp() {
 
     Properties system = new Properties();
-    system.put("system", "value");
-    system.put("user", "value");
+    system.put(SYSTEM, "value");
+    system.put(USER, "value");
     Properties root = new Properties();
-    root.put("root", "value");
+    root.put(ROOT, "value");
     envProps.put("env", "value");
 
     when(mojoExecution.getVersion()).thenReturn("2.0");
@@ -239,7 +245,7 @@ class ScannerBootstrapperFactoryTest {
     verify(underTest).createScannerEngineBootstrapper("ScannerMaven", "2.0/1.0");
     ArgumentCaptor<Map<String, String>> captor = ArgumentCaptor.forClass(Map.class);
     verify(mockBootstrapper).addBootstrapProperties(captor.capture());
-    assertThat(captor.getValue()).contains(entry("system", "value"), entry("user", "value"), entry("root", "value"), entry("env", "value"));
+    assertThat(captor.getValue()).contains(entry(SYSTEM, "value"), entry(USER, "value"), entry(ROOT, "value"), entry("env", "value"));
     verify(mavenSession).getSystemProperties();
     verify(rootProject).getProperties();
   }

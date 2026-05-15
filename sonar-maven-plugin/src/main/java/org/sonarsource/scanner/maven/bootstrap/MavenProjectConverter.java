@@ -486,7 +486,7 @@ public class MavenProjectConverter {
     for (Artifact artifact : pom.getArtifacts()) {
       // FIXME: Should we check scope (e.g. "compile")?
       // FIXME: Can the file be relative, which requires resolving against basedir?
-//      libraries.add(artifact.getFile());
+      libraries.add(artifact.getFile());
     }
 
     if (!libraries.isEmpty()) {

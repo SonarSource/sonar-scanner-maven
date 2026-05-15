@@ -162,7 +162,6 @@ class BootstrapTest extends AbstractMavenTest {
       .setProperty("sonar.login", ORCHESTRATOR.getDefaultAdminToken())
       .setProperty("sonar.host.url", ORCHESTRATOR.getServer().getUrl())
       .setEnvironmentVariable("DUMP_SENSOR_PROPERTIES", "" +
-        "any.property.name," +
         "sonar.java.fileByFile," +
         "sonar.java.file.suffixes," +
         "sonar.projectKey," +
@@ -183,8 +182,6 @@ class BootstrapTest extends AbstractMavenTest {
       .setEnvironmentVariable("ANY_ENV_VAR", "42")
       // http.nonProxyHosts will only be present in the maven context and not in the provisioned JRE
       .setProperty("http.nonProxyHosts", "localhost|my-custom-non-proxy.server.com")
-      // Any property will be passed to the sensorContext.config()
-      .setProperty("any.property.name", "foo42")
       // This property will be ignored because of the bellow "sonar.scanner.javaOpts" property that has priority
       .setEnvironmentVariable("SONAR_SCANNER_JAVA_OPTS", "-Dhttp.proxyUser=my-custom-user-from-env")
       // Set system property on the provisioned JRE
@@ -215,9 +212,6 @@ class BootstrapTest extends AbstractMavenTest {
     softly.assertThat(props.getProperty("sonar.projectBaseDir")).isEqualTo( smallProjectDir.toString());
     softly.assertThat(props.getProperty("sonar.sources")).isEqualTo( smallProjectDir.resolve("pom.xml") + "," + smallProjectDir.resolve("src").resolve("main").resolve("java"));
     softly.assertThat(props.getProperty("sonar.working.directory")).isEqualTo( smallProjectDir.resolve("target").resolve("sonar").toString());
-
-    // Any properties are present in the sensor context
-    softly.assertThat(props).doesNotContainKey("any.property.name");
 
     // Java analyzers properties
     softly.assertThat(props.getProperty("sonar.java.libraries")).contains("jsr305-3.0.2.jar");

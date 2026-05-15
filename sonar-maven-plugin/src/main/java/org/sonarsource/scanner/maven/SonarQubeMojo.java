@@ -39,6 +39,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.sonarsource.scanner.lib.EnvironmentConfig;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
@@ -49,7 +50,6 @@ import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
 import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
 import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper;
 import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapperFactory;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 /**
  * Analyze project. SonarQube server must be started.
@@ -72,7 +72,7 @@ public class SonarQubeMojo extends AbstractMojo {
   @Component
   private LifecycleExecutor lifecycleExecutor;
   @Component(hint = "mng-4384")
-  private SecDispatcher securityDispatcher;
+  private SettingsDecrypter settingsDecrypter;
   @Component
   private RuntimeInformation runtimeInformation;
   @Parameter(defaultValue = "${mojoExecution}", required = true, readonly = true)
@@ -110,7 +110,7 @@ public class SonarQubeMojo extends AbstractMojo {
     MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), new Maven3ToolchainResolver(session, getLog(), toolchainManager));
     MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), mavenCompilerResolver, envProps);
 
-    PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
+    PropertyDecryptor propertyDecryptor = new PropertyDecryptor(settingsDecrypter);
 
     ScannerBootstrapperFactory bootstrapperFactory = new ScannerBootstrapperFactory(getLog(), runtimeInformation, mojoExecution, session, envProps, propertyDecryptor);
 

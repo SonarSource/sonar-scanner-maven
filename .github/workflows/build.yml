@@ -20,7 +20,7 @@ env:
 
 jobs:
   quick-build-deploy:
-    runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners
+    runs-on: warp-custom-ubuntu-24-04  # Public repo uses custom GitHub-hosted runners
     name: Build + UTs + Deploy
     permissions: &write_permissions
       id-token: write  # Required for Vault OIDC authentication
@@ -50,7 +50,7 @@ jobs:
   scan:
     needs:
       - quick-build-deploy
-    runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners
+    runs-on: warp-custom-ubuntu-24-04  # Public repo uses custom GitHub-hosted runners
     name: SQ Analysis
     permissions: &read_permissions
       id-token: write  # Required for Vault OIDC authentication
@@ -86,7 +86,7 @@ jobs:
           - {maven_version: 3.5.4}
           - {maven_version: 3.3.9}
           - {maven_version: 3.2.5}
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     name: Invoker Integration Tests
     permissions: *read_permissions
     env:
@@ -126,7 +126,7 @@ jobs:
           - {sq_version: "LATEST_RELEASE", maven_version: 3.9.11}
           - {sq_version: "LATEST_RELEASE[2025.1]", maven_version: 3.8.9}
           - {sq_version: "LATEST_RELEASE[9.9]", maven_version: 3.2.5, java_version: "java@17"}
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     name: E2E Tests
     permissions: *read_permissions
     env:
@@ -175,7 +175,7 @@ jobs:
       matrix:
         item:
           - {sq_version: "LATEST_RELEASE[2026.1]", maven_version: 4.0.0-rc-5}
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     name: E2E Tests Maven 4
     permissions: *read_permissions
     env:
@@ -225,7 +225,7 @@ jobs:
       - e2e-tests-maven-4
       - scan
     if: ${{ needs.quick-build-deploy.outputs.deployed }}
-    runs-on: github-ubuntu-latest-s  # Public repo uses custom GitHub-hosted runners  
+    runs-on: warp-custom-ubuntu-24-04  # Public repo uses custom GitHub-hosted runners  
     name: Promote
     permissions: *write_permissions
     env:

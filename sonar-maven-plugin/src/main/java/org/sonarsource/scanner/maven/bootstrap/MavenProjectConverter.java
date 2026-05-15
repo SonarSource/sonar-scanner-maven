@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.model.CiManagement;
 import org.apache.maven.model.IssueManagement;
@@ -481,6 +482,13 @@ public class MavenProjectConverter {
         .filter(File::exists)
         .forEach(libraries::add);
     }
+
+    for (Artifact artifact : pom.getArtifacts()) {
+      // FIXME: Should we check scope (e.g. "compile")?
+      // FIXME: Can the file be relative, which requires resolving against basedir?
+      libraries.add(artifact.getFile());
+    }
+
     if (!libraries.isEmpty()) {
       String librariesValue = MavenUtils.joinAsCsv(toPaths(libraries));
       if (test) {

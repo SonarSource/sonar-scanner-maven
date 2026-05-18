@@ -10,7 +10,7 @@
     </parent>
     <artifactId>sonar-module</artifactId>
     <properties>
-        <sonar.prop>{AES}cannot-decrypt</sonar.prop>
-        <unknown.prop>{AES}cannot-decrypt</unknown.prop>
+        <sonar.prop>{ABCDEFGHIJKLMNOPQRSTUVWXYZ=}cannot-decrypt</sonar.prop>
+        <unknown.prop>{ABCDEFGHIJKLMNOPQRSTUVWXYZ=}cannot-decrypt</unknown.prop>
     </properties>
 </project>

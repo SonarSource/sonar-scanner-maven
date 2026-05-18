@@ -10,8 +10,8 @@
 
   <properties>
     <!--SCANMAVEN-228-->
-    <sonar.relevant.secret.from.pom>{AES}cannot-decrypt</sonar.relevant.secret.from.pom>
-    <irrelevant.secret.from.pom>{AES}irrelevant</irrelevant.secret.from.pom>
+    <sonar.relevant.secret.from.pom>{ABCDEFGHIJKLMNOPQRSTUVWXYZ=}cannot-decrypt</sonar.relevant.secret.from.pom>
+    <irrelevant.secret.from.pom>{jZz7HU4PjzsHu1hxfBciwU8+rJoZm2/jIPdxpTcgNJE=}irrelevant</irrelevant.secret.from.pom>
   </properties>
 
   <modules>

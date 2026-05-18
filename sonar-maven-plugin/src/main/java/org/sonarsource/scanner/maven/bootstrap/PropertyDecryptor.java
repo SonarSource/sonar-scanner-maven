@@ -19,9 +19,7 @@
  */
 package org.sonarsource.scanner.maven.bootstrap;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import org.apache.maven.plugin.logging.Log;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;

@@ -55,7 +55,7 @@ class ScannerBootstrapperFactoryTest {
   private final MojoExecution mojoExecution = mock(MojoExecution.class);
   private final MavenSession mavenSession = mock(MavenSession.class);
   private final MavenProject rootProject = mock(MavenProject.class);
-  private final PropertyDecryptor propertyDecryptor = new PropertyDecryptor(mock(Log.class), s -> s);
+  private final PropertyDecryptor propertyDecryptor = new PropertyDecryptor(mock(Log.class), mock(SecDispatcher.class));
   private final Map<String, String> envProps = new HashMap<>();
 
   private final Log log = mock(Log.class);

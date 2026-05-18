@@ -68,17 +68,21 @@ class MavenUtilsTest {
       .containsOnly(expectedValues);
   }
 
-  @Test
-  void testPutRelevant() {
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "{jZz7HU4PjzsHu1hxfBciwU8+rJoZm2/jIPdxpTcgNJE=}",
+    "{[name=master,cipher=AES/GCM/NoPadding,version=4.1]d9GsUmuETOgp2x7zvlc5IrHxxcOYrOrgqtISxPSr7WgEZtqaIRjtrBcl3FglyeApRg==}"
+  })
+  void testPutRelevant(String encryptedString) {
     Properties src = new Properties();
     src.put("abc", "123");
-    src.put("encrypted1", "{AES}hello1");
-    src.put("encrypted2", "{b64}hello2");
-    src.put("encrypted3", "{aes-gcm}hello3");
-    src.put("comments.around", "comment1{AES}comment2");
-    src.put("comment.before", "comment{AES}");
-    src.put("sonar.ours", "{aes}let-it-pass");
-    src.put("env.SONAR_VAR", "{aes}this-too");
+    src.put("encrypted1", String.format("%shello1", encryptedString));
+    src.put("encrypted2", String.format("hello1%s", encryptedString));
+    src.put("weird", "this{is}fine");
+    var letItPass = String.format("%slet-it-pass", encryptedString);
+    var thisToo = String.format("this-too%s", encryptedString);
+    src.put("sonar.ours", letItPass);
+    src.put("env.SONAR_VAR", thisToo);
 
     Map<String, String> destMap = new HashMap<>();
     Properties destProps = new Properties();
@@ -88,8 +92,9 @@ class MavenUtilsTest {
 
     Map<String, String> expected = Map.of(
       "abc", "123",
-      "sonar.ours", "{aes}let-it-pass",
-      "env.SONAR_VAR", "{aes}this-too"
+      "weird", "this{is}fine",
+      "sonar.ours", letItPass,
+      "env.SONAR_VAR", thisToo
     );
 
     assertThat(destMap).containsExactlyInAnyOrderEntriesOf(expected);

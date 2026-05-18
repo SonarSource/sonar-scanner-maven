@@ -60,7 +60,7 @@ public final class MavenUtils {
    *  - Maven 3: {<base64>}, example : {QwHY...ev2A==}
    *  - Maven 4: {[metadata]<base64>}, example : {[name=master,cipher=AES/GCM/NoPadding,version=4]Y0z6...niWjiw==}
    */
-  private static final Pattern ENCRYPTED_VALUE = Pattern.compile("\\{(?:\\[[^]]++])?[a-zA-Z0-9+/=_-]++}");
+  private static final Pattern ENCRYPTED_VALUE = Pattern.compile("\\{(?:\\[[^]]++])?[a-zA-Z0-9+/=_-]{20,}}");
 
   private MavenUtils() {
     // utility class with only static methods

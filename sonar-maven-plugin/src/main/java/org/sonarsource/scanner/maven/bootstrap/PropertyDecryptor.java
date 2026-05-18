@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.maven.plugin.logging.Log;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
 public class PropertyDecryptor {
 
@@ -50,7 +49,7 @@ public class PropertyDecryptor {
   private String decrypt(String key, String value) {
     try {
       return securityDispatcher.decrypt(value);
-    } catch (SecDispatcherException e) {
+    } catch (Exception e) {
       log.debug("Unable to decrypt property " + key, e);
       return value;
     }

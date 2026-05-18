@@ -70,7 +70,7 @@ class ScannerBootstrapperTest {
   @Mock
   private MavenSession session;
 
-  private SecDispatcher securityDispatcher = s -> s;
+  private static final SecDispatcher securityDispatcher = s -> s;
 
   @Mock
   private ScannerEngineBootstrapper scannerEngineBootstrapper;

@@ -39,8 +39,10 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
-import org.apache.maven.settings.crypto.DefaultSettingsDecrypter;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
 import org.apache.maven.toolchain.ToolchainManager;
+import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.sonarsource.scanner.lib.EnvironmentConfig;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
 import org.sonarsource.scanner.lib.ScannerProperties;
@@ -72,13 +74,13 @@ public class SonarQubeMojo extends AbstractMojo {
   @Component
   private LifecycleExecutor lifecycleExecutor;
   @Component
-  private DefaultSettingsDecrypter settingsDecrypter;
-  @Component
   private RuntimeInformation runtimeInformation;
   @Parameter(defaultValue = "${mojoExecution}", required = true, readonly = true)
   private MojoExecution mojoExecution;
   @Component
   private ToolchainManager toolchainManager;
+  @Component
+  private PlexusContainer plexusContainer;
 
   @VisibleForTesting
   static boolean isPluginVersionDefinedInTheProject(MavenProject project, String groupId, String artifactId) {
@@ -110,7 +112,7 @@ public class SonarQubeMojo extends AbstractMojo {
     MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), new Maven3ToolchainResolver(session, getLog(), toolchainManager));
     MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), mavenCompilerResolver, envProps);
 
-    PropertyDecryptor propertyDecryptor = new PropertyDecryptor(settingsDecrypter);
+    PropertyDecryptor propertyDecryptor = new PropertyDecryptor(lookupSettingsDecrypter());
 
     ScannerBootstrapperFactory bootstrapperFactory = new ScannerBootstrapperFactory(getLog(), runtimeInformation, mojoExecution, session, envProps, propertyDecryptor);
 
@@ -199,6 +201,37 @@ public class SonarQubeMojo extends AbstractMojo {
       return true;
     }
     return false;
+  }
+
+  private SettingsDecrypter lookupSettingsDecrypter() {
+    if (plexusContainer == null) {
+      return null;
+    }
+    try {
+      return plexusContainer.lookup(SettingsDecrypter.class, "maven");
+    } catch (ComponentLookupException e) {
+      getLog().debug("SettingsDecrypter component with hint 'maven' is not available.", e);
+      return createLegacySettingsDecrypter();
+    }
+  }
+
+  private SettingsDecrypter createLegacySettingsDecrypter() {
+    try {
+      Object securityDispatcher;
+      try {
+        securityDispatcher = plexusContainer.lookup("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", "maven");
+      } catch (ComponentLookupException e) {
+        securityDispatcher = plexusContainer.lookup("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher");
+      }
+      ClassLoader classLoader = SettingsDecrypter.class.getClassLoader();
+      Class<?> secDispatcherClass = Class.forName("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", true, classLoader);
+      Class<?> defaultSettingsDecrypterClass = Class.forName("org.apache.maven.settings.crypto.DefaultSettingsDecrypter", true, classLoader);
+      Object decrypter = defaultSettingsDecrypterClass.getConstructor(secDispatcherClass).newInstance(securityDispatcher);
+      return (SettingsDecrypter) decrypter;
+    } catch (ReflectiveOperationException | ComponentLookupException e) {
+      getLog().debug("Legacy SecDispatcher-backed settings decrypter is not available.", e);
+      return null;
+    }
   }
 
   MavenSession getSession() {

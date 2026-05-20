@@ -21,6 +21,7 @@ package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest;
 import org.apache.maven.settings.crypto.SettingsDecrypter;
@@ -38,6 +39,9 @@ public class PropertyDecryptor {
 
 
   public Map<String, String> decryptProperties(Map<String, String> properties) {
+    if (settingsDecrypter == null) {
+      return properties;
+    }
     // 1. Identify and wrap encrypted sonar properties into Server objects
     List<Server> serversToDecrypt = properties.entrySet().stream()
       .filter(entry -> !isIrrelevantEncryptedProperty(entry.getKey(), entry.getValue()))
@@ -56,14 +60,14 @@ public class PropertyDecryptor {
 
     // 3. Map decrypted results back to a lookup map
     Map<String, String> decryptedMap = result.getServers().stream()
-      .collect(java.util.stream.Collectors.toMap(
+      .collect(Collectors.toMap(
         Server::getId,
         Server::getPassword
       ));
 
     // 4. Return the original map with decrypted values where applicable
     return properties.entrySet().stream()
-      .collect(java.util.stream.Collectors.toMap(
+      .collect(Collectors.toMap(
         Map.Entry::getKey,
         entry -> decryptedMap.getOrDefault(entry.getKey(), entry.getValue())
       ));

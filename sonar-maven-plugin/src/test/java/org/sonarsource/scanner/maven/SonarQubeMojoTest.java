@@ -48,13 +48,14 @@ import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugin.testing.MojoRule;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
-import org.apache.maven.settings.crypto.DefaultSettingsDecrypter;
 import org.apache.maven.settings.Proxy;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.building.SettingsProblem;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
 import org.apache.maven.settings.crypto.SettingsDecryptionRequest;
 import org.apache.maven.settings.crypto.SettingsDecryptionResult;
 import org.apache.maven.toolchain.ToolchainManager;
+import org.codehaus.plexus.PlexusContainer;
 import org.assertj.core.data.MapEntry;
 import org.junit.Rule;
 import org.junit.Test;
@@ -116,9 +117,11 @@ public class SonarQubeMojoTest {
     mojoRule.setVariableValueToObject(mojo, "session", session);
     mojoRule.setVariableValueToObject(mojo, "mojoExecution", mojoExecution);
     mojoRule.setVariableValueToObject(mojo, "lifecycleExecutor", mojoRule.lookup(LifecycleExecutor.class));
-    mojoRule.setVariableValueToObject(mojo, "settingsDecrypter", new PassthroughSettingsDecrypter());
     mojoRule.setVariableValueToObject(mojo, "runtimeInformation", mojoRule.lookup(RuntimeInformation.class));
     mojoRule.setVariableValueToObject(mojo, "toolchainManager", mojoRule.lookup(ToolchainManager.class));
+    PlexusContainer plexusContainer = mojoRule.getContainer();
+    plexusContainer.addComponent(new PassthroughSettingsDecrypter(), SettingsDecrypter.class, "maven");
+    mojoRule.setVariableValueToObject(mojo, "plexusContainer", plexusContainer);
     return mojo;
   }
 
@@ -495,11 +498,7 @@ public class SonarQubeMojoTest {
       .collect(Collectors.toSet());
   }
 
-  private static class PassthroughSettingsDecrypter extends DefaultSettingsDecrypter {
-    private PassthroughSettingsDecrypter() {
-      super(null);
-    }
-
+  private static class PassthroughSettingsDecrypter implements SettingsDecrypter {
     @Override
     public SettingsDecryptionResult decrypt(SettingsDecryptionRequest request) {
       List<Server> servers = request.getServers() == null ? Collections.emptyList() : request.getServers();

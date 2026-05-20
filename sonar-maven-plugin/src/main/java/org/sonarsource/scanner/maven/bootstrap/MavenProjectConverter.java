@@ -470,7 +470,7 @@ public class MavenProjectConverter {
       throw new MojoExecutionException("Unable to populate" + (test ? " test" : "") + " libraries", e);
     }
 
-    List<File> libraries = new ArrayList<>();
+    LinkedHashSet<File> libraries = new LinkedHashSet<>();
     if (classpathElements != null) {
       String outputDirectory = test ? pom.getBuild().getTestOutputDirectory() : pom.getBuild().getOutputDirectory();
       File basedir = pom.getBasedir();

@@ -48,10 +48,10 @@ import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugin.testing.MojoRule;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.settings.crypto.DefaultSettingsDecrypter;
 import org.apache.maven.settings.Proxy;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.building.SettingsProblem;
-import org.apache.maven.settings.crypto.SettingsDecrypter;
 import org.apache.maven.settings.crypto.SettingsDecryptionRequest;
 import org.apache.maven.settings.crypto.SettingsDecryptionResult;
 import org.apache.maven.toolchain.ToolchainManager;
@@ -495,7 +495,11 @@ public class SonarQubeMojoTest {
       .collect(Collectors.toSet());
   }
 
-  private static class PassthroughSettingsDecrypter implements SettingsDecrypter {
+  private static class PassthroughSettingsDecrypter extends DefaultSettingsDecrypter {
+    private PassthroughSettingsDecrypter() {
+      super(null);
+    }
+
     @Override
     public SettingsDecryptionResult decrypt(SettingsDecryptionRequest request) {
       List<Server> servers = request.getServers() == null ? Collections.emptyList() : request.getServers();

@@ -39,7 +39,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
-import org.apache.maven.settings.crypto.SettingsDecrypter;
+import org.apache.maven.settings.crypto.DefaultSettingsDecrypter;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.sonarsource.scanner.lib.EnvironmentConfig;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
@@ -71,8 +71,8 @@ public class SonarQubeMojo extends AbstractMojo {
   private boolean skip;
   @Component
   private LifecycleExecutor lifecycleExecutor;
-  @Component(hint = "mng-4384")
-  private SettingsDecrypter settingsDecrypter;
+  @Component
+  private DefaultSettingsDecrypter settingsDecrypter;
   @Component
   private RuntimeInformation runtimeInformation;
   @Parameter(defaultValue = "${mojoExecution}", required = true, readonly = true)

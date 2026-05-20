@@ -33,7 +33,6 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.spliterator;
 
 /**
  * Tests for features that are only available in Maven 4.

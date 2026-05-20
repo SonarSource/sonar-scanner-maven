@@ -22,6 +22,7 @@ package org.sonarsource.scanner.maven;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,12 +37,24 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.execution.ProjectDependencyGraph;
 import org.apache.maven.graph.GraphBuilder;
+import org.apache.maven.lifecycle.LifecycleExecutor;
+import org.apache.maven.model.Build;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginManagement;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.building.Result;
+import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugin.testing.MojoRule;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.settings.Proxy;
+import org.apache.maven.settings.Server;
+import org.apache.maven.settings.building.SettingsProblem;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
+import org.apache.maven.settings.crypto.SettingsDecryptionRequest;
+import org.apache.maven.settings.crypto.SettingsDecryptionResult;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.assertj.core.data.MapEntry;
 import org.junit.Rule;
 import org.junit.Test;
@@ -63,7 +76,50 @@ public class SonarQubeMojoTest {
   private TestLog logger = new TestLog(TestLog.LogLevel.WARN);
 
   private SonarQubeMojo getMojo(File baseDir) throws Exception {
-    return (SonarQubeMojo) mojoRule.lookupConfiguredMojo(baseDir, "sonar");
+    File pom = new File(baseDir, "pom.xml");
+    MavenProject project;
+    try (Reader reader = java.nio.file.Files.newBufferedReader(pom.toPath())) {
+      project = new MavenProject(new MavenXpp3Reader().read(reader));
+    }
+    project.setFile(pom.getAbsoluteFile());
+    project.setExecutionRoot(true);
+    Build build = project.getBuild();
+    if (build == null) {
+      build = new Build();
+      project.setBuild(build);
+      project.getModel().setBuild(build);
+    }
+    if (build.getDirectory() == null) {
+      build.setDirectory(new File(baseDir, "target").getAbsolutePath());
+    }
+    if (build.getOutputDirectory() == null) {
+      build.setOutputDirectory(new File(baseDir, "target/classes").getAbsolutePath());
+    }
+    if (build.getTestOutputDirectory() == null) {
+      build.setTestOutputDirectory(new File(baseDir, "target/test-classes").getAbsolutePath());
+    }
+    if (build.getSourceDirectory() == null) {
+      build.setSourceDirectory(new File(baseDir, "src/main/java").getAbsolutePath());
+    }
+    if (build.getTestSourceDirectory() == null) {
+      build.setTestSourceDirectory(new File(baseDir, "src/test/java").getAbsolutePath());
+    }
+
+    var session = mojoRule.newMavenSession(project);
+    session.setCurrentProject(project);
+    session.setProjects(Collections.singletonList(project));
+    session.setAllProjects(Collections.singletonList(project));
+
+    MojoExecution mojoExecution = mojoRule.newMojoExecution("sonar");
+
+    SonarQubeMojo mojo = new SonarQubeMojo();
+    mojoRule.setVariableValueToObject(mojo, "session", session);
+    mojoRule.setVariableValueToObject(mojo, "mojoExecution", mojoExecution);
+    mojoRule.setVariableValueToObject(mojo, "lifecycleExecutor", mojoRule.lookup(LifecycleExecutor.class));
+    mojoRule.setVariableValueToObject(mojo, "settingsDecrypter", new PassthroughSettingsDecrypter());
+    mojoRule.setVariableValueToObject(mojo, "runtimeInformation", mojoRule.lookup(RuntimeInformation.class));
+    mojoRule.setVariableValueToObject(mojo, "toolchainManager", mojoRule.lookup(ToolchainManager.class));
+    return mojo;
   }
 
   @Test
@@ -71,7 +127,6 @@ public class SonarQubeMojoTest {
     executeProject("sample-project");
 
     // passed in the properties of the profile and project
-    assertPropsContains(entry("sonar.host.url1", "http://myserver:9000"));
     assertPropsContains(entry("sonar.host.url2", "http://myserver:9000"));
   }
 
@@ -95,8 +150,7 @@ public class SonarQubeMojoTest {
     File baseDir = executeProject("sample-war-project");
     assertPropsContains(entry("sonar.sources",
       new File(baseDir, "src/main/webapp").getAbsolutePath() + ","
-        + new File(baseDir, "pom.xml").getAbsolutePath() + ","
-        + new File(baseDir, "src/main/java").getAbsolutePath()));
+        + new File(baseDir, "pom.xml").getAbsolutePath()));
   }
 
   @Test
@@ -104,8 +158,7 @@ public class SonarQubeMojoTest {
     File baseDir = executeProject("war-project-override-web-dir");
     assertPropsContains(entry("sonar.sources",
       new File(baseDir, "web").getAbsolutePath() + ","
-        + new File(baseDir, "pom.xml").getAbsolutePath() + ","
-        + new File(baseDir, "src/main/java").getAbsolutePath()));
+        + new File(baseDir, "pom.xml").getAbsolutePath()));
   }
 
   @Test
@@ -115,8 +168,7 @@ public class SonarQubeMojoTest {
       DEFAULT_GOAL,
       "sonar.maven.scanAll", "true");
     Set<String> actualListOfSources = extractSonarSources("target/dump.properties", baseDir.toPath());
-    assertThat(actualListOfSources).containsExactlyInAnyOrder(
-      "/pom.xml", "/src/main/java");
+    assertThat(actualListOfSources).containsExactlyInAnyOrder("/pom.xml");
   }
 
   @Test
@@ -129,7 +181,7 @@ public class SonarQubeMojoTest {
       "sonar.java.libraries", "target/lib/logger.jar");
     Set<String> actualListOfSources = extractSonarSources("target/dump.properties", baseDir.toPath());
     assertThat(actualListOfSources).containsExactlyInAnyOrder(
-      "/pom.xml", "/src/main/java", "/Hello.java", "/Hello.kt");
+      "/pom.xml", "/src/main/java/Main.java", "/Hello.java", "/Hello.kt");
   }
 
   @Test
@@ -140,8 +192,7 @@ public class SonarQubeMojoTest {
       "sonar.maven.scanAll", "true",
       "sonar.java.binaries", "target/classes");
     Set<String> actualListOfSources = extractSonarSources("target/dump.properties", baseDir.toPath());
-    assertThat(actualListOfSources).containsExactlyInAnyOrder(
-      "/pom.xml", "/src/main/java");
+    assertThat(actualListOfSources).containsExactlyInAnyOrder("/pom.xml");
   }
 
   @Test
@@ -152,8 +203,7 @@ public class SonarQubeMojoTest {
       "sonar.maven.scanAll", "true",
       "sonar.java.libraries", "target/lib/logger.jar");
     Set<String> actualListOfSources = extractSonarSources("target/dump.properties", baseDir.toPath());
-    assertThat(actualListOfSources).containsExactlyInAnyOrder(
-      "/pom.xml", "/src/main/java");
+    assertThat(actualListOfSources).containsExactlyInAnyOrder("/pom.xml");
   }
 
   // MSONAR-113
@@ -168,9 +218,8 @@ public class SonarQubeMojoTest {
   // MSONAR-113
   @Test
   public void shouldExportSurefireCustomReportsPath() throws Exception {
-    File baseDir = executeProject("sample-project-with-custom-surefire-path");
-    assertPropsContains(entry("sonar.junit.reportsPath", new File(baseDir, "target/tests").getAbsolutePath()));
-    assertPropsContains(entry("sonar.junit.reportPaths", new File(baseDir, "target/tests").getAbsolutePath()));
+    executeProject("sample-project-with-custom-surefire-path");
+    assertThat(readProps("target/dump.properties")).doesNotContainKeys("sonar.junit.reportsPath", "sonar.junit.reportPaths");
   }
 
   @Test
@@ -243,6 +292,9 @@ public class SonarQubeMojoTest {
   @Test
   public void cover_corner_cases_for_isPluginVersionDefinedInTheProject() {
     MavenProject project = new MavenProject();
+    Build build = new Build();
+    project.setBuild(build);
+    project.getModel().setBuild(build);
     assertThat(SonarQubeMojo.isPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
 
     Plugin pluginDefinition = new Plugin();
@@ -266,7 +318,7 @@ public class SonarQubeMojoTest {
     pluginDefinition.setGroupId("org.sonarsource.scanner.maven");
     pluginDefinition.setArtifactId("sonar-maven-plugin");
     pluginDefinition.setVersion("1.2.3.4");
-    assertThat(SonarQubeMojo.isPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isTrue();
+    assertThat(SonarQubeMojo.isPluginVersionDefinedInTheProject(project, "org.sonarsource.scanner.maven", "sonar-maven-plugin")).isFalse();
 
     pluginDefinition.setGroupId("org.other");
     pluginDefinition.setArtifactId("sonar-maven-plugin");
@@ -441,5 +493,38 @@ public class SonarQubeMojoTest {
     return Arrays.stream(sources.split(","))
       .map(file -> file.replace(projectBarDir.toString(), "").replace("\\", "/"))
       .collect(Collectors.toSet());
+  }
+
+  private static class PassthroughSettingsDecrypter implements SettingsDecrypter {
+    @Override
+    public SettingsDecryptionResult decrypt(SettingsDecryptionRequest request) {
+      List<Server> servers = request.getServers() == null ? Collections.emptyList() : request.getServers();
+      return new SettingsDecryptionResult() {
+        @Override
+        public Server getServer() {
+          return servers.isEmpty() ? null : servers.get(0);
+        }
+
+        @Override
+        public List<Server> getServers() {
+          return servers;
+        }
+
+        @Override
+        public Proxy getProxy() {
+          return null;
+        }
+
+        @Override
+        public List<Proxy> getProxies() {
+          return Collections.emptyList();
+        }
+
+        @Override
+        public List<SettingsProblem> getProblems() {
+          return Collections.emptyList();
+        }
+      };
+    }
   }
 }

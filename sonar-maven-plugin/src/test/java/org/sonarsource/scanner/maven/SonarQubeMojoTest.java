@@ -64,6 +64,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
 
+@SuppressWarnings("deprecation")
 public class SonarQubeMojoTest {
 
   private static final String UNSPECIFIED_VERSION_WARNING_SUFFIX = "instead of an explicit plugin version may introduce breaking analysis changes at an unwanted time. " +

@@ -64,6 +64,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper.UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE;
 
+@SuppressWarnings("deprecation")
 class ScannerBootstrapperTest {
   @Mock
   private Log log;

@@ -37,11 +37,11 @@ public class PropertyDecryptor {
   private final SettingsDecrypter settingsDecrypter;
   private final Object securityDispatcher;
 
-  public PropertyDecryptor(SettingsDecrypter settingsDecrypter) {
+  public PropertyDecryptor(@Nullable SettingsDecrypter settingsDecrypter) {
     this(settingsDecrypter, null);
   }
 
-  public PropertyDecryptor(SettingsDecrypter settingsDecrypter, @Nullable Object securityDispatcher) {
+  public PropertyDecryptor(@Nullable SettingsDecrypter settingsDecrypter, @Nullable Object securityDispatcher) {
     this.settingsDecrypter = settingsDecrypter;
     this.securityDispatcher = securityDispatcher;
   }

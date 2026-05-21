@@ -486,8 +486,6 @@ public class MavenProjectConverter {
     // Loop over artifacts makes sure we handle `modular-jar` dependencies.
     // Some of them may duplicate classpath elements, so `libraries` needs to be a set to avoid duplicates.
     for (Artifact artifact : pom.getArtifacts()) {
-      // FIXME: Should we check scope (e.g. "compile")?
-      // FIXME: Can the file be relative? (It requires resolving against basedir.)
       if ("modular-jar".equals(artifact.getType()) && artifact.isResolved()) {
         libraries.add(artifact.getFile());
       }

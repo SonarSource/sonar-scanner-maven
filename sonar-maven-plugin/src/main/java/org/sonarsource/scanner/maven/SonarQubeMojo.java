@@ -60,6 +60,7 @@ import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapperFactory;
 @SuppressWarnings("deprecation")
 public class SonarQubeMojo extends AbstractMojo {
   private static final String MAVEN = "maven";
+  private static final String SEC_DISPATCHER = "org.sonatype.plexus.components.sec.dispatcher.SecDispatcher";
 
   // Visible for testing
   Map<String, String> environmentVariables = new HashMap<>(System.getenv());
@@ -223,7 +224,7 @@ public class SonarQubeMojo extends AbstractMojo {
         return null;
       }
       ClassLoader classLoader = SettingsDecrypter.class.getClassLoader();
-      Class<?> secDispatcherClass = Class.forName("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", true, classLoader);
+      Class<?> secDispatcherClass = Class.forName(SEC_DISPATCHER, true, classLoader);
       Class<?> defaultSettingsDecrypterClass = Class.forName("org.apache.maven.settings.crypto.DefaultSettingsDecrypter", true, classLoader);
       Object decrypter = defaultSettingsDecrypterClass.getConstructor(secDispatcherClass).newInstance(securityDispatcher);
       return (SettingsDecrypter) decrypter;
@@ -238,10 +239,10 @@ public class SonarQubeMojo extends AbstractMojo {
       return null;
     }
     return lookupComponent("org.codehaus.plexus.components.secdispatcher.SecDispatcher", MAVEN)
-      .or(() -> lookupComponent("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", MAVEN))
-      .or(() -> lookupComponent("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", "mng-4384"))
+      .or(() -> lookupComponent(SEC_DISPATCHER, MAVEN))
+      .or(() -> lookupComponent(SEC_DISPATCHER, "mng-4384"))
       .or(() -> lookupComponent("org.codehaus.plexus.components.secdispatcher.SecDispatcher"))
-      .or(() -> lookupComponent("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher"))
+      .or(() -> lookupComponent(SEC_DISPATCHER))
       .orElse(null);
   }
 

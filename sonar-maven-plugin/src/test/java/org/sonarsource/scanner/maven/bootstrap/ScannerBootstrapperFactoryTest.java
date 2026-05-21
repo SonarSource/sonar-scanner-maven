@@ -51,6 +51,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("deprecation")
 class ScannerBootstrapperFactoryTest {
   private final RuntimeInformation runtimeInformation = mock(RuntimeInformation.class, Mockito.RETURNS_DEEP_STUBS);
   private final MojoExecution mojoExecution = mock(MojoExecution.class);

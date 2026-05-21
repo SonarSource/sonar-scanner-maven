@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest;
 import org.apache.maven.settings.crypto.SettingsDecrypter;
@@ -40,7 +41,7 @@ public class PropertyDecryptor {
     this(settingsDecrypter, null);
   }
 
-  public PropertyDecryptor(SettingsDecrypter settingsDecrypter, Object securityDispatcher) {
+  public PropertyDecryptor(SettingsDecrypter settingsDecrypter, @Nullable Object securityDispatcher) {
     this.settingsDecrypter = settingsDecrypter;
     this.securityDispatcher = securityDispatcher;
   }

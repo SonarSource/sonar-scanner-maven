@@ -57,8 +57,9 @@ import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapperFactory;
  * Analyze project. SonarQube server must be started.
  */
 @Mojo(name = "sonar", requiresDependencyResolution = ResolutionScope.TEST, aggregator = true)
-
+@SuppressWarnings("deprecation")
 public class SonarQubeMojo extends AbstractMojo {
+  private static final String MAVEN = "maven";
 
   // Visible for testing
   Map<String, String> environmentVariables = new HashMap<>(System.getenv());
@@ -208,7 +209,7 @@ public class SonarQubeMojo extends AbstractMojo {
       return null;
     }
     try {
-      return plexusContainer.lookup(SettingsDecrypter.class, "maven");
+      return plexusContainer.lookup(SettingsDecrypter.class, MAVEN);
     } catch (ComponentLookupException e) {
       getLog().debug("SettingsDecrypter component with hint 'maven' is not available.", e);
       return createLegacySettingsDecrypter();
@@ -236,8 +237,8 @@ public class SonarQubeMojo extends AbstractMojo {
     if (plexusContainer == null) {
       return null;
     }
-    return lookupComponent("org.codehaus.plexus.components.secdispatcher.SecDispatcher", "maven")
-      .or(() -> lookupComponent("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", "maven"))
+    return lookupComponent("org.codehaus.plexus.components.secdispatcher.SecDispatcher", MAVEN)
+      .or(() -> lookupComponent("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", MAVEN))
       .or(() -> lookupComponent("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", "mng-4384"))
       .or(() -> lookupComponent("org.codehaus.plexus.components.secdispatcher.SecDispatcher"))
       .or(() -> lookupComponent("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher"))

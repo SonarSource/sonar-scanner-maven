@@ -56,13 +56,18 @@ import org.apache.maven.settings.crypto.SettingsDecryptionRequest;
 import org.apache.maven.settings.crypto.SettingsDecryptionResult;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.assertj.core.data.MapEntry;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("deprecation")
 public class SonarQubeMojoTest {
@@ -390,6 +395,37 @@ public class SonarQubeMojoTest {
       .hasMessageContaining("Invalid region 'invalid'.");
   }
 
+  @Test
+  public void should_lookup_legacy_security_dispatcher_with_mng4384_hint() throws Exception {
+    SonarQubeMojo mojo = new SonarQubeMojo();
+    PlexusContainer plexusContainer = mock(PlexusContainer.class);
+    Object dispatcher = new Object();
+    setMojoField(mojo, "plexusContainer", plexusContainer);
+
+    when(plexusContainer.lookup("org.codehaus.plexus.components.secdispatcher.SecDispatcher", "maven"))
+      .thenThrow(new ComponentLookupException("missing", "role", "maven"));
+    when(plexusContainer.lookup("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", "maven"))
+      .thenThrow(new ComponentLookupException("missing", "role", "maven"));
+    when(plexusContainer.lookup("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", "mng-4384"))
+      .thenReturn(dispatcher);
+
+    assertThat(invokePrivate(mojo, "lookupSecurityDispatcher")).isSameAs(dispatcher);
+  }
+
+  @Test
+  public void should_return_null_when_no_security_dispatcher_is_available() throws Exception {
+    SonarQubeMojo mojo = new SonarQubeMojo();
+    PlexusContainer plexusContainer = mock(PlexusContainer.class);
+    setMojoField(mojo, "plexusContainer", plexusContainer);
+
+    when(plexusContainer.lookup(anyString(), anyString()))
+      .thenThrow(new ComponentLookupException("missing", "role", "hint"));
+    when(plexusContainer.lookup(anyString()))
+      .thenThrow(new ComponentLookupException("missing", "role", null));
+
+    assertThat(invokePrivate(mojo, "lookupSecurityDispatcher")).isNull();
+  }
+
   private File executeProject(String projectName) throws Exception {
     return executeProject(projectName, DEFAULT_GOAL);
   }
@@ -497,6 +533,16 @@ public class SonarQubeMojoTest {
     return Arrays.stream(sources.split(","))
       .map(file -> file.replace(projectBarDir.toString(), "").replace("\\", "/"))
       .collect(Collectors.toSet());
+  }
+
+  private static Object invokePrivate(Object target, String methodName) throws Exception {
+    var method = target.getClass().getDeclaredMethod(methodName);
+    method.setAccessible(true);
+    return method.invoke(target);
+  }
+
+  private void setMojoField(SonarQubeMojo mojo, String field, Object value) throws Exception {
+    mojoRule.setVariableValueToObject(mojo, field, value);
   }
 
   private static class PassthroughSettingsDecrypter implements SettingsDecrypter {

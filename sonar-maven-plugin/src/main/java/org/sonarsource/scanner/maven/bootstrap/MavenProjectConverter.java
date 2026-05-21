@@ -487,6 +487,7 @@ public class MavenProjectConverter {
     // Some of them may duplicate classpath elements, so `libraries` needs to be a set to avoid duplicates.
     for (Artifact artifact : pom.getArtifacts()) {
       if ("modular-jar".equals(artifact.getType()) && artifact.isResolved()) {
+        // getFile() returns the absolute path to the local ~/.m2 repository.
         libraries.add(artifact.getFile());
       }
     }

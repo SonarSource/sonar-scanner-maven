@@ -470,7 +470,7 @@ public class MavenProjectConverter {
       throw new MojoExecutionException("Unable to populate" + (test ? " test" : "") + " libraries", e);
     }
 
-    LinkedHashSet<File> libraries = new LinkedHashSet<>();
+    Set<File> libraries = new LinkedHashSet<>();
     if (classpathElements != null) {
       String outputDirectory = test ? pom.getBuild().getTestOutputDirectory() : pom.getBuild().getOutputDirectory();
       File basedir = pom.getBasedir();
@@ -488,7 +488,9 @@ public class MavenProjectConverter {
     for (Artifact artifact : pom.getArtifacts()) {
       // FIXME: Should we check scope (e.g. "compile")?
       // FIXME: Can the file be relative? (It requires resolving against basedir.)
-      libraries.add(artifact.getFile());
+      if ("modular-jar".equals(artifact.getType()) && artifact.isResolved()) {
+        libraries.add(artifact.getFile());
+      }
     }
 
     if (!libraries.isEmpty()) {

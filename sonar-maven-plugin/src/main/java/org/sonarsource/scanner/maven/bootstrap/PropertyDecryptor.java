@@ -31,6 +31,7 @@ import org.apache.maven.settings.crypto.SettingsDecryptionResult;
 
 import static org.sonarsource.scanner.maven.bootstrap.MavenUtils.isIrrelevantEncryptedProperty;
 
+@SuppressWarnings("deprecation")
 public class PropertyDecryptor {
   private final SettingsDecrypter settingsDecrypter;
   private final Object securityDispatcher;
@@ -93,13 +94,8 @@ public class PropertyDecryptor {
     try {
       Object decrypted = securityDispatcher.getClass().getMethod("decrypt", String.class).invoke(securityDispatcher, value);
       return decrypted instanceof String ? (String) decrypted : value;
-    } catch (ReflectiveOperationException e) {
+    } catch (Exception e) {
       return value;
-    } catch (RuntimeException e) {
-      if (Objects.equals(e.getClass().getName(), "java.lang.reflect.UndeclaredThrowableException")) {
-        return value;
-      }
-      throw e;
     }
   }
 }

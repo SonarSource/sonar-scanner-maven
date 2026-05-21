@@ -87,7 +87,7 @@ public class PropertyDecryptor {
       ));
   }
 
-  private String decryptWithSecurityDispatcher(String value) {
+  private String decryptWithSecurityDispatcher(@Nullable String value) {
     if (securityDispatcher == null || value == null) {
       return value;
     }

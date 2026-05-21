@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.model.CiManagement;
 import org.apache.maven.model.IssueManagement;
@@ -469,7 +470,7 @@ public class MavenProjectConverter {
       throw new MojoExecutionException("Unable to populate" + (test ? " test" : "") + " libraries", e);
     }
 
-    List<File> libraries = new ArrayList<>();
+    Set<File> libraries = new LinkedHashSet<>();
     if (classpathElements != null) {
       String outputDirectory = test ? pom.getBuild().getTestOutputDirectory() : pom.getBuild().getOutputDirectory();
       File basedir = pom.getBasedir();
@@ -481,6 +482,16 @@ public class MavenProjectConverter {
         .filter(File::exists)
         .forEach(libraries::add);
     }
+
+    // Loop over artifacts makes sure we handle `modular-jar` dependencies.
+    // Some of them may duplicate classpath elements, so `libraries` needs to be a set to avoid duplicates.
+    for (Artifact artifact : pom.getArtifacts()) {
+      if ("modular-jar".equals(artifact.getType()) && artifact.isResolved()) {
+        // getFile() returns the absolute path to the local ~/.m2 repository.
+        libraries.add(artifact.getFile());
+      }
+    }
+
     if (!libraries.isEmpty()) {
       String librariesValue = MavenUtils.joinAsCsv(toPaths(libraries));
       if (test) {

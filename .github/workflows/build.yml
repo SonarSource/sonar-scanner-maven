@@ -214,6 +214,7 @@ jobs:
           mvn
           --projects '!sonar-maven-plugin'
           --activate-profiles e2e
+          -DqaMaven4=true
           -Dsonar.runtimeVersion="${{ matrix.item.sq_version }}"
           -Dmaven.home="${{ steps.download_maven.outputs.maven_it_path }}"
           verify

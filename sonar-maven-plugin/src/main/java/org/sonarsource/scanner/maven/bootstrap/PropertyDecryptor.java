@@ -21,6 +21,7 @@ package org.sonarsource.scanner.maven.bootstrap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest;
@@ -32,18 +33,30 @@ import static org.sonarsource.scanner.maven.bootstrap.MavenUtils.isIrrelevantEnc
 
 public class PropertyDecryptor {
   private final SettingsDecrypter settingsDecrypter;
+  private final Object securityDispatcher;
 
   public PropertyDecryptor(SettingsDecrypter settingsDecrypter) {
+    this(settingsDecrypter, null);
+  }
+
+  public PropertyDecryptor(SettingsDecrypter settingsDecrypter, Object securityDispatcher) {
     this.settingsDecrypter = settingsDecrypter;
+    this.securityDispatcher = securityDispatcher;
   }
 
 
   public Map<String, String> decryptProperties(Map<String, String> properties) {
+    Map<String, String> decryptedWithDispatcher = properties.entrySet().stream()
+      .collect(Collectors.toMap(
+        Map.Entry::getKey,
+        entry -> decryptWithSecurityDispatcher(entry.getValue())
+      ));
+
     if (settingsDecrypter == null) {
-      return properties;
+      return decryptedWithDispatcher;
     }
     // 1. Identify and wrap encrypted sonar properties into Server objects
-    List<Server> serversToDecrypt = properties.entrySet().stream()
+    List<Server> serversToDecrypt = decryptedWithDispatcher.entrySet().stream()
       .filter(entry -> !isIrrelevantEncryptedProperty(entry.getKey(), entry.getValue()))
       .map(entry -> {
         Server s = new Server();
@@ -66,10 +79,27 @@ public class PropertyDecryptor {
       ));
 
     // 4. Return the original map with decrypted values where applicable
-    return properties.entrySet().stream()
+    return decryptedWithDispatcher.entrySet().stream()
       .collect(Collectors.toMap(
         Map.Entry::getKey,
         entry -> decryptedMap.getOrDefault(entry.getKey(), entry.getValue())
       ));
+  }
+
+  private String decryptWithSecurityDispatcher(String value) {
+    if (securityDispatcher == null || value == null) {
+      return value;
+    }
+    try {
+      Object decrypted = securityDispatcher.getClass().getMethod("decrypt", String.class).invoke(securityDispatcher, value);
+      return decrypted instanceof String ? (String) decrypted : value;
+    } catch (ReflectiveOperationException e) {
+      return value;
+    } catch (RuntimeException e) {
+      if (Objects.equals(e.getClass().getName(), "java.lang.reflect.UndeclaredThrowableException")) {
+        return value;
+      }
+      throw e;
+    }
   }
 }

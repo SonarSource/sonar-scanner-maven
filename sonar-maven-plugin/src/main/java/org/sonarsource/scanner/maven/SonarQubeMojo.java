@@ -112,7 +112,7 @@ public class SonarQubeMojo extends AbstractMojo {
     MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), new Maven3ToolchainResolver(session, getLog(), toolchainManager));
     MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), mavenCompilerResolver, envProps);
 
-    PropertyDecryptor propertyDecryptor = new PropertyDecryptor(lookupSettingsDecrypter());
+    PropertyDecryptor propertyDecryptor = new PropertyDecryptor(lookupSettingsDecrypter(), lookupSecurityDispatcher());
 
     ScannerBootstrapperFactory bootstrapperFactory = new ScannerBootstrapperFactory(getLog(), runtimeInformation, mojoExecution, session, envProps, propertyDecryptor);
 
@@ -217,20 +217,48 @@ public class SonarQubeMojo extends AbstractMojo {
 
   private SettingsDecrypter createLegacySettingsDecrypter() {
     try {
-      Object securityDispatcher;
-      try {
-        securityDispatcher = plexusContainer.lookup("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", "maven");
-      } catch (ComponentLookupException e) {
-        securityDispatcher = plexusContainer.lookup("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher");
+      Object securityDispatcher = lookupSecurityDispatcher();
+      if (securityDispatcher == null) {
+        return null;
       }
       ClassLoader classLoader = SettingsDecrypter.class.getClassLoader();
       Class<?> secDispatcherClass = Class.forName("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", true, classLoader);
       Class<?> defaultSettingsDecrypterClass = Class.forName("org.apache.maven.settings.crypto.DefaultSettingsDecrypter", true, classLoader);
       Object decrypter = defaultSettingsDecrypterClass.getConstructor(secDispatcherClass).newInstance(securityDispatcher);
       return (SettingsDecrypter) decrypter;
-    } catch (ReflectiveOperationException | ComponentLookupException e) {
+    } catch (ReflectiveOperationException e) {
       getLog().debug("Legacy SecDispatcher-backed settings decrypter is not available.", e);
       return null;
+    }
+  }
+
+  private Object lookupSecurityDispatcher() {
+    if (plexusContainer == null) {
+      return null;
+    }
+    return lookupComponent("org.codehaus.plexus.components.secdispatcher.SecDispatcher", "maven")
+      .or(() -> lookupComponent("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", "maven"))
+      .or(() -> lookupComponent("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher", "mng-4384"))
+      .or(() -> lookupComponent("org.codehaus.plexus.components.secdispatcher.SecDispatcher"))
+      .or(() -> lookupComponent("org.sonatype.plexus.components.sec.dispatcher.SecDispatcher"))
+      .orElse(null);
+  }
+
+  private java.util.Optional<Object> lookupComponent(String role) {
+    try {
+      return java.util.Optional.ofNullable(plexusContainer.lookup(role));
+    } catch (ComponentLookupException e) {
+      getLog().debug("Component is not available: " + role, e);
+      return java.util.Optional.empty();
+    }
+  }
+
+  private java.util.Optional<Object> lookupComponent(String role, String hint) {
+    try {
+      return java.util.Optional.ofNullable(plexusContainer.lookup(role, hint));
+    } catch (ComponentLookupException e) {
+      getLog().debug("Component is not available: " + role + " with hint '" + hint + "'.", e);
+      return java.util.Optional.empty();
     }
   }
 

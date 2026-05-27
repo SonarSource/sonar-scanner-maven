@@ -39,7 +39,10 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
 import org.apache.maven.toolchain.ToolchainManager;
+import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.sonarsource.scanner.lib.EnvironmentConfig;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
 import org.sonarsource.scanner.lib.ScannerProperties;
@@ -49,14 +52,15 @@ import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
 import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
 import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper;
 import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapperFactory;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 /**
  * Analyze project. SonarQube server must be started.
  */
 @Mojo(name = "sonar", requiresDependencyResolution = ResolutionScope.TEST, aggregator = true)
-
+@SuppressWarnings("deprecation")
 public class SonarQubeMojo extends AbstractMojo {
+  private static final String MAVEN = "maven";
+  private static final String SEC_DISPATCHER = "org.sonatype.plexus.components.sec.dispatcher.SecDispatcher";
 
   // Visible for testing
   Map<String, String> environmentVariables = new HashMap<>(System.getenv());
@@ -71,14 +75,14 @@ public class SonarQubeMojo extends AbstractMojo {
   private boolean skip;
   @Component
   private LifecycleExecutor lifecycleExecutor;
-  @Component(hint = "mng-4384")
-  private SecDispatcher securityDispatcher;
   @Component
   private RuntimeInformation runtimeInformation;
   @Parameter(defaultValue = "${mojoExecution}", required = true, readonly = true)
   private MojoExecution mojoExecution;
   @Component
   private ToolchainManager toolchainManager;
+  @Component
+  private PlexusContainer plexusContainer;
 
   @VisibleForTesting
   static boolean isPluginVersionDefinedInTheProject(MavenProject project, String groupId, String artifactId) {
@@ -110,7 +114,7 @@ public class SonarQubeMojo extends AbstractMojo {
     MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), new Maven3ToolchainResolver(session, getLog(), toolchainManager));
     MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), mavenCompilerResolver, envProps);
 
-    PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
+    PropertyDecryptor propertyDecryptor = new PropertyDecryptor(lookupSettingsDecrypter(), lookupSecurityDispatcher());
 
     ScannerBootstrapperFactory bootstrapperFactory = new ScannerBootstrapperFactory(getLog(), runtimeInformation, mojoExecution, session, envProps, propertyDecryptor);
 
@@ -199,6 +203,65 @@ public class SonarQubeMojo extends AbstractMojo {
       return true;
     }
     return false;
+  }
+
+  private SettingsDecrypter lookupSettingsDecrypter() {
+    if (plexusContainer == null) {
+      return null;
+    }
+    try {
+      return plexusContainer.lookup(SettingsDecrypter.class, MAVEN);
+    } catch (ComponentLookupException e) {
+      getLog().debug("SettingsDecrypter component with hint 'maven' is not available.", e);
+      return createLegacySettingsDecrypter();
+    }
+  }
+
+  private SettingsDecrypter createLegacySettingsDecrypter() {
+    try {
+      Object securityDispatcher = lookupSecurityDispatcher();
+      if (securityDispatcher == null) {
+        return null;
+      }
+      ClassLoader classLoader = SettingsDecrypter.class.getClassLoader();
+      Class<?> secDispatcherClass = Class.forName(SEC_DISPATCHER, true, classLoader);
+      Class<?> defaultSettingsDecrypterClass = Class.forName("org.apache.maven.settings.crypto.DefaultSettingsDecrypter", true, classLoader);
+      Object decrypter = defaultSettingsDecrypterClass.getConstructor(secDispatcherClass).newInstance(securityDispatcher);
+      return (SettingsDecrypter) decrypter;
+    } catch (ReflectiveOperationException e) {
+      getLog().debug("Legacy SecDispatcher-backed settings decrypter is not available.", e);
+      return null;
+    }
+  }
+
+  private Object lookupSecurityDispatcher() {
+    if (plexusContainer == null) {
+      return null;
+    }
+    return lookupComponent("org.codehaus.plexus.components.secdispatcher.SecDispatcher", MAVEN)
+      .or(() -> lookupComponent(SEC_DISPATCHER, MAVEN))
+      .or(() -> lookupComponent(SEC_DISPATCHER, "mng-4384"))
+      .or(() -> lookupComponent("org.codehaus.plexus.components.secdispatcher.SecDispatcher"))
+      .or(() -> lookupComponent(SEC_DISPATCHER))
+      .orElse(null);
+  }
+
+  private java.util.Optional<Object> lookupComponent(String role) {
+    try {
+      return java.util.Optional.ofNullable(plexusContainer.lookup(role));
+    } catch (ComponentLookupException e) {
+      getLog().debug("Component is not available: " + role, e);
+      return java.util.Optional.empty();
+    }
+  }
+
+  private java.util.Optional<Object> lookupComponent(String role, String hint) {
+    try {
+      return java.util.Optional.ofNullable(plexusContainer.lookup(role, hint));
+    } catch (ComponentLookupException e) {
+      getLog().debug("Component is not available: " + role + " with hint '" + hint + "'.", e);
+      return java.util.Optional.empty();
+    }
   }
 
   MavenSession getSession() {

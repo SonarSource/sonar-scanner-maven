@@ -430,9 +430,13 @@ public class MavenProjectConverter {
 
     // IMPORTANT NOTE : reference on properties from POM model must not be saved,
     // instead they should be copied explicitly - see SONAR-2896
-    for (String k : pom.getModel().getProperties().stringPropertyNames()) {
-      if (!AnalysisProperties.PROJECT_KEY.equals(k) || pom.equals(this.root)) {
-        props.put(k, pom.getModel().getProperties().getProperty(k));
+    for (Map.Entry<Object, Object> entry : pom.getModel().getProperties().entrySet()) {
+      if (!(entry.getKey() instanceof String) || !(entry.getValue() instanceof String)) {
+        continue;
+      }
+      String key = (String) entry.getKey();
+      if (!AnalysisProperties.PROJECT_KEY.equals(key) || pom.equals(this.root)) {
+        props.put(key, (String) entry.getValue());
       }
     }
 

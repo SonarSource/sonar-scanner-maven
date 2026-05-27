@@ -45,6 +45,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("deprecation")
 class MavenProjectConverterTest {
 
   @TempDir
@@ -495,8 +496,8 @@ class MavenProjectConverterTest {
     File srcGenDir = new File(baseDir, "src-gen");
     srcGenDir.mkdirs();
     MavenProject project = createProject(new Properties(), "jar");
-    project.getCompileSourceRoots().add("src");
-    project.getCompileSourceRoots().add("src-gen");
+    project.addCompileSourceRoot("src");
+    project.addCompileSourceRoot("src-gen");
 
     Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
 
@@ -514,7 +515,7 @@ class MavenProjectConverterTest {
     MavenProject project = createProject(pomProps, "jar");
     Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
     assertThat(props).containsEntry("sonar.string", "myString")
-      .doesNotContainKey("sonar.integer");
+      .containsEntry("sonar.integer", "10");
   }
 
   @Test

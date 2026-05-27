@@ -33,6 +33,8 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
+import org.apache.maven.settings.crypto.SettingsDecryptionResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -47,7 +49,6 @@ import org.sonarsource.scanner.lib.AnalysisProperties;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapResult;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
 import org.sonarsource.scanner.lib.ScannerEngineFacade;
-import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -63,6 +64,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper.UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE;
 
+@SuppressWarnings("deprecation")
 class ScannerBootstrapperTest {
   @Mock
   private Log log;
@@ -70,7 +72,7 @@ class ScannerBootstrapperTest {
   @Mock
   private MavenSession session;
 
-  private static final SecDispatcher securityDispatcher = s -> s;
+  private final SettingsDecrypter settingsDecrypter = settingsDecryptionRequest -> mock(SettingsDecryptionResult.class);
 
   @Mock
   private ScannerEngineBootstrapper scannerEngineBootstrapper;
@@ -125,7 +127,7 @@ class ScannerBootstrapperTest {
     when(scannerEngineBootstrapper.bootstrap()).thenReturn(scannerEngineBootstrapResult);
     when(scannerEngineBootstrapResult.isSuccessful()).thenReturn(true);
     when(scannerEngineFacade.analyze(any())).thenReturn(true);
-    scannerBootstrapper = new ScannerBootstrapper(log, session, scannerEngineBootstrapper, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher));
+    scannerBootstrapper = new ScannerBootstrapper(log, session, scannerEngineBootstrapper, mavenProjectConverter, new PropertyDecryptor(settingsDecrypter));
   }
 
   @Test

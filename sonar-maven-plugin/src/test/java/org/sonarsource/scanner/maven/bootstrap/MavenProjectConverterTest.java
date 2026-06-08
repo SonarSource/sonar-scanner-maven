@@ -39,7 +39,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.sonarsource.scanner.lib.AnalysisProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -150,11 +150,9 @@ class MavenProjectConverterTest {
     assertThat(MavenProjectConverter.findCommonParentDir(temp.resolve(fooBarPath), temp.resolve(dir2)))
       .isEqualTo(temp);
 
-    IllegalStateException exception = assertThrows(IllegalStateException.class,
-      () -> MavenProjectConverter.findCommonParentDir(fooBarPath, dir2)
-    );
-
-    assertThat(exception).hasMessageMatching("Unable to find a common parent between two modules baseDir: 'foo.bar' and 'foo2.bar2'");
+    assertThatThrownBy(() -> MavenProjectConverter.findCommonParentDir(fooBarPath, dir2))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageMatching("Unable to find a common parent between two modules baseDir: 'foo.bar' and 'foo2.bar2'");
   }
 
   @Test
@@ -468,8 +466,8 @@ class MavenProjectConverterTest {
 
     MavenProject project = createProject(pomProps, "jar");
 
-    assertThrows(MojoExecutionException.class, () ->
-      projectConverter.configure(Collections.singletonList(project), project, new Properties()));
+    assertThatThrownBy(() -> projectConverter.configure(Collections.singletonList(project), project, new Properties()))
+      .isInstanceOf(MojoExecutionException.class);
   }
 
   @Test

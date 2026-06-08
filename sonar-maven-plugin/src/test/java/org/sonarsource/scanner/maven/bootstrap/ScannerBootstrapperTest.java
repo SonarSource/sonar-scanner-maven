@@ -132,7 +132,7 @@ class ScannerBootstrapperTest {
     when(scannerEngineFacade.isSonarQubeCloud()).thenReturn(false);
     when(scannerEngineFacade.getServerVersion()).thenReturn("5.1");
 
-    assertThatThrownBy(() -> scannerBootstrapper.execute())
+    assertThatThrownBy(scannerBootstrapper::execute)
       .isInstanceOf(MojoExecutionException.class)
       .hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
       .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);

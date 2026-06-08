@@ -51,7 +51,6 @@ import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.inOrder;
@@ -133,10 +132,8 @@ class ScannerBootstrapperTest {
     when(scannerEngineFacade.isSonarQubeCloud()).thenReturn(false);
     when(scannerEngineFacade.getServerVersion()).thenReturn("5.1");
 
-    MojoExecutionException exception = assertThrows(MojoExecutionException.class,
-      () -> scannerBootstrapper.execute());
-
-    assertThat(exception)
+    assertThatThrownBy(scannerBootstrapper::execute)
+      .isInstanceOf(MojoExecutionException.class)
       .hasCauseExactlyInstanceOf(UnsupportedOperationException.class)
       .hasMessage(UNSUPPORTED_BELOW_SONARQUBE_56_MESSAGE);
   }

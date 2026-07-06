@@ -13,7 +13,7 @@
   <name>SonarSource :: E2E :: SonarQube Maven</name>
 
   <properties>
-    <jetty.version>9.4.51.v20230217</jetty.version>
+    <jetty.version>9.4.57.v20241219</jetty.version>
     <maven.compiler.release>17</maven.compiler.release>
     <skipTests>true</skipTests>
     <maven.deploy.skip>true</maven.deploy.skip>
@@ -33,13 +33,13 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
-      <version>5.11.3</version>
+      <version>5.14.4</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.11.3</version>
+      <version>5.14.4</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -69,7 +69,7 @@
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
       <artifactId>json-simple</artifactId>
-      <version>1.1</version>
+      <version>1.1.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>

@@ -21,7 +21,7 @@ package com.sonar.maven.it.suite;
 
 import com.sonar.maven.it.ItUtils;
 import com.sonar.orchestrator.build.MavenBuild;
-import com.sonar.orchestrator.version.Version;
+import com.sonar.orchestrator.util.Version;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;

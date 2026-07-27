@@ -1,8 +1,7 @@
 name: Test mvn sonar:sonar shorthand
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 */3 * * *"  # Run every 3 hours, on the hour
+
 jobs:
   test-shorthand:
     defaults:

@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import javax.annotation.Nullable;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.proxy.ProxyHandler;
@@ -43,7 +44,7 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 public class Proxy {
   private static final String PROXY_USER = "scott";
   private static final String PROXY_PASSWORD = "tiger";
-  private static final String PROXY_CREDENTIALS = "Basic " + Base64.getEncoder()
+  private static final String EXPECTED_BASE64_CREDENTIALS = Base64.getEncoder()
     .encodeToString((PROXY_USER + ":" + PROXY_PASSWORD).getBytes(StandardCharsets.ISO_8859_1));
   private Server server;
   private int httpProxyPort;
@@ -95,7 +96,8 @@ public class Proxy {
     return new Handler.Wrapper(new ProxyHandler.Forward()) {
       @Override
       public boolean handle(Request request, Response response, Callback callback) throws Exception {
-        if (!PROXY_CREDENTIALS.equals(request.getHeaders().get(HttpHeader.PROXY_AUTHORIZATION))) {
+        String credentials = request.getHeaders().get(HttpHeader.PROXY_AUTHORIZATION);
+        if (!isAuthorized(credentials)) {
           response.getHeaders().put(HttpHeader.PROXY_AUTHENTICATE, "Basic realm=\"myrealm\"");
           Response.writeError(request, response, callback, HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407);
           return true;
@@ -105,5 +107,15 @@ public class Proxy {
         return super.handle(request, response, callback);
       }
     };
+  }
+
+  private static boolean isAuthorized(@Nullable String credentials) {
+    if (credentials == null) {
+      return false;
+    }
+    int space = credentials.indexOf(' ');
+    return space > 0
+      && "basic".equalsIgnoreCase(credentials.substring(0, space))
+      && EXPECTED_BASE64_CREDENTIALS.equals(credentials.substring(space + 1).trim());
   }
 }

@@ -13,7 +13,7 @@
   <name>SonarSource :: E2E :: SonarQube Maven</name>
 
   <properties>
-    <jetty.version>9.4.58.v20250814</jetty.version>
+    <jetty.version>12.1.12</jetty.version>
     <maven.compiler.release>17</maven.compiler.release>
     <skipTests>true</skipTests>
     <maven.deploy.skip>true</maven.deploy.skip>
@@ -81,12 +81,6 @@
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-server</artifactId>
-      <version>${jetty.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-servlet</artifactId>
       <version>${jetty.version}</version>
       <scope>test</scope>
     </dependency>

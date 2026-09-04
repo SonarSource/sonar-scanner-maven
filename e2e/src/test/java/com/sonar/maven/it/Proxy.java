@@ -21,37 +21,31 @@ package com.sonar.maven.it;
 
 import com.sonar.orchestrator.util.NetworkUtils;
 
-import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.proxy.ProxyServlet;
-import org.eclipse.jetty.security.ConstraintMapping;
-import org.eclipse.jetty.security.ConstraintSecurityHandler;
-import org.eclipse.jetty.security.HashLoginService;
-import org.eclipse.jetty.security.SecurityHandler;
+import javax.annotation.Nullable;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.proxy.ProxyHandler;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.handler.DefaultHandler;
-import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.security.UserStore;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.util.security.Constraint;
-import org.eclipse.jetty.util.security.Credential;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 public class Proxy {
   private static final String PROXY_USER = "scott";
   private static final String PROXY_PASSWORD = "tiger";
+  private static final String EXPECTED_BASE64_CREDENTIALS = Base64.getEncoder()
+    .encodeToString((PROXY_USER + ":" + PROXY_PASSWORD).getBytes(StandardCharsets.ISO_8859_1));
   private Server server;
   private int httpProxyPort;
 
@@ -88,10 +82,7 @@ public class Proxy {
     httpConfig.setSendServerVersion(true);
     httpConfig.setSendDateHeader(false);
 
-    // Handler Structure
-    HandlerCollection handlers = new HandlerCollection();
-    handlers.setHandlers(new Handler[] {proxyHandler(), new DefaultHandler()});
-    server.setHandler(handlers);
+    server.setHandler(proxyHandler());
 
     ServerConnector http = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
     http.setPort(httpProxyPort);
@@ -101,60 +92,30 @@ public class Proxy {
     return httpProxyPort;
   }
 
-  private ServletContextHandler proxyHandler() {
-    ServletContextHandler contextHandler = new ServletContextHandler();
-    contextHandler.setServletHandler(newServletHandler());
-    contextHandler.setSecurityHandler(basicAuth(PROXY_USER, PROXY_PASSWORD, "Private!"));
-    return contextHandler;
+  private Handler proxyHandler() {
+    return new Handler.Wrapper(new ProxyHandler.Forward()) {
+      @Override
+      public boolean handle(Request request, Response response, Callback callback) throws Exception {
+        String credentials = request.getHeaders().get(HttpHeader.PROXY_AUTHORIZATION);
+        if (!isAuthorized(credentials)) {
+          response.getHeaders().put(HttpHeader.PROXY_AUTHENTICATE, "Basic realm=\"myrealm\"");
+          Response.writeError(request, response, callback, HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407);
+          return true;
+        }
+
+        seenByProxy.add(request.getHttpURI().toString());
+        return super.handle(request, response, callback);
+      }
+    };
   }
 
-  private ServletHandler newServletHandler() {
-    ServletHandler handler = new ServletHandler();
-    handler.addServletWithMapping(MyProxyServlet.class, "/*");
-    return handler;
-  }
-
-  private static final SecurityHandler basicAuth(String username, String password, String realm) {
-
-    HashLoginService l = new HashLoginService();
-    UserStore userStore = new UserStore();
-    userStore.addUser(username, Credential.getCredential(password), new String[] {"user"});
-    l.setUserStore(userStore);
-    l.setName(realm);
-
-    Constraint constraint = new Constraint();
-    constraint.setName(Constraint.__BASIC_AUTH);
-    constraint.setRoles(new String[] {"user"});
-    constraint.setAuthenticate(true);
-
-    ConstraintMapping cm = new ConstraintMapping();
-    cm.setConstraint(constraint);
-    cm.setPathSpec("/*");
-
-    ConstraintSecurityHandler csh = new ConstraintSecurityHandler();
-    csh.setAuthenticator(new ProxyAuthenticator());
-    csh.setRealmName("myrealm");
-    csh.addConstraintMapping(cm);
-    csh.setLoginService(l);
-
-    return csh;
-
-  }
-
-  public static class MyProxyServlet extends ProxyServlet {
-    public MyProxyServlet() {
-      super();
+  private static boolean isAuthorized(@Nullable String credentials) {
+    if (credentials == null) {
+      return false;
     }
-
-    @Override
-    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-      seenByProxy.add(request.getRequestURI());
-      super.service(request, response);
-    }
-
-    @Override
-    protected void sendProxyRequest(HttpServletRequest clientRequest, HttpServletResponse proxyResponse, Request proxyRequest) {
-      super.sendProxyRequest(clientRequest, proxyResponse, proxyRequest);
-    }
+    int space = credentials.indexOf(' ');
+    return space > 0
+      && "basic".equalsIgnoreCase(credentials.substring(0, space))
+      && EXPECTED_BASE64_CREDENTIALS.equals(credentials.substring(space + 1).trim());
   }
 }

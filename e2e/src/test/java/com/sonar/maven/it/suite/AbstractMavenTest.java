@@ -84,7 +84,7 @@ public abstract class AbstractMavenTest {
     .addBundledPluginToKeep("sonar-xml-plugin")
     .addBundledPluginToKeep("sonar-html-plugin")
     // This plugin should have been built locally from the property-dump-plugin module
-    .addPlugin(FileLocation.of("../property-dump-plugin/target/property-dump-plugin-1.0-SNAPSHOT.jar"))
+    .addPlugin(FileLocation.of("../property-dump-plugin/target/property-dump-plugin-" + mojoVersion() + ".jar"))
     .build();
 
   protected WsClient wsClient;
@@ -120,7 +120,7 @@ public abstract class AbstractMavenTest {
   }
 
   protected static String sonarGoal() {
-    return "org.sonarsource.scanner.maven:sonar-maven-plugin:" + mojoVersion().toString() + ":sonar -V";
+    return "org.sonarsource.scanner.maven:sonar-maven-plugin:" + mojoVersion() + ":sonar -V";
   }
 
   protected static String[] cleanSonarGoal() {

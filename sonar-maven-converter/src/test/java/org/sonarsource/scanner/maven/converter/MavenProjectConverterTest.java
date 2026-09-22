@@ -1,5 +1,5 @@
 /*
- * SonarQube Scanner for Maven
+ * SonarQube Scanner for Maven :: Reactor Converter
  * Copyright (C) SonarSource Sàrl
  * mailto:info AT sonarsource DOT com
  *
@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.scanner.maven.bootstrap;
+package org.sonarsource.scanner.maven.converter;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,7 +36,6 @@ import org.apache.maven.project.MavenProject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.sonarsource.scanner.lib.AnalysisProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -221,14 +220,14 @@ class MavenProjectConverterTest {
 
     Properties userProperties = new Properties();
     String userProjectKey = "user-project-key";
-    userProperties.put(AnalysisProperties.PROJECT_KEY, userProjectKey);
+    userProperties.put(SonarProperties.PROJECT_KEY, userProjectKey);
     Map<String, String> propsWithUserProjectKey = projectConverter.configure(Arrays.asList(module12, module11, module1, module2, root),
       root, userProperties);
 
     assertThat(propsWithUserProjectKey).containsEntry("sonar.projectKey", userProjectKey);
 
     String customProjectKey = "custom-project-key";
-    root.getModel().getProperties().setProperty(AnalysisProperties.PROJECT_KEY, customProjectKey);
+    root.getModel().getProperties().setProperty(SonarProperties.PROJECT_KEY, customProjectKey);
     Map<String, String> propsWithCustomProjectKey = projectConverter.configure(Arrays.asList(module12, module11, module1, module2, root),
       root, new Properties());
 
@@ -640,7 +639,7 @@ class MavenProjectConverterTest {
   @Test
   void submodules_are_not_assigned_user_provided_project_key_from_parent() throws MojoExecutionException, IOException {
     Properties rootPomProperties = new Properties();
-    rootPomProperties.put(AnalysisProperties.PROJECT_KEY, "the_greatest_project_key_there_ever_was");
+    rootPomProperties.put(SonarProperties.PROJECT_KEY, "the_greatest_project_key_there_ever_was");
     File baseDir = temp.toFile();
     baseDir.mkdirs();
     MavenProject root = createProject(rootPomProperties, "pom");
@@ -662,11 +661,11 @@ class MavenProjectConverterTest {
       new Properties()
     );
 
-    assertThat(properties.get(AnalysisProperties.PROJECT_KEY))
+    assertThat(properties.get(SonarProperties.PROJECT_KEY))
       .isNotNull()
       .isEqualTo("the_greatest_project_key_there_ever_was");
     String keyPrefixForModule1 = module1.getGroupId() + ":" + module1.getArtifactId() + ".";
-    assertThat(properties).doesNotContainKey(keyPrefixForModule1 + AnalysisProperties.PROJECT_KEY);
+    assertThat(properties).doesNotContainKey(keyPrefixForModule1 + SonarProperties.PROJECT_KEY);
   }
 
   @Test

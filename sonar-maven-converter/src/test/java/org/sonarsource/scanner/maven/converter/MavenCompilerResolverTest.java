@@ -1,5 +1,5 @@
 /*
- * SonarQube Scanner for Maven
+ * SonarQube Scanner for Maven :: Reactor Converter
  * Copyright (C) SonarSource Sàrl
  * mailto:info AT sonarsource DOT com
  *
@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.scanner.maven;
+package org.sonarsource.scanner.maven.converter;
 
 
 import java.nio.file.Path;
@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver.MavenCompilerConfiguration;
+import static org.sonarsource.scanner.maven.converter.MavenCompilerResolver.MavenCompilerConfiguration;
 
 class MavenCompilerResolverTest {
 

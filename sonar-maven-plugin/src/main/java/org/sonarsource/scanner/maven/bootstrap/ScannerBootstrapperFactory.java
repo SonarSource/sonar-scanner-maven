@@ -32,6 +32,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.settings.Proxy;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
+import org.sonarsource.scanner.maven.converter.MavenUtils;
 
 public class ScannerBootstrapperFactory {
   private static final String UNKNOWN_PROXY_PROTOCOL_MESSAGE = "Setting proxy properties:" +

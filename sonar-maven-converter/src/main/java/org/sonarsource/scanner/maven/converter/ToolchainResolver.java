@@ -1,5 +1,5 @@
 /*
- * SonarQube Scanner for Maven
+ * SonarQube Scanner for Maven :: Reactor Converter
  * Copyright (C) SonarSource Sàrl
  * mailto:info AT sonarsource DOT com
  *
@@ -17,15 +17,14 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.scanner.maven.bootstrap;
+package org.sonarsource.scanner.maven.converter;
 
-import com.google.common.annotations.Beta;
+import java.nio.file.Path;
+import java.util.Optional;
+import org.apache.maven.plugin.MojoExecution;
 
-@Beta
-final class MavenScannerProperties {
-  public static final String PROJECT_SCAN_ALL_SOURCES = "sonar.maven.scanAll";
+public interface ToolchainResolver {
 
-  private MavenScannerProperties() {
-    /* This class only contains constants and is not meant to be instantiated */
-  }
+  Optional<Path> getJdkHomeFromToolchains(MojoExecution compilerExecution);
+
 }

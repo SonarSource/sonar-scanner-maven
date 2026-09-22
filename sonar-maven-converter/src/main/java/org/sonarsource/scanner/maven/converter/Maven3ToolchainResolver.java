@@ -1,5 +1,5 @@
 /*
- * SonarQube Scanner for Maven
+ * SonarQube Scanner for Maven :: Reactor Converter
  * Copyright (C) SonarSource Sàrl
  * mailto:info AT sonarsource DOT com
  *
@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.scanner.maven.bootstrap;
+package org.sonarsource.scanner.maven.converter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -38,8 +38,8 @@ import org.codehaus.plexus.configuration.xml.XmlPlexusConfiguration;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver.toJdkHomeFromJavacExec;
-import static org.sonarsource.scanner.maven.bootstrap.MavenUtils.convertString;
+import static org.sonarsource.scanner.maven.converter.MavenCompilerResolver.toJdkHomeFromJavacExec;
+import static org.sonarsource.scanner.maven.converter.MavenUtils.convertString;
 
 public class Maven3ToolchainResolver implements ToolchainResolver {
 

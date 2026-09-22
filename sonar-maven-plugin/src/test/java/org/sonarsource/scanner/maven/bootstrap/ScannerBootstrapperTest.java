@@ -20,15 +20,12 @@
 package org.sonarsource.scanner.maven.bootstrap;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Consumer;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -41,12 +38,13 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.sonarsource.scanner.lib.AnalysisProperties;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapResult;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
 import org.sonarsource.scanner.lib.ScannerEngineFacade;
+import org.sonarsource.scanner.maven.converter.MavenProjectConverter;
+import org.sonarsource.scanner.maven.converter.MavenReactorConverter;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -124,7 +122,8 @@ class ScannerBootstrapperTest {
     when(scannerEngineBootstrapper.bootstrap()).thenReturn(scannerEngineBootstrapResult);
     when(scannerEngineBootstrapResult.isSuccessful()).thenReturn(true);
     when(scannerEngineFacade.analyze(any())).thenReturn(true);
-    scannerBootstrapper = new ScannerBootstrapper(log, session, scannerEngineBootstrapper, mavenProjectConverter, new PropertyDecryptor(log, securityDispatcher));
+    MavenReactorConverter mavenReactorConverter = new MavenReactorConverter(log, session, mavenProjectConverter);
+    scannerBootstrapper = new ScannerBootstrapper(log, scannerEngineBootstrapper, mavenReactorConverter, new PropertyDecryptor(log, securityDispatcher));
   }
 
   @Test
@@ -181,123 +180,6 @@ class ScannerBootstrapperTest {
     assertThat(scannerBootstrapper.isVersionPriorTo("6.4")).isTrue();
   }
 
-  @Test
-  void scanAll_property_is_not_applied_by_default() throws MojoExecutionException {
-    // When sonar.scannerEngineFacade.scanAll is not set
-    verifyCollectedSources(sourceDirs -> {
-      assertThat(sourceDirs).hasSize(2);
-      assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
-      assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
-    });
-
-    verify(log, never()).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
-  }
-
-  @Test
-  void scanAll_property_is_not_applied_when_set_explicitly() throws MojoExecutionException {
-    setSonarScannerScanAllTo("false");
-
-    verifyCollectedSources(sourceDirs -> {
-      assertThat(sourceDirs).hasSize(2);
-      assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
-      assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
-    });
-
-    verify(log, never()).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
-  }
-
-  @Test
-  void scanAll_property_is_applied_when_set_explicitly() throws MojoExecutionException {
-    setSonarScannerScanAllTo("true");
-
-    verifyCollectedSources(sourceDirs -> {
-      assertThat(sourceDirs).hasSize(3);
-      assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
-      assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
-      assertThat(sourceDirs[2]).endsWith(Paths.get("src", "main", "resources", "index.js").toString());
-    });
-
-    verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
-  }
-
-  @Test
-  void scanAll_should_also_collect_java_and_kotlin_sources_when_binaries_and_libraries_are_explicitly_set() throws MojoExecutionException {
-    setSonarScannerScanAllAndBinariesAndLibraries();
-
-    verifyCollectedSources(sourceDirs -> {
-      assertThat(sourceDirs).hasSize(3);
-      assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "java").toString());
-      assertThat(sourceDirs[1]).endsWith(Paths.get("pom.xml").toString());
-      assertThat(sourceDirs[2]).endsWith(Paths.get("src", "main", "resources", "index.js").toString());
-    });
-
-    verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
-  }
-
-  @Test
-  void should_not_collect_all_sources_when_sonar_sources_is_overridden() throws MojoExecutionException {
-    setSonarScannerScanAllTo("true");
-
-    // Return the expected directory and notify of overriding
-    projectProperties.put(AnalysisProperties.PROJECT_SOURCE_DIRS, Paths.get("src", "main", "resources").toFile().toString());
-    when(mavenProjectConverter.isSourceDirsOverridden()).thenReturn(true);
-
-    verifyCollectedSources(sourceDirs -> {
-      assertThat(sourceDirs).hasSize(1);
-      assertThat(sourceDirs[0]).endsWith(Paths.get("src", "main", "resources").toString());
-    });
-
-    verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
-    verify(log, times(1)).warn("Parameter sonar.maven.scanAll is enabled but the scanner will not collect additional sources because sonar.sources has been overridden.");
-  }
-
-  @Test
-  void should_not_collect_all_sources_when_sonar_tests_is_overridden() throws MojoExecutionException {
-    setSonarScannerScanAllTo("true");
-
-    // Return the expected directory and notify of overriding
-    projectProperties.put(AnalysisProperties.PROJECT_TEST_DIRS, Paths.get("src", "test", "resources").toFile().toString());
-    when(mavenProjectConverter.isTestDirsOverridden()).thenReturn(true);
-
-    Map<String, String> collectedProperties = scannerBootstrapper.collectProperties();
-    assertThat(collectedProperties).containsKey(AnalysisProperties.PROJECT_TEST_DIRS);
-    String[] sourceDirs = collectedProperties.get(AnalysisProperties.PROJECT_TEST_DIRS).split(",");
-    assertThat(sourceDirs).hasSize(1);
-    assertThat(sourceDirs[0]).endsWith(Paths.get("src", "test", "resources").toString());
-
-    verify(log, times(1)).info("Parameter sonar.maven.scanAll is enabled. The scanner will attempt to collect additional sources.");
-    verify(log, times(1)).warn("Parameter sonar.maven.scanAll is enabled but the scanner will not collect additional sources because sonar.tests has been overridden.");
-  }
-
-  @Test
-  void an_exception_is_logged_at_warning_level_when_failing_to_crawl_the_filesystem_to_scan_all_sources() throws MojoExecutionException {
-    setSonarScannerScanAllTo("true");
-
-    IOException expectedException = new IOException("This is what we expected");
-    try (MockedStatic<Files> mockedFiles = Mockito.mockStatic(Files.class)) {
-      mockedFiles.when(() -> Files.walkFileTree(any(), any())).thenThrow(expectedException);
-      scannerBootstrapper.collectProperties();
-    }
-    verify(log, times(1)).warn(expectedException);
-  }
-
-  @Test
-  void can_collect_sources_with_commas_in_paths() throws MojoExecutionException, IOException {
-    setSonarScannerScanAllTo("true");
-
-    // Create paths with commas in them
-    Path root = tmpFolder.toAbsolutePath();
-    Path directory = root.resolve(Paths.get("directory,with,commas"));
-    directory.toFile().mkdirs();
-    Path file = directory.resolve("file.properties");
-    file.toFile().createNewFile();
-
-    Map<String, String> collectedProperties = scannerBootstrapper.collectProperties();
-    assertThat(collectedProperties).containsKey(AnalysisProperties.PROJECT_SOURCE_DIRS);
-    List<String> values = MavenUtils.splitAsCsv(collectedProperties.get(AnalysisProperties.PROJECT_SOURCE_DIRS));
-    assertThat(values).hasSize(4);
-  }
-
   @Nested
   class EnvironmentInformation {
     MockedStatic<SystemWrapper> mockedSystem;
@@ -340,27 +222,6 @@ class ScannerBootstrapperTest {
       scannerBootstrapper.execute();
       verify(log, never()).info(contains("MAVEN_OPTS="));
     }
-  }
-
-  private void setSonarScannerScanAllTo(String value) {
-    Properties withScanAllSet = new Properties();
-    withScanAllSet.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, value);
-    when(session.getUserProperties()).thenReturn(withScanAllSet);
-  }
-
-  private void setSonarScannerScanAllAndBinariesAndLibraries() {
-    Properties withScanAllSet = new Properties();
-    withScanAllSet.put(MavenScannerProperties.PROJECT_SCAN_ALL_SOURCES, "true");
-    withScanAllSet.put(MavenProjectConverter.JAVA_PROJECT_MAIN_BINARY_DIRS, "target/classes");
-    withScanAllSet.put(MavenProjectConverter.JAVA_PROJECT_MAIN_LIBRARIES, "target/lib/log.jar");
-    when(session.getUserProperties()).thenReturn(withScanAllSet);
-  }
-
-  private void verifyCollectedSources(Consumer<String[]> sourceDirsAssertions) throws MojoExecutionException {
-    Map<String, String> collectedProperties = scannerBootstrapper.collectProperties();
-    assertThat(collectedProperties).containsKey(AnalysisProperties.PROJECT_SOURCE_DIRS);
-    String[] sourceDirs = collectedProperties.get(AnalysisProperties.PROJECT_SOURCE_DIRS).split(",");
-    sourceDirsAssertions.accept(sourceDirs);
   }
 
   private void verifyCommonCalls() {

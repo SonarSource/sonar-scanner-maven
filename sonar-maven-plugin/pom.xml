@@ -13,17 +13,17 @@
   <packaging>maven-plugin</packaging>
 
   <properties>
-    <!--
-      We can't update the Maven core dependencies unless we remove the dependency on SecDispatcher
-      For more details see this ticket https://sonarsource.atlassian.net/browse/SCANMAVEN-222
-    -->
-    <mavenVersion>3.6.3</mavenVersion>
+    <!-- mavenVersion is inherited from the parent POM, shared with sonar-maven-converter -->
     <mojo.java.target>11</mojo.java.target>
     <maven.compiler.release>11</maven.compiler.release>
     <sonar.exclusions>src/main/java/org/apache/maven/shared/dependency/tree/DependencyTreeResolutionListener.java,target/generated-sources/**/*</sonar.exclusions>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>org.sonarsource.scanner.maven</groupId>
+      <artifactId>sonar-maven-converter</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>

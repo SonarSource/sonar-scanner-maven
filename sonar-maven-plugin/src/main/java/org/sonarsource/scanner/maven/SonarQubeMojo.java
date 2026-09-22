@@ -43,12 +43,10 @@ import org.apache.maven.toolchain.ToolchainManager;
 import org.sonarsource.scanner.lib.EnvironmentConfig;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
 import org.sonarsource.scanner.lib.ScannerProperties;
-import org.sonarsource.scanner.maven.bootstrap.Maven3ToolchainResolver;
-import org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver;
-import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
 import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
 import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper;
 import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapperFactory;
+import org.sonarsource.scanner.maven.converter.MavenReactorConverter;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcher;
 
 /**
@@ -107,8 +105,7 @@ public class SonarQubeMojo extends AbstractMojo {
 
     Map<String, String> envProps = EnvironmentConfig.load(environmentVariables);
 
-    MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), new Maven3ToolchainResolver(session, getLog(), toolchainManager));
-    MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), mavenCompilerResolver, envProps);
+    MavenReactorConverter mavenReactorConverter = MavenReactorConverter.create(getLog(), session, lifecycleExecutor, toolchainManager, envProps);
 
     PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
 
@@ -119,7 +116,7 @@ public class SonarQubeMojo extends AbstractMojo {
     }
 
     ScannerEngineBootstrapper engineBootstrapper = bootstrapperFactory.create();
-    ScannerBootstrapper scannerBootstrapper = new ScannerBootstrapper(getLog(), session, engineBootstrapper, mavenProjectConverter, propertyDecryptor);
+    ScannerBootstrapper scannerBootstrapper = new ScannerBootstrapper(getLog(), engineBootstrapper, mavenReactorConverter, propertyDecryptor);
     scannerBootstrapper.execute();
   }
 

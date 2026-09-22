@@ -1,5 +1,5 @@
 /*
- * SonarQube Scanner for Maven
+ * SonarQube Scanner for Maven :: Reactor Converter
  * Copyright (C) SonarSource Sàrl
  * mailto:info AT sonarsource DOT com
  *
@@ -17,9 +17,8 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.scanner.maven.bootstrap;
+package org.sonarsource.scanner.maven.converter;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -49,9 +48,7 @@ import org.apache.maven.model.Scm;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.sonarsource.scanner.lib.AnalysisProperties;
-import org.sonarsource.scanner.lib.ScannerProperties;
-import org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver.MavenCompilerConfiguration;
+import org.sonarsource.scanner.maven.converter.MavenCompilerResolver.MavenCompilerConfiguration;
 
 public class MavenProjectConverter {
   private final Log log;
@@ -161,7 +158,7 @@ public class MavenProjectConverter {
 
   /**
    * Configures the Maven project hierarchy and generates properties for analysis.
-   * Cleans irrelevant pom-defined project properties via {@link org.sonarsource.scanner.maven.bootstrap.MavenUtils#isIrrelevantEncryptedProperty}.
+   * Cleans irrelevant pom-defined project properties via {@link org.sonarsource.scanner.maven.converter.MavenUtils#isIrrelevantEncryptedProperty}.
    *
    * @param mavenProjects   the list of Maven projects (including submodules) to configure
    * @param root            the root Maven project of the hierarchy
@@ -169,7 +166,7 @@ public class MavenProjectConverter {
    * @return a map containing the generated properties for the root project
    * @throws MojoExecutionException if an error occurs during project configuration or property generation
    */
-  Map<String, String> configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties) throws MojoExecutionException {
+  public Map<String, String> configure(List<MavenProject> mavenProjects, MavenProject root, Properties userProperties) throws MojoExecutionException {
     this.userProperties = userProperties;
     this.specifiedProjectKey = specifiedProjectKey(userProperties, root);
     Map<MavenProject, Map<String, String>> propsByModule = new LinkedHashMap<>();
@@ -178,9 +175,9 @@ public class MavenProjectConverter {
       this.root = root;
       configureModules(mavenProjects, propsByModule);
       Map<String, String> props = new HashMap<>();
-      props.put(AnalysisProperties.PROJECT_KEY, getArtifactKey(root));
+      props.put(SonarProperties.PROJECT_KEY, getArtifactKey(root));
       Path topLevelDir = rebuildModuleHierarchy(props, propsByModule, root, "");
-      props.put(AnalysisProperties.PROJECT_BASEDIR, topLevelDir.toString());
+      props.put(SonarProperties.PROJECT_BASEDIR, topLevelDir.toString());
       if (!propsByModule.isEmpty()) {
         throw new IllegalStateException(UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE + " \""
           + propsByModule.keySet().iterator().next().getName() + "\" is orphan");
@@ -283,11 +280,11 @@ public class MavenProjectConverter {
   private Map<String, String> computeSonarQubeProperties(MavenProject pom) throws MojoExecutionException {
     Map<String, String> props = new HashMap<>();
     defineModuleKey(pom, props);
-    props.put(AnalysisProperties.PROJECT_VERSION, pom.getVersion());
-    props.put(AnalysisProperties.PROJECT_NAME, pom.getName());
+    props.put(SonarProperties.PROJECT_VERSION, pom.getVersion());
+    props.put(SonarProperties.PROJECT_NAME, pom.getName());
     String description = pom.getDescription();
     if (description != null) {
-      props.put(AnalysisProperties.PROJECT_DESCRIPTION, description);
+      props.put(SonarProperties.PROJECT_DESCRIPTION, description);
     }
 
     populateJavaAnalyzerProperties(pom, props);
@@ -300,9 +297,9 @@ public class MavenProjectConverter {
 
   @CheckForNull
   private static String specifiedProjectKey(Properties userProperties, MavenProject root) {
-    String projectKey = userProperties.getProperty(AnalysisProperties.PROJECT_KEY);
+    String projectKey = userProperties.getProperty(SonarProperties.PROJECT_KEY);
     if (projectKey == null) {
-      projectKey = root.getModel().getProperties().getProperty(AnalysisProperties.PROJECT_KEY);
+      projectKey = root.getModel().getProperties().getProperty(SonarProperties.PROJECT_KEY);
     }
     if (projectKey == null || projectKey.isEmpty()) {
       return null;
@@ -338,7 +335,7 @@ public class MavenProjectConverter {
     // See http://jira.codehaus.org/browse/SONAR-2151
     String encoding = MavenUtils.getSourceEncoding(pom);
     if (encoding != null) {
-      props.put(AnalysisProperties.PROJECT_SOURCE_ENCODING, encoding);
+      props.put(SonarProperties.PROJECT_SOURCE_ENCODING, encoding);
     }
   }
 
@@ -415,11 +412,11 @@ public class MavenProjectConverter {
 
   private void synchronizeFileSystemAndOtherProps(MavenProject pom, Map<String, String> props)
     throws MojoExecutionException {
-    props.put(AnalysisProperties.PROJECT_BASEDIR, pom.getBasedir().getAbsolutePath());
+    props.put(SonarProperties.PROJECT_BASEDIR, pom.getBasedir().getAbsolutePath());
     File buildDir = getBuildDir(pom);
     if (buildDir != null) {
       props.put(PROPERTY_PROJECT_BUILDDIR, buildDir.getAbsolutePath());
-      props.put(ScannerProperties.WORK_DIR, getSonarWorkDir(pom).getAbsolutePath());
+      props.put(SonarProperties.WORK_DIR, getSonarWorkDir(pom).getAbsolutePath());
     }
     populateBinaries(pom, props);
 
@@ -431,7 +428,7 @@ public class MavenProjectConverter {
     // IMPORTANT NOTE : reference on properties from POM model must not be saved,
     // instead they should be copied explicitly - see SONAR-2896
     for (String k : pom.getModel().getProperties().stringPropertyNames()) {
-      if (!AnalysisProperties.PROJECT_KEY.equals(k) || pom.equals(this.root)) {
+      if (!SonarProperties.PROJECT_KEY.equals(k) || pom.equals(this.root)) {
         props.put(k, pom.getModel().getProperties().getProperty(k));
       }
     }
@@ -443,12 +440,12 @@ public class MavenProjectConverter {
     MavenUtils.putAll(userProperties, props);
 
     List<File> mainDirs = mainSources(pom);
-    props.put(AnalysisProperties.PROJECT_SOURCE_DIRS, MavenUtils.joinAsCsv(toPaths(mainDirs)));
+    props.put(SonarProperties.PROJECT_SOURCE_DIRS, MavenUtils.joinAsCsv(toPaths(mainDirs)));
     List<File> testDirs = testSources(pom);
     if (!testDirs.isEmpty()) {
-      props.put(AnalysisProperties.PROJECT_TEST_DIRS, MavenUtils.joinAsCsv(toPaths(testDirs)));
+      props.put(SonarProperties.PROJECT_TEST_DIRS, MavenUtils.joinAsCsv(toPaths(testDirs)));
     } else {
-      props.remove(AnalysisProperties.PROJECT_TEST_DIRS);
+      props.remove(SonarProperties.PROJECT_TEST_DIRS);
     }
   }
 
@@ -585,13 +582,12 @@ public class MavenProjectConverter {
     // Add GHA folder
     sources.add(new File(pom.getBasedir(), ".github").getAbsolutePath());
 
-    return sourcePaths(pom, AnalysisProperties.PROJECT_SOURCE_DIRS, sources);
+    return sourcePaths(pom, SonarProperties.PROJECT_SOURCE_DIRS, sources);
   }
 
   /**
    * Returns the paths to the generated and original pom, when available.
    */
-  @VisibleForTesting
   static Collection<String> getPathsToPoms(MavenProject project) {
     Set<String> paths = new LinkedHashSet<>(2);
     paths.add(project.getFile().getAbsolutePath());
@@ -603,7 +599,7 @@ public class MavenProjectConverter {
   }
 
   private List<File> testSources(MavenProject pom) throws MojoExecutionException {
-    return sourcePaths(pom, AnalysisProperties.PROJECT_TEST_DIRS, pom.getTestCompileSourceRoots());
+    return sourcePaths(pom, SonarProperties.PROJECT_TEST_DIRS, pom.getTestCompileSourceRoots());
   }
 
   private List<File> sourcePaths(MavenProject pom, String propertyKey, Collection<String> mavenPaths) throws MojoExecutionException {
@@ -617,8 +613,8 @@ public class MavenProjectConverter {
       List<String> paths = Arrays.asList(StringUtils.split(prop, ","));
       filesOrDirs = resolvePaths(paths, pom.getBasedir());
       userDefined = true;
-      sourceDirsIsOverridden |= propertyKey.equals(AnalysisProperties.PROJECT_SOURCE_DIRS);
-      testDirsIsOverridden |= propertyKey.equals(AnalysisProperties.PROJECT_TEST_DIRS);
+      sourceDirsIsOverridden |= propertyKey.equals(SonarProperties.PROJECT_SOURCE_DIRS);
+      testDirsIsOverridden |= propertyKey.equals(SonarProperties.PROJECT_TEST_DIRS);
     } else {
       Collection<String> mavenPathsWithoutBuildDir = removeBuildDir(pom, mavenPaths);
       filesOrDirs = resolvePaths(mavenPathsWithoutBuildDir, pom.getBasedir());

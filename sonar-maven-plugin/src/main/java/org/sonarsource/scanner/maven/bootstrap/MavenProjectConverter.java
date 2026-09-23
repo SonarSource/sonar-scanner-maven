@@ -485,12 +485,11 @@ public class MavenProjectConverter {
 
     // Loop over artifacts makes sure we handle `modular-jar` dependencies.
     // Some of them may duplicate classpath elements, so `libraries` needs to be a set to avoid duplicates.
-    for (Artifact artifact : pom.getArtifacts()) {
-      if ("modular-jar".equals(artifact.getType()) && artifact.isResolved()) {
-        // getFile() returns the absolute path to the local ~/.m2 repository.
-        libraries.add(artifact.getFile());
-      }
-    }
+    // getFile() returns the absolute path to the local ~/.m2 repository.
+    pom.getArtifacts().stream()
+      .filter(artifact -> "modular-jar".equals(artifact.getType()) && artifact.isResolved())
+      .map(Artifact::getFile)
+      .forEach(libraries::add);
 
     if (!libraries.isEmpty()) {
       String librariesValue = MavenUtils.joinAsCsv(toPaths(libraries));

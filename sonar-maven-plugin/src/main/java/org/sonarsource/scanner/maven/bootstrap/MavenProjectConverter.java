@@ -132,6 +132,8 @@ public class MavenProjectConverter {
 
   private final Set<Path> skippedBasedDirs = new HashSet<>();
 
+  private final Map<MavenProject, List<Path>> sourceRootsCache = new HashMap<>();
+
   private boolean sourceDirsIsOverridden = false;
   private boolean testDirsIsOverridden = false;
 
@@ -204,6 +206,7 @@ public class MavenProjectConverter {
       throw new IllegalStateException("Cannot configure project", e);
     } finally {
       this.root = null;
+      sourceRootsCache.clear();
     }
   }
 
@@ -398,7 +401,7 @@ public class MavenProjectConverter {
     return projectsByArtifact;
   }
 
-  private static void populateJavaSourcePath(MavenProject project, Map<String, String> props, Map<List<String>, MavenProject> projectsByArtifact) {
+  private void populateJavaSourcePath(MavenProject project, Map<String, String> props, Map<List<String>, MavenProject> projectsByArtifact) {
     Set<Path> roots = new LinkedHashSet<>(compileSourceRoots(project));
     // Maven's resolved artifacts already account for transitivity, mediation and exclusions.
     project.getArtifacts().stream()
@@ -415,14 +418,16 @@ public class MavenProjectConverter {
     }
   }
 
-  private static List<Path> compileSourceRoots(MavenProject project) {
-    Path baseDir = project.getBasedir().toPath().toAbsolutePath();
-    return project.getCompileSourceRoots().stream()
-      .map(Paths::get)
-      .map(baseDir::resolve)
-      .map(Path::normalize)
-      .filter(Files::isDirectory)
-      .collect(Collectors.toList());
+  private List<Path> compileSourceRoots(MavenProject project) {
+    return sourceRootsCache.computeIfAbsent(project, p -> {
+      Path baseDir = p.getBasedir().toPath().toAbsolutePath();
+      return p.getCompileSourceRoots().stream()
+        .map(Paths::get)
+        .map(baseDir::resolve)
+        .map(Path::normalize)
+        .filter(Files::isDirectory)
+        .collect(Collectors.toList());
+    });
   }
 
   private static String relativeSourcePaths(Collection<Path> roots, Path moduleBaseDir) {

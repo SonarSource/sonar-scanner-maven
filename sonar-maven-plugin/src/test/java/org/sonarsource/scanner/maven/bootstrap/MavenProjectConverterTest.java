@@ -202,6 +202,25 @@ class MavenProjectConverterTest {
   }
 
   @Test
+  void sourcepathRefreshesDependencyRootsBetweenConfigureCalls() throws Exception {
+    MavenProject root = createProject(new Properties(), "pom");
+    MavenProject a = createSourceModule(root, "A");
+    MavenProject b = createSourceModule(root, "B");
+    a.setArtifacts(Collections.singleton(b.getArtifact()));
+    b.addCompileSourceRoot("target/generated-sources/java");
+    List<MavenProject> projects = Arrays.asList(root, a, b);
+
+    assertThat(projectConverter.configure(projects, root, new Properties()))
+      .containsEntry("com.foo:A.sonar.java.sourcepath", "src/main/java,../B/src/main/java");
+
+    Files.createDirectories(b.getBasedir().toPath().resolve("target/generated-sources/java"));
+
+    assertThat(projectConverter.configure(projects, root, new Properties()))
+      .containsEntry("com.foo:A.sonar.java.sourcepath", "src/main/java,../B/src/main/java,../B/target/generated-sources/java")
+      .containsEntry("com.foo:B.sonar.java.sourcepath", "src/main/java,target/generated-sources/java");
+  }
+
+  @Test
   void sourcepathPreservesExplicitOverridesWithExistingPrecedence() throws Exception {
     MavenProject project = createProject(new Properties(), "jar");
     Files.createDirectories(temp.resolve("src/main/java"));

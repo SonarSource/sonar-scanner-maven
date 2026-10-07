@@ -22,11 +22,13 @@ package org.sonarsource.scanner.maven.bootstrap;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -64,6 +66,8 @@ public class MavenProjectConverter {
   private static final String PROPERTY_PROJECT_BUILDDIR = "sonar.projectBuildDir";
 
   private static final String JAVA_SOURCE_PROPERTY = "sonar.java.source";
+
+  private static final String JAVA_SOURCEPATH_PROPERTY = "sonar.java.sourcepath";
 
   private static final String JAVA_TARGET_PROPERTY = "sonar.java.target";
 
@@ -128,6 +132,8 @@ public class MavenProjectConverter {
 
   private final Set<Path> skippedBasedDirs = new HashSet<>();
 
+  private final Map<MavenProject, List<Path>> sourceRootsCache = new HashMap<>();
+
   private boolean sourceDirsIsOverridden = false;
   private boolean testDirsIsOverridden = false;
 
@@ -176,11 +182,21 @@ public class MavenProjectConverter {
 
     try {
       this.root = root;
-      configureModules(mavenProjects, propsByModule);
+      Map<List<String>, MavenProject> projectsByArtifact = indexProjectsByArtifact(mavenProjects);
+      boolean rootSourcePathIsOverridden = root.getModel().getProperties().getProperty(JAVA_SOURCEPATH_PROPERTY) != null
+        || envProperties.containsKey(JAVA_SOURCEPATH_PROPERTY) || userProperties.getProperty(JAVA_SOURCEPATH_PROPERTY) != null;
+      configureModules(mavenProjects, propsByModule, projectsByArtifact);
       Map<String, String> props = new HashMap<>();
       props.put(AnalysisProperties.PROJECT_KEY, getArtifactKey(root));
       Path topLevelDir = rebuildModuleHierarchy(props, propsByModule, root, "");
       props.put(AnalysisProperties.PROJECT_BASEDIR, topLevelDir.toString());
+      if (!rootSourcePathIsOverridden && props.containsKey(JAVA_SOURCEPATH_PROPERTY)) {
+        List<Path> roots = MavenUtils.splitAsCsv(props.get(JAVA_SOURCEPATH_PROPERTY)).stream()
+          .map(root.getBasedir().toPath().toAbsolutePath()::resolve)
+          .map(Path::normalize)
+          .collect(Collectors.toList());
+        props.put(JAVA_SOURCEPATH_PROPERTY, relativeSourcePaths(roots, topLevelDir));
+      }
       if (!propsByModule.isEmpty()) {
         throw new IllegalStateException(UNABLE_TO_DETERMINE_PROJECT_STRUCTURE_EXCEPTION_MESSAGE + " \""
           + propsByModule.keySet().iterator().next().getName() + "\" is orphan");
@@ -190,6 +206,7 @@ public class MavenProjectConverter {
       throw new IllegalStateException("Cannot configure project", e);
     } finally {
       this.root = null;
+      sourceRootsCache.clear();
     }
   }
 
@@ -245,7 +262,7 @@ public class MavenProjectConverter {
     throw new IllegalStateException("Unable to find a common parent between two modules baseDir: '" + dir1 + "' and '" + dir2 + "'");
   }
 
-  private void configureModules(List<MavenProject> mavenProjects, Map<MavenProject, Map<String, String>> propsByModule)
+  private void configureModules(List<MavenProject> mavenProjects, Map<MavenProject, Map<String, String>> propsByModule, Map<List<String>, MavenProject> projectsByArtifact)
     throws MojoExecutionException {
     for (MavenProject pom : mavenProjects) {
       boolean skipped = "true".equals(pom.getModel().getProperties().getProperty("sonar.skip"));
@@ -254,7 +271,7 @@ public class MavenProjectConverter {
         log.info("Module " + pom + " skipped by property 'sonar.skip'");
         continue;
       }
-      propsByModule.put(pom, computeSonarQubeProperties(pom));
+      propsByModule.put(pom, computeSonarQubeProperties(pom, projectsByArtifact));
     }
   }
 
@@ -280,7 +297,7 @@ public class MavenProjectConverter {
     return null;
   }
 
-  private Map<String, String> computeSonarQubeProperties(MavenProject pom) throws MojoExecutionException {
+  private Map<String, String> computeSonarQubeProperties(MavenProject pom, Map<List<String>, MavenProject> projectsByArtifact) throws MojoExecutionException {
     Map<String, String> props = new HashMap<>();
     defineModuleKey(pom, props);
     props.put(AnalysisProperties.PROJECT_VERSION, pom.getVersion());
@@ -290,7 +307,7 @@ public class MavenProjectConverter {
       props.put(AnalysisProperties.PROJECT_DESCRIPTION, description);
     }
 
-    populateJavaAnalyzerProperties(pom, props);
+    populateJavaAnalyzerProperties(pom, props, projectsByArtifact);
     guessEncoding(pom, props);
     convertMavenLinksToProperties(props, pom);
     synchronizeFileSystemAndOtherProps(pom, props);
@@ -342,13 +359,14 @@ public class MavenProjectConverter {
     }
   }
 
-  private void populateJavaAnalyzerProperties(MavenProject pom, Map<String, String> props) {
+  private void populateJavaAnalyzerProperties(MavenProject pom, Map<String, String> props, Map<List<String>, MavenProject> projectsByArtifact) {
     Optional<MavenCompilerConfiguration> javaCompilerConfig = mavenCompilerResolver.extractConfiguration(pom);
     javaCompilerConfig.ifPresent(config -> {
       populateJavaAnalyzerSourceAndTarget(config, props);
       populateEnablePreview(config, props);
       populateJavaAnalyzerJdkHome(config, props);
     });
+    populateJavaSourcePath(pom, props, projectsByArtifact);
   }
 
   private static void populateJavaAnalyzerJdkHome(MavenCompilerConfiguration config, Map<String, String> props) {
@@ -371,6 +389,60 @@ public class MavenProjectConverter {
 
   private static void populateEnablePreview(MavenCompilerConfiguration config, Map<String, String> props) {
     config.getEnablePreview().ifPresent(property -> props.put(JAVA_ENABLE_PREVIEW, property));
+  }
+
+  private static Map<List<String>, MavenProject> indexProjectsByArtifact(List<MavenProject> mavenProjects) {
+    Map<List<String>, MavenProject> projectsByArtifact = new HashMap<>();
+    for (MavenProject project : mavenProjects) {
+      if (project.getArtifact() != null) {
+        projectsByArtifact.put(sourceArtifactKey(project.getArtifact()), project);
+      }
+    }
+    return projectsByArtifact;
+  }
+
+  private void populateJavaSourcePath(MavenProject project, Map<String, String> props, Map<List<String>, MavenProject> projectsByArtifact) {
+    Set<Path> roots = new LinkedHashSet<>(compileSourceRoots(project));
+    // Maven's resolved artifacts already account for transitivity, mediation and exclusions.
+    project.getArtifacts().stream()
+      .filter(artifact -> Artifact.SCOPE_COMPILE.equals(artifact.getScope())
+        || Artifact.SCOPE_PROVIDED.equals(artifact.getScope()) || Artifact.SCOPE_SYSTEM.equals(artifact.getScope()))
+      .filter(artifact -> artifact.getArtifactHandler().isAddedToClasspath())
+      .sorted(Comparator.comparing(Artifact::getId))
+      .map(artifact -> projectsByArtifact.get(sourceArtifactKey(artifact)))
+      .filter(Objects::nonNull)
+      .forEach(dependency -> roots.addAll(compileSourceRoots(dependency)));
+
+    if (!roots.isEmpty()) {
+      props.put(JAVA_SOURCEPATH_PROPERTY, relativeSourcePaths(roots, project.getBasedir().toPath()));
+    }
+  }
+
+  private List<Path> compileSourceRoots(MavenProject project) {
+    return sourceRootsCache.computeIfAbsent(project, p -> {
+      Path baseDir = p.getBasedir().toPath().toAbsolutePath();
+      return p.getCompileSourceRoots().stream()
+        .map(Paths::get)
+        .map(baseDir::resolve)
+        .map(Path::normalize)
+        .filter(Files::isDirectory)
+        .collect(Collectors.toList());
+    });
+  }
+
+  private static String relativeSourcePaths(Collection<Path> roots, Path moduleBaseDir) {
+    Path baseDir = moduleBaseDir.toAbsolutePath().normalize();
+    List<String> paths = roots.stream()
+      .map(path -> baseDir.getRoot().equals(path.getRoot()) ? baseDir.relativize(path) : path)
+      .map(Path::toString)
+      .map(path -> path.isEmpty() ? "." : path.replace(File.separatorChar, '/'))
+      .collect(Collectors.toList());
+    return MavenUtils.joinAsCsv(paths);
+  }
+
+  private static List<String> sourceArtifactKey(Artifact artifact) {
+    // Compare the classpath artifact, so jar aliases work but classified test/source jars do not match main sources.
+    return Arrays.asList(artifact.getGroupId(), artifact.getArtifactId(), artifact.getBaseVersion(), artifact.getArtifactHandler().getExtension(), artifact.getClassifier());
   }
 
   private static void findBugsExcludeFileMaven(MavenProject pom, Map<String, String> props) {

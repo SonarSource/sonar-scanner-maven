@@ -27,15 +27,22 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.handler.DefaultArtifactHandler;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.sonarsource.scanner.lib.AnalysisProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,6 +81,195 @@ class MavenProjectConverterTest {
       .containsEntry("sonar.projectKey", "com.foo:myProject")
       .containsEntry("sonar.projectName", "My Project")
       .containsEntry("sonar.projectVersion", "2.1");
+  }
+
+  @Test
+  void sourcepathIncludesOwnAndResolvedTransitiveDependencyRoots() throws Exception {
+    MavenProject root = createProject(new Properties(), "pom");
+    MavenProject a = createSourceModule(root, "A");
+    MavenProject b = createSourceModule(root, "B");
+    MavenProject c = createSourceModule(root, "nested/C");
+    b.setArtifacts(Collections.singleton(c.getArtifact()));
+    // The resolved set contains transitive dependencies; its iteration order must not affect the property.
+    a.setArtifacts(new LinkedHashSet<>(Arrays.asList(c.getArtifact(), b.getArtifact())));
+
+    Map<String, String> props = projectConverter.configure(Arrays.asList(c, b, a, root), root, new Properties());
+
+    assertThat(props)
+      .containsEntry("com.foo:A.sonar.java.sourcepath", "src/main/java,../B/src/main/java,../nested/C/src/main/java")
+      .containsEntry("com.foo:B.sonar.java.sourcepath", "src/main/java,../nested/C/src/main/java")
+      .containsEntry("com.foo:C.sonar.java.sourcepath", "src/main/java")
+      .doesNotContainKey("sonar.java.sourcepath");
+    assertThat(MavenUtils.splitAsCsv(props.get("com.foo:A.sonar.sources")))
+      .containsExactly(a.getFile().getAbsolutePath(), a.getBasedir().toPath().resolve("src/main/java").toString());
+
+    a.setArtifacts(new LinkedHashSet<>(Arrays.asList(b.getArtifact(), c.getArtifact())));
+    assertThat(projectConverter.configure(Arrays.asList(root, a, b, c), root, new Properties()))
+      .containsEntry("com.foo:A.sonar.java.sourcepath", props.get("com.foo:A.sonar.java.sourcepath"));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "compile,jar,,2.1,true",
+    "compile,modular-jar,,2.1,true",
+    "provided,jar,,2.1,true",
+    "system,jar,,2.1,true",
+    "test,jar,,2.1,false",
+    "runtime,jar,,2.1,false",
+    "compile,jar,tests,2.1,false",
+    "compile,jar,sources,2.1,false",
+    "compile,pom,,2.1,false",
+    "compile,jar,,3.0,false"
+  })
+  void sourcepathMatchesOnlyMainReactorArtifactsOnCompileClasspath(String scope, String type, String classifier, String version, boolean included) throws Exception {
+    MavenProject root = createProject(new Properties(), "pom");
+    MavenProject a = createSourceModule(root, "A");
+    MavenProject b = createSourceModule(root, "B");
+    Artifact dependency = sourceArtifact(b, version, scope, type, classifier);
+    a.setArtifacts(Collections.singleton(dependency));
+
+    Map<String, String> props = projectConverter.configure(Arrays.asList(root, a, b), root, new Properties());
+
+    assertThat(props).containsEntry("com.foo:A.sonar.java.sourcepath",
+      included ? "src/main/java,../B/src/main/java" : "src/main/java");
+  }
+
+  @Test
+  void sourcepathIgnoresExternalAndExcludedDependencies() throws Exception {
+    MavenProject root = createProject(new Properties(), "pom");
+    MavenProject a = createSourceModule(root, "A");
+    MavenProject b = createSourceModule(root, "B");
+    Artifact external = sourceArtifact(b, b.getVersion(), "compile", "jar", null);
+    external.setGroupId("external");
+    // B is not in A's resolved set, as happens after a Maven exclusion.
+    a.setArtifacts(Collections.singleton(external));
+
+    assertThat(projectConverter.configure(Arrays.asList(root, a, b), root, new Properties()))
+      .containsEntry("com.foo:A.sonar.java.sourcepath", "src/main/java");
+  }
+
+  @Test
+  void sourcepathMatchesTimestampedSnapshotDependencies() throws Exception {
+    MavenProject root = createProject(new Properties(), "pom");
+    MavenProject a = createSourceModule(root, "A");
+    MavenProject b = createSourceModule(root, "B");
+    b.getModel().setVersion("2.1-SNAPSHOT");
+    b.setArtifact(sourceArtifact(b, b.getVersion(), "compile", "jar", null));
+    a.setArtifacts(Collections.singleton(sourceArtifact(b, "2.1-20261007.081234-1", "compile", "jar", null)));
+
+    assertThat(projectConverter.configure(Arrays.asList(root, a, b), root, new Properties()))
+      .containsEntry("com.foo:A.sonar.java.sourcepath", "src/main/java,../B/src/main/java");
+  }
+
+  @Test
+  void rootSourcepathUsesFinalAnalysisBaseDirectoryForFlatLayouts() throws Exception {
+    Path rootDir = temp.resolve("root");
+    Files.createDirectories(rootDir.resolve("src/main/java"));
+    Files.createFile(rootDir.resolve("pom.xml"));
+    MavenProject root = createProject(rootDir.resolve("pom.xml").toFile(), new Properties(), "jar");
+    root.addCompileSourceRoot("src/main/java");
+    MavenProject b = createSourceModule(root, "../B");
+    root.setArtifacts(Collections.singleton(b.getArtifact()));
+
+    assertThat(projectConverter.configure(Arrays.asList(root, b), root, new Properties()))
+      .containsEntry("sonar.projectBaseDir", temp.toString())
+      .containsEntry("sonar.java.sourcepath", "root/src/main/java,B/src/main/java")
+      .containsEntry("com.foo:B.sonar.java.sourcepath", "src/main/java");
+
+    root.getProperties().setProperty("sonar.java.sourcepath", "custom");
+    assertThat(projectConverter.configure(Arrays.asList(root, b), root, new Properties()))
+      .containsEntry("sonar.java.sourcepath", "custom");
+  }
+
+  @Test
+  void sourcepathIncludesGeneratedRootsAndEscapesCommasButIgnoresMissingDirectoriesAndTestRoots() throws Exception {
+    MavenProject project = createProject(new Properties(), "jar");
+    Files.createDirectories(temp.resolve("src/main/java"));
+    Files.createDirectories(temp.resolve("target/generated-sources/java"));
+    Files.createDirectories(temp.resolve("custom,sources"));
+    Files.createDirectories(temp.resolve("src/test/java"));
+    Files.createFile(temp.resolve("not-a-directory"));
+    project.addCompileSourceRoot("src/main/java");
+    project.addCompileSourceRoot(temp.resolve("src/main/../main/java").toString());
+    project.addCompileSourceRoot("target/generated-sources/java");
+    project.addCompileSourceRoot("custom,sources");
+    project.addCompileSourceRoot("missing");
+    project.addCompileSourceRoot("not-a-directory");
+    project.addTestCompileSourceRoot("src/test/java");
+
+    assertThat(projectConverter.configure(Collections.singletonList(project), project, new Properties()))
+      .containsEntry("sonar.java.sourcepath", "src/main/java,target/generated-sources/java,\"custom,sources\"");
+  }
+
+  @Test
+  void sourcepathRefreshesDependencyRootsBetweenConfigureCalls() throws Exception {
+    MavenProject root = createProject(new Properties(), "pom");
+    MavenProject a = createSourceModule(root, "A");
+    MavenProject b = createSourceModule(root, "B");
+    a.setArtifacts(Collections.singleton(b.getArtifact()));
+    b.addCompileSourceRoot("target/generated-sources/java");
+    List<MavenProject> projects = Arrays.asList(root, a, b);
+
+    assertThat(projectConverter.configure(projects, root, new Properties()))
+      .containsEntry("com.foo:A.sonar.java.sourcepath", "src/main/java,../B/src/main/java");
+
+    Files.createDirectories(b.getBasedir().toPath().resolve("target/generated-sources/java"));
+
+    assertThat(projectConverter.configure(projects, root, new Properties()))
+      .containsEntry("com.foo:A.sonar.java.sourcepath", "src/main/java,../B/src/main/java,../B/target/generated-sources/java")
+      .containsEntry("com.foo:B.sonar.java.sourcepath", "src/main/java,target/generated-sources/java");
+  }
+
+  @Test
+  void sourcepathPreservesExplicitOverridesWithExistingPrecedence() throws Exception {
+    MavenProject project = createProject(new Properties(), "jar");
+    Files.createDirectories(temp.resolve("src/main/java"));
+    project.addCompileSourceRoot("src/main/java");
+    project.getProperties().setProperty("sonar.java.sourcepath", "pom-path");
+    List<MavenProject> projects = Collections.singletonList(project);
+
+    assertThat(projectConverter.configure(projects, project, new Properties())).containsEntry("sonar.java.sourcepath", "pom-path");
+    env.put("sonar.java.sourcepath", "env-path");
+    assertThat(projectConverter.configure(projects, project, new Properties())).containsEntry("sonar.java.sourcepath", "env-path");
+    Properties userProperties = new Properties();
+    userProperties.setProperty("sonar.java.sourcepath", "user-path");
+    assertThat(projectConverter.configure(projects, project, userProperties)).containsEntry("sonar.java.sourcepath", "user-path");
+    userProperties.setProperty("sonar.java.sourcepath", "");
+    assertThat(projectConverter.configure(projects, project, userProperties)).containsEntry("sonar.java.sourcepath", "");
+  }
+
+  @Test
+  void sourcepathIncludesSkippedDependencyRootsWithoutAnalyzingTheDependency() throws Exception {
+    MavenProject root = createProject(new Properties(), "pom");
+    MavenProject a = createSourceModule(root, "A");
+    MavenProject b = createSourceModule(root, "B");
+    b.getProperties().setProperty("sonar.skip", "true");
+    a.setArtifacts(Collections.singleton(b.getArtifact()));
+
+    assertThat(projectConverter.configure(Arrays.asList(root, a, b), root, new Properties()))
+      .containsEntry("com.foo:A.sonar.java.sourcepath", "src/main/java,../B/src/main/java")
+      .doesNotContainKey("com.foo:B.sonar.java.sourcepath");
+  }
+
+  private MavenProject createSourceModule(MavenProject root, String modulePath) throws IOException {
+    Path moduleDir = root.getBasedir().toPath().resolve(modulePath).normalize();
+    Files.createDirectories(moduleDir.resolve("src/main/java"));
+    Files.createFile(moduleDir.resolve("pom.xml"));
+    MavenProject module = createProject(moduleDir.resolve("pom.xml").toFile(), new Properties(), "jar");
+    module.getModel().setArtifactId(moduleDir.getFileName().toString());
+    module.addCompileSourceRoot("src/main/java");
+    module.setArtifact(sourceArtifact(module, module.getVersion(), "compile", "jar", null));
+    root.getModules().add(modulePath);
+    return module;
+  }
+
+  private static Artifact sourceArtifact(MavenProject project, String version, String scope, String type, String classifier) {
+    DefaultArtifactHandler handler = new DefaultArtifactHandler(type);
+    handler.setExtension("modular-jar".equals(type) ? "jar" : type);
+    handler.setAddedToClasspath("jar".equals(handler.getExtension()));
+    Artifact artifact = new DefaultArtifact(project.getGroupId(), project.getArtifactId(), version, scope, type, classifier, handler);
+    artifact.setFile(new File(project.getBuild().getOutputDirectory()));
+    return artifact;
   }
 
   // MSONAR-104

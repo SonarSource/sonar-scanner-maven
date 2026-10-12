@@ -378,7 +378,7 @@ public class MavenProjectConverter {
     setPropertyIfNotAlreadyExists(props, LINKS_ISSUE_TRACKER, links.issueTracker());
   }
 
-  private static void setPropertyIfNotAlreadyExists(Map<String, String> props, String propertyKey, String propertyValue) {
+  private static void setPropertyIfNotAlreadyExists(Map<String, String> props, String propertyKey, @Nullable String propertyValue) {
     if (StringUtils.isBlank(props.get(propertyKey))) {
       props.put(propertyKey, Objects.toString(propertyValue, ""));
     }

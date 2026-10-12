@@ -68,6 +68,12 @@
     </dependency>
 
     <dependency>
+      <groupId>org.sonarsource.scanner.engine</groupId>
+      <artifactId>sonar-maven-model-reader</artifactId>
+      <version>13.16-SNAPSHOT</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>3.18.0</version>

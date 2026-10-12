@@ -36,6 +36,7 @@ import org.apache.maven.project.MavenProject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.sonar.scanner.maven.model.MavenCompilerConfigurationResolver;
 import org.sonarsource.scanner.lib.AnalysisProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,9 +60,9 @@ class MavenProjectConverterTest {
   @BeforeEach
   void prepare() {
     log = mock(Log.class);
-    MavenCompilerResolver mavenCompilerResolver = mock(MavenCompilerResolver.class);
-    when(mavenCompilerResolver.extractConfiguration(any())).thenReturn(Optional.empty());
-    projectConverter = new MavenProjectConverter(log, mavenCompilerResolver, env);
+    MavenCompilerConfigurationResolver compilerConfigurationResolver = mock(MavenCompilerConfigurationResolver.class);
+    when(compilerConfigurationResolver.resolve(any())).thenReturn(Optional.empty());
+    projectConverter = new MavenProjectConverter(log, compilerConfigurationResolver, env);
   }
 
   @Test

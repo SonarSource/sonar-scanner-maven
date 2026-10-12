@@ -41,17 +41,16 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
-import org.apache.maven.model.CiManagement;
-import org.apache.maven.model.IssueManagement;
-import org.apache.maven.model.Scm;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.sonar.scanner.maven.model.MavenCompilerConfiguration;
+import org.sonar.scanner.maven.model.MavenCompilerConfigurationResolver;
+import org.sonar.scanner.maven.model.MavenProjectLinks;
+import org.sonar.scanner.maven.model.MavenProjects;
 import org.sonarsource.scanner.lib.AnalysisProperties;
 import org.sonarsource.scanner.lib.ScannerProperties;
-import org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver.MavenCompilerConfiguration;
 
 public class MavenProjectConverter {
   private final Log log;
@@ -124,7 +123,7 @@ public class MavenProjectConverter {
 
   private final Map<String, String> envProperties;
 
-  private final MavenCompilerResolver mavenCompilerResolver;
+  private final MavenCompilerConfigurationResolver compilerConfigurationResolver;
 
   private final Set<Path> skippedBasedDirs = new HashSet<>();
 
@@ -137,9 +136,9 @@ public class MavenProjectConverter {
    */
   private MavenProject root;
 
-  public MavenProjectConverter(Log log, MavenCompilerResolver mavenCompilerResolver, Map<String, String> envProperties) {
+  public MavenProjectConverter(Log log, MavenCompilerConfigurationResolver compilerConfigurationResolver, Map<String, String> envProperties) {
     this.log = log;
-    this.mavenCompilerResolver = mavenCompilerResolver;
+    this.compilerConfigurationResolver = compilerConfigurationResolver;
     this.envProperties = envProperties;
   }
 
@@ -343,34 +342,20 @@ public class MavenProjectConverter {
   }
 
   private void populateJavaAnalyzerProperties(MavenProject pom, Map<String, String> props) {
-    Optional<MavenCompilerConfiguration> javaCompilerConfig = mavenCompilerResolver.extractConfiguration(pom);
+    Optional<MavenCompilerConfiguration> javaCompilerConfig = compilerConfigurationResolver.resolve(pom);
     javaCompilerConfig.ifPresent(config -> {
-      populateJavaAnalyzerSourceAndTarget(config, props);
-      populateEnablePreview(config, props);
-      populateJavaAnalyzerJdkHome(config, props);
+      // See http://jira.codehaus.org/browse/SONAR-2148
+      putIfNotNull(props, JAVA_SOURCE_PROPERTY, config.javaSource());
+      putIfNotNull(props, JAVA_TARGET_PROPERTY, config.javaTarget());
+      putIfNotNull(props, JAVA_ENABLE_PREVIEW, config.enablePreview());
+      putIfNotNull(props, SONAR_JAVA_JDK_HOME_PROPERTY, config.jdkHome());
     });
   }
 
-  private static void populateJavaAnalyzerJdkHome(MavenCompilerConfiguration config, Map<String, String> props) {
-    config.getJdkHome().ifPresent(jdkHome -> props.put(SONAR_JAVA_JDK_HOME_PROPERTY, jdkHome.toString()));
-  }
-
-  private static void populateJavaAnalyzerSourceAndTarget(MavenCompilerConfiguration config, Map<String, String> props) {
-    // Get Java release version from maven-compiler-plugin.
-    Optional<String> release = config.getRelease();
-    if (release.isPresent()) {
-      props.put(JAVA_SOURCE_PROPERTY, release.get());
-      props.put(JAVA_TARGET_PROPERTY, release.get());
-    } else {
-      // See http://jira.codehaus.org/browse/SONAR-2148
-      // Get Java source and target versions from maven-compiler-plugin.
-      config.getSource().ifPresent(s -> props.put(JAVA_SOURCE_PROPERTY, s));
-      config.getTarget().ifPresent(t -> props.put(JAVA_TARGET_PROPERTY, t));
+  private static void putIfNotNull(Map<String, String> props, String key, @Nullable Object value) {
+    if (value != null) {
+      props.put(key, value.toString());
     }
-  }
-
-  private static void populateEnablePreview(MavenCompilerConfiguration config, Map<String, String> props) {
-    config.getEnablePreview().ifPresent(property -> props.put(JAVA_ENABLE_PREVIEW, property));
   }
 
   private static void findBugsExcludeFileMaven(MavenProject pom, Map<String, String> props) {
@@ -385,29 +370,15 @@ public class MavenProjectConverter {
    * For SONAR-3676
    */
   private static void convertMavenLinksToProperties(Map<String, String> props, MavenProject pom) {
-    setPropertyIfNotAlreadyExists(props, LINKS_HOME_PAGE, pom.getUrl());
-
-    Scm scm = pom.getScm();
-    if (scm == null) {
-      scm = new Scm();
-    }
-    setPropertyIfNotAlreadyExists(props, LINKS_SOURCES, scm.getUrl());
-    setPropertyIfNotAlreadyExists(props, LINKS_SOURCES_DEV, scm.getDeveloperConnection());
-
-    CiManagement ci = pom.getCiManagement();
-    if (ci == null) {
-      ci = new CiManagement();
-    }
-    setPropertyIfNotAlreadyExists(props, LINKS_CI, ci.getUrl());
-
-    IssueManagement issues = pom.getIssueManagement();
-    if (issues == null) {
-      issues = new IssueManagement();
-    }
-    setPropertyIfNotAlreadyExists(props, LINKS_ISSUE_TRACKER, issues.getUrl());
+    MavenProjectLinks links = MavenProjectLinks.of(pom);
+    setPropertyIfNotAlreadyExists(props, LINKS_HOME_PAGE, links.homepage());
+    setPropertyIfNotAlreadyExists(props, LINKS_SOURCES, links.scm());
+    setPropertyIfNotAlreadyExists(props, LINKS_SOURCES_DEV, links.scmDeveloperConnection());
+    setPropertyIfNotAlreadyExists(props, LINKS_CI, links.ci());
+    setPropertyIfNotAlreadyExists(props, LINKS_ISSUE_TRACKER, links.issueTracker());
   }
 
-  private static void setPropertyIfNotAlreadyExists(Map<String, String> props, String propertyKey, String propertyValue) {
+  private static void setPropertyIfNotAlreadyExists(Map<String, String> props, String propertyKey, @Nullable String propertyValue) {
     if (StringUtils.isBlank(props.get(propertyKey))) {
       props.put(propertyKey, Objects.toString(propertyValue, ""));
     }
@@ -463,36 +434,15 @@ public class MavenProjectConverter {
   }
 
   private static void populateLibraries(MavenProject pom, Map<String, String> props, boolean test) throws MojoExecutionException {
-    List<String> classpathElements;
+    List<Path> libraries;
     try {
-      classpathElements = test ? pom.getTestClasspathElements() : pom.getCompileClasspathElements();
+      libraries = test ? MavenProjects.testLibraries(pom) : MavenProjects.mainLibraries(pom);
     } catch (DependencyResolutionRequiredException e) {
       throw new MojoExecutionException("Unable to populate" + (test ? " test" : "") + " libraries", e);
     }
 
-    Set<File> libraries = new LinkedHashSet<>();
-    if (classpathElements != null) {
-      String outputDirectory = test ? pom.getBuild().getTestOutputDirectory() : pom.getBuild().getOutputDirectory();
-      File basedir = pom.getBasedir();
-      classpathElements.stream()
-        .filter(cp -> !cp.equals(outputDirectory))
-        .map(cp -> Optional.ofNullable(resolvePath(cp, basedir)))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .filter(File::exists)
-        .forEach(libraries::add);
-    }
-
-    // Loop over artifacts makes sure we handle `modular-jar` dependencies.
-    // Some of them may duplicate classpath elements, so `libraries` needs to be a set to avoid duplicates.
-    // getFile() returns the absolute path to the local ~/.m2 repository.
-    pom.getArtifacts().stream()
-      .filter(artifact -> "modular-jar".equals(artifact.getType()) && artifact.isResolved())
-      .map(Artifact::getFile)
-      .forEach(libraries::add);
-
     if (!libraries.isEmpty()) {
-      String librariesValue = MavenUtils.joinAsCsv(toPaths(libraries));
+      String librariesValue = MavenUtils.joinAsCsv(libraries.stream().map(Path::toString).collect(Collectors.toList()));
       if (test) {
         props.put(JAVA_PROJECT_TEST_LIBRARIES, librariesValue);
       } else {
@@ -504,16 +454,16 @@ public class MavenProjectConverter {
   }
 
   private static void populateBinaries(MavenProject pom, Map<String, String> props) {
-    File mainBinaryDir = resolvePath(pom.getBuild().getOutputDirectory(), pom.getBasedir());
-    if (mainBinaryDir != null && mainBinaryDir.exists()) {
+    File mainBinaryDir = MavenProjects.mainOutputDirectory(pom).toFile();
+    if (mainBinaryDir.exists()) {
       String binPath = mainBinaryDir.getAbsolutePath();
       // Populate both deprecated and new property for backward compatibility
       props.put(PROJECT_BINARY_DIRS, binPath);
       props.put(JAVA_PROJECT_MAIN_BINARY_DIRS, binPath);
       props.put(GROOVY_PROJECT_MAIN_BINARY_DIRS, binPath);
     }
-    File testBinaryDir = resolvePath(pom.getBuild().getTestOutputDirectory(), pom.getBasedir());
-    if (testBinaryDir != null && testBinaryDir.exists()) {
+    File testBinaryDir = MavenProjects.testOutputDirectory(pom).toFile();
+    if (testBinaryDir.exists()) {
       String binPath = testBinaryDir.getAbsolutePath();
       props.put(JAVA_PROJECT_TEST_BINARY_DIRS, binPath);
     }
@@ -528,15 +478,10 @@ public class MavenProjectConverter {
   }
 
   private static File resolvePath(@Nullable String path, File basedir) {
-    if (path != null) {
-      File file = new File(StringUtils.trim(path));
-      if (!file.isAbsolute()) {
-        file = new File(basedir, path).getAbsoluteFile();
-      }
-      return file;
-    }
-    return null;
+    Path resolved = MavenProjects.resolvePath(path, basedir);
+    return resolved != null ? resolved.toFile() : null;
   }
+
 
   private static List<File> resolvePaths(Collection<String> paths, File basedir) {
     List<File> result = new ArrayList<>();

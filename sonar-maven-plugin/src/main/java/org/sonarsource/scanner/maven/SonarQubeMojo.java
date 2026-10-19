@@ -40,11 +40,10 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.toolchain.ToolchainManager;
+import org.sonar.scanner.maven.model.MavenCompilerConfigurationResolver;
 import org.sonarsource.scanner.lib.EnvironmentConfig;
 import org.sonarsource.scanner.lib.ScannerEngineBootstrapper;
 import org.sonarsource.scanner.lib.ScannerProperties;
-import org.sonarsource.scanner.maven.bootstrap.Maven3ToolchainResolver;
-import org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver;
 import org.sonarsource.scanner.maven.bootstrap.MavenProjectConverter;
 import org.sonarsource.scanner.maven.bootstrap.PropertyDecryptor;
 import org.sonarsource.scanner.maven.bootstrap.ScannerBootstrapper;
@@ -107,8 +106,8 @@ public class SonarQubeMojo extends AbstractMojo {
 
     Map<String, String> envProps = EnvironmentConfig.load(environmentVariables);
 
-    MavenCompilerResolver mavenCompilerResolver = new MavenCompilerResolver(session, lifecycleExecutor, getLog(), new Maven3ToolchainResolver(session, getLog(), toolchainManager));
-    MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), mavenCompilerResolver, envProps);
+    MavenCompilerConfigurationResolver compilerConfigurationResolver = new MavenCompilerConfigurationResolver(session, lifecycleExecutor, toolchainManager, getLog());
+    MavenProjectConverter mavenProjectConverter = new MavenProjectConverter(getLog(), compilerConfigurationResolver, envProps);
 
     PropertyDecryptor propertyDecryptor = new PropertyDecryptor(getLog(), securityDispatcher);
 

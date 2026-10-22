@@ -1,18 +1,10 @@
 name: Release
-# This workflow is triggered when publishing a GitHub release
 on:
-  release:
-    types:
-      - published
   workflow_dispatch:
     inputs:
       version:
         type: string
         description: Version
-        required: true
-      releaseId:
-        type: string
-        description: Release ID
         required: true
       dryRun:
         type: boolean
@@ -24,67 +16,10 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@v6
+    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@v7
     with:
       publishToBinaries: true
       mavenCentralSync: true
       slackChannel: ops-ci-experience
-      # We do not have any inputs if this workflow is triggered by a release event, hence we have to use a fallback for all inputs
-      version: ${{ inputs.version || github.event.release.tag_name }}
-      releaseId: ${{ inputs.releaseId || github.event.release.id }}
+      version: ${{ inputs.version }}
       dryRun: ${{ inputs.dryRun == true }}
-
-  relocation-pom:
-    name: Publish relocation POM
-    runs-on: github-ubuntu-latest-s
-    # This step will be removed soon. Skip it in the automated release.
-    if: ${{ github.event_name != 'workflow_dispatch' }}
-    needs:
-      - release
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
-      - name: Get secrets
-        id: secrets
-        uses: SonarSource/vault-action-wrapper@v3
-        with:
-          secrets: |
-            development/kv/data/slack webhook | slack_webhook;
-            development/kv/data/ossrh username | ossrh_username;
-            development/kv/data/ossrh password | ossrh_password;
-            development/kv/data/sign key | sign_key;
-            development/kv/data/sign passphrase | sign_passphrase;
-      - name: Prepare repo for uploading
-        working-directory: relocation/
-        run: |
-          GROUP_ID=$(mvn --batch-mode org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression="project.groupId" -q -DforceStdout)
-          ARTIFACT_ID=$(mvn --batch-mode org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression="project.artifactId" -q -DforceStdout)
-          _PATH="local_repo/${GROUP_ID//.//}/${ARTIFACT_ID}/${{ github.event.release.tag_name }}"
-          POM_PATH="${_PATH}/${ARTIFACT_ID}-${{ github.event.release.tag_name }}.pom"
-          mkdir --parent "${_PATH}"
-          sed 's|REPLACE_ME|${{ github.event.release.tag_name }}|' pom.xml > "${POM_PATH}"
-          md5sum "${POM_PATH}"    | cut -d\  -f1 > "${POM_PATH}.md5"
-          sha1sum "${POM_PATH}"   | cut -d\  -f1 > "${POM_PATH}.sha1"
-          sha256sum "${POM_PATH}" | cut -d\  -f1 > "${POM_PATH}.sha256"
-          sha512sum "${POM_PATH}" | cut -d\  -f1 > "${POM_PATH}.sha512"
-          export GNUPGHOMEDIR=gnupg/
-          mkdir --parent "${GNUPGHOMEDIR}"
-          echo "${GPG_PRIVATE_KEY_PASSPHRASE}" | gpg --batch --pinentry-mode loopback --passphrase-fd 0 --quiet --import <(echo "${GPG_PRIVATE_KEY_BASE64}")
-          echo "${GPG_PRIVATE_KEY_PASSPHRASE}" | gpg --batch --pinentry-mode loopback --passphrase-fd 0 --quiet --detach-sign --armor "${POM_PATH}"
-          rm -rf "${GNUPGHOMEDIR}"
-        env:
-          GPG_PRIVATE_KEY_BASE64: ${{ fromJSON(steps.secrets.outputs.vault).sign_key }}
-          GPG_PRIVATE_KEY_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).sign_passphrase }}
-      - name: Maven Central Sync
-        id: maven-central-sync
-        uses: SonarSource/gh-action_release/maven-central-sync@v6
-        with:
-          local-repo-dir: relocation/local_repo/
-          nexus-url: https://oss.sonatype.org/
-          staging-profile-id: 23a95768f56d42
-        env:
-          OSSRH_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ossrh_username }}
-          OSSRH_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ossrh_password }}

@@ -329,6 +329,23 @@ public class SonarQubeMojoTest {
   }
 
   @Test
+  public void test_sonar_region_au() throws Exception {
+    executeProject("sample-project", DEFAULT_GOAL, "sonar.region", "au");
+    assertThat(readProps("target/dump.properties"))
+      .contains((entry("sonar.host.url", "https://sonarqube.au")))
+      .contains((entry("sonar.scanner.apiBaseUrl", "https://api.sonarqube.au")));
+  }
+
+  @Test
+  public void test_sonar_region_au_using_env() throws Exception {
+    var env = Map.of("SONAR_REGION", "au");
+    executeProject("sample-project", DEFAULT_GOAL, env);
+    assertThat(readProps("target/dump.properties"))
+      .contains((entry("sonar.host.url", "https://sonarqube.au")))
+      .contains((entry("sonar.scanner.apiBaseUrl", "https://api.sonarqube.au")));
+  }
+
+  @Test
   public void test_sonar_region_invalid() {
     assertThatThrownBy(() -> executeProject("sample-project", DEFAULT_GOAL, "sonar.region", "invalid"))
       .hasMessageContaining("Invalid region 'invalid'.");

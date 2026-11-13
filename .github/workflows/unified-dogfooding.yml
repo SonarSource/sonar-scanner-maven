@@ -18,9 +18,10 @@ jobs:
           version: 2025.7.12
       - uses: SonarSource/ci-github-actions/build-maven@v1
         with:
-          run-shadow-scans: true
-          artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
+          artifactory-reader-role: private-reader
+          deploy: 'false'
+          run-shadow-scans: true
       - name: Run IRIS Analysis
         uses: SonarSource/unified-dogfooding-actions/run-iris@v1
         with:

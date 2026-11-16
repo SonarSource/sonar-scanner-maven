@@ -27,16 +27,28 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
+import org.apache.maven.artifact.handler.DefaultArtifactHandler;
+import org.apache.maven.model.CiManagement;
+import org.apache.maven.model.IssueManagement;
+import org.apache.maven.model.Plugin;
+import org.apache.maven.model.Scm;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.sonarsource.scanner.lib.AnalysisProperties;
+import org.sonarsource.scanner.maven.bootstrap.MavenCompilerResolver.MavenCompilerConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,10 +68,12 @@ class MavenProjectConverterTest {
 
   private MavenProjectConverter projectConverter;
 
+  private MavenCompilerResolver mavenCompilerResolver;
+
   @BeforeEach
   void prepare() {
     log = mock(Log.class);
-    MavenCompilerResolver mavenCompilerResolver = mock(MavenCompilerResolver.class);
+    mavenCompilerResolver = mock(MavenCompilerResolver.class);
     when(mavenCompilerResolver.extractConfiguration(any())).thenReturn(Optional.empty());
     projectConverter = new MavenProjectConverter(log, mavenCompilerResolver, env);
   }
@@ -670,6 +684,24 @@ class MavenProjectConverterTest {
   }
 
   @Test
+  void submodules_do_not_propagate_project_key_defined_in_their_own_pom() throws MojoExecutionException, IOException {
+    MavenProject root = createProject(new Properties(), "pom");
+    File module1BaseDir = temp.resolve("module1").toFile();
+    module1BaseDir.mkdirs();
+    Properties module1PomProperties = new Properties();
+    module1PomProperties.put(AnalysisProperties.PROJECT_KEY, "module_specific_project_key");
+    MavenProject module1 = createProject(new File(module1BaseDir, "pom.xml"), module1PomProperties, "jar");
+    module1.getModel().setArtifactId("module1");
+    root.getModules().add("module1");
+
+    Map<String, String> properties = projectConverter.configure(Arrays.asList(module1, root), root, new Properties());
+
+    assertThat(properties)
+      .containsEntry(AnalysisProperties.PROJECT_KEY, "com.foo:myProject")
+      .doesNotContainKey("com.foo:module1." + AnalysisProperties.PROJECT_KEY);
+  }
+
+  @Test
   void getAbsolutePathToOriginalPom_returns_the_original_pom_when_available() throws IOException {
     Path baseDirectory = temp;
     File originalPom = baseDirectory.resolve("pom.xml").toFile();
@@ -744,6 +776,348 @@ class MavenProjectConverterTest {
     );
   }
 
+  @Test
+  void shouldUseCompilerReleaseAsJavaSourceAndTarget() throws Exception {
+    MavenCompilerConfiguration compilerConfiguration = mock(MavenCompilerConfiguration.class);
+    Path jdkHome = temp.resolve("jdk");
+    when(compilerConfiguration.getRelease()).thenReturn(Optional.of("17"));
+    when(compilerConfiguration.getSource()).thenReturn(Optional.of("8"));
+    when(compilerConfiguration.getTarget()).thenReturn(Optional.of("8"));
+    when(compilerConfiguration.getJdkHome()).thenReturn(Optional.of(jdkHome));
+    when(compilerConfiguration.getEnablePreview()).thenReturn(Optional.of("true"));
+    givenCompilerConfiguration(compilerConfiguration);
+    MavenProject project = createProject(new Properties(), "jar");
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+
+    assertThat(props)
+      .containsEntry("sonar.java.source", "17")
+      .containsEntry("sonar.java.target", "17")
+      .containsEntry("sonar.java.jdkHome", jdkHome.toString())
+      .containsEntry("sonar.java.enablePreview", "true");
+  }
+
+  @Test
+  void shouldUseCompilerSourceAndTargetWhenReleaseIsAbsent() throws Exception {
+    MavenCompilerConfiguration compilerConfiguration = mock(MavenCompilerConfiguration.class);
+    when(compilerConfiguration.getRelease()).thenReturn(Optional.empty());
+    when(compilerConfiguration.getSource()).thenReturn(Optional.of("11"));
+    when(compilerConfiguration.getTarget()).thenReturn(Optional.of("17"));
+    when(compilerConfiguration.getJdkHome()).thenReturn(Optional.empty());
+    when(compilerConfiguration.getEnablePreview()).thenReturn(Optional.empty());
+    givenCompilerConfiguration(compilerConfiguration);
+    MavenProject project = createProject(new Properties(), "jar");
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+
+    assertThat(props)
+      .containsEntry("sonar.java.source", "11")
+      .containsEntry("sonar.java.target", "17")
+      .doesNotContainKeys("sonar.java.jdkHome", "sonar.java.enablePreview");
+  }
+
+  @Test
+  void failWhenModuleIsNotReferencedByAnyParent() throws Exception {
+    MavenProject root = createProject(new Properties(), "pom");
+    File orphanBaseDir = temp.resolve("orphan").toFile();
+    orphanBaseDir.mkdir();
+    MavenProject orphan = createProject(new File(orphanBaseDir, "pom.xml"), new Properties(), "jar");
+    orphan.getModel().setArtifactId("orphan");
+    orphan.getModel().setName("Orphan Module");
+    List<MavenProject> reactorProjects = Arrays.asList(orphan, root);
+    Properties userProperties = new Properties();
+
+    assertThatThrownBy(() -> projectConverter.configure(reactorProjects, root, userProperties))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageEndingWith("\"Orphan Module\" is orphan");
+  }
+
+  @Test
+  void failWhenRootModuleIsSkipped() throws Exception {
+    Properties rootProps = new Properties();
+    rootProps.setProperty("sonar.skip", "true");
+    MavenProject root = createProject(rootProps, "pom");
+    List<MavenProject> reactorProjects = Collections.singletonList(root);
+    Properties userProperties = new Properties();
+
+    assertThatThrownBy(() -> projectConverter.configure(reactorProjects, root, userProperties))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageStartingWith("Unable to determine structure of project.");
+    assertThat(projectConverter.getSkippedBasedDirs()).containsExactly(temp);
+  }
+
+  @Test
+  void failWhenModulePathCannotBeResolved() throws Exception {
+    MavenProject root = createProject(new Properties(), "pom");
+    // A NUL character makes File#getCanonicalFile throw an IOException on every platform
+    root.getModules().add("invalid\u0000module");
+    List<MavenProject> reactorProjects = Collections.singletonList(root);
+    Properties userProperties = new Properties();
+
+    assertThatThrownBy(() -> projectConverter.configure(reactorProjects, root, userProperties))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Cannot configure project")
+      .hasCauseInstanceOf(IOException.class);
+  }
+
+  @Test
+  void findModuleByBaseDirWhenPomHasCustomName() throws Exception {
+    File baseDir = temp.toRealPath().toFile();
+    MavenProject root = createProject(new File(baseDir, "pom.xml"), new Properties(), "pom");
+    File moduleBaseDir = new File(baseDir, "module1");
+    moduleBaseDir.mkdir();
+    MavenProject module = createProject(new File(moduleBaseDir, "custom-pom.xml"), new Properties(), "jar");
+    module.getModel().setArtifactId("module1");
+    root.getModules().add("module1");
+
+    Map<String, String> props = projectConverter.configure(Arrays.asList(module, root), root, new Properties());
+
+    assertThat(props)
+      .containsEntry("sonar.modules", "com.foo:module1")
+      .containsEntry("com.foo:module1.sonar.projectBaseDir", moduleBaseDir.getAbsolutePath());
+  }
+
+  @Test
+  void ignoreModulePathThatDoesNotMatchAnyProject() throws Exception {
+    File baseDir = temp.toAbsolutePath().toFile();
+    MavenProject root = createProject(new Properties(), "pom");
+    File moduleBaseDir = new File(baseDir, "module1");
+    moduleBaseDir.mkdir();
+    MavenProject module = createProject(new File(moduleBaseDir, "pom.xml"), new Properties(), "jar");
+    module.getModel().setArtifactId("module1");
+    root.getModules().add("missing-module/pom.xml");
+    root.getModules().add("module1");
+
+    Map<String, String> props = projectConverter.configure(Arrays.asList(module, root), root, new Properties());
+
+    assertThat(props).containsEntry("sonar.modules", "com.foo:module1");
+  }
+
+  @Test
+  void useArtifactKeyAsModuleKeyWhenSpecifiedProjectKeyIsEmpty() throws Exception {
+    MavenProject project = createProject(new Properties(), "jar");
+    Properties userProperties = new Properties();
+    userProperties.setProperty("sonar.projectKey", "");
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, userProperties);
+
+    assertThat(props).containsEntry("sonar.moduleKey", "com.foo:myProject");
+  }
+
+  @Test
+  void excludeEncryptedPropertiesUnrelatedToSonar() throws Exception {
+    String encryptedValue = "{COQLCE6DU6GtcS5P=KjsdhuvsdAa7Hsg6dlgEWerkkW}";
+    Properties pomProps = new Properties();
+    pomProps.setProperty("repository.password", encryptedValue);
+    pomProps.setProperty("sonar.custom.secret", encryptedValue);
+    MavenProject project = createProject(pomProps, "jar");
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+
+    assertThat(props)
+      .doesNotContainKey("repository.password")
+      .containsEntry("sonar.custom.secret", encryptedValue);
+  }
+
+  @Test
+  void convertMavenLinksToProperties() throws Exception {
+    MavenProject project = createProject(new Properties(), "jar");
+    project.getModel().setUrl("https://example.org");
+    Scm scm = new Scm();
+    scm.setUrl("https://example.org/scm");
+    scm.setDeveloperConnection("scm:git:git@example.org:foo/bar.git");
+    project.getModel().setScm(scm);
+    CiManagement ciManagement = new CiManagement();
+    ciManagement.setUrl("https://example.org/ci");
+    project.getModel().setCiManagement(ciManagement);
+    IssueManagement issueManagement = new IssueManagement();
+    issueManagement.setUrl("https://example.org/issues");
+    project.getModel().setIssueManagement(issueManagement);
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+
+    assertThat(props)
+      .containsEntry("sonar.links.homepage", "https://example.org")
+      .containsEntry("sonar.links.scm", "https://example.org/scm")
+      .containsEntry("sonar.links.scm_dev", "scm:git:git@example.org:foo/bar.git")
+      .containsEntry("sonar.links.ci", "https://example.org/ci")
+      .containsEntry("sonar.links.issue", "https://example.org/issues");
+  }
+
+  @Test
+  void setFindbugsExcludeFiltersWhenFilterFileExists() throws Exception {
+    File filterFile = Files.createFile(temp.resolve("findbugs-exclude.xml")).toFile();
+    MavenProject project = createProject(new Properties(), "jar");
+    addFindbugsPlugin(project, "findbugs-exclude.xml");
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+
+    assertThat(props).containsEntry("sonar.findbugs.excludeFilters", filterFile.getAbsolutePath());
+  }
+
+  @Test
+  void ignoreFindbugsExcludeFiltersWhenFilterFileIsMissing() throws Exception {
+    MavenProject project = createProject(new Properties(), "jar");
+    addFindbugsPlugin(project, "missing-findbugs-exclude.xml");
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+
+    assertThat(props).doesNotContainKey("sonar.findbugs.excludeFilters");
+  }
+
+  @Test
+  void setSurefireReportsPathWhenReportsDirectoryExists() throws Exception {
+    File reportsDir = temp.resolve("target").resolve("surefire-reports").toFile();
+    reportsDir.mkdirs();
+    MavenProject project = createProject(new Properties(), "jar");
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+
+    assertThat(props)
+      .containsEntry("sonar.junit.reportsPath", reportsDir.getAbsolutePath())
+      .containsEntry("sonar.junit.reportPaths", reportsDir.getAbsolutePath());
+  }
+
+  @Test
+  void ignoreBinariesWhenOutputDirectoriesDoNotExist() throws Exception {
+    MavenProject project = createProject(new Properties(), "jar");
+    project.getBuild().setOutputDirectory(temp.resolve("missing-classes").toString());
+    project.getBuild().setTestOutputDirectory(temp.resolve("missing-test-classes").toString());
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+
+    assertThat(props).doesNotContainKeys("sonar.binaries", "sonar.java.binaries", "sonar.groovy.binaries", "sonar.java.test.binaries");
+  }
+
+  @Test
+  void ignoreBuildDirectoriesWhenUndefined() throws Exception {
+    File sourcesDir = temp.resolve("src").toFile();
+    sourcesDir.mkdir();
+    MavenProject project = createProject(new Properties(), "jar");
+    project.getBuild().setDirectory(null);
+    project.getBuild().setOutputDirectory(null);
+    project.getBuild().setTestOutputDirectory(null);
+    Properties userProperties = new Properties();
+    // Explicit sources and tests bypass the build directory exclusion, which requires a build directory
+    userProperties.setProperty("sonar.sources", "src");
+    userProperties.setProperty("sonar.tests", "src");
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, userProperties);
+
+    assertThat(props)
+      .containsEntry("sonar.sources", sourcesDir.getAbsolutePath())
+      .doesNotContainKeys("sonar.projectBuildDir", "sonar.working.directory", "sonar.java.binaries", "sonar.java.test.binaries");
+  }
+
+  @Test
+  void failWhenCompileClasspathCannotBeResolved() {
+    MavenProject project = initializeProject(new MavenProject() {
+      @Override
+      public List<String> getCompileClasspathElements() throws DependencyResolutionRequiredException {
+        throw new DependencyResolutionRequiredException(mock(Artifact.class));
+      }
+    }, temp.resolve("pom.xml").toFile(), new Properties(), "jar");
+    List<MavenProject> reactorProjects = Collections.singletonList(project);
+    Properties userProperties = new Properties();
+
+    assertThatThrownBy(() -> projectConverter.configure(reactorProjects, project, userProperties))
+      .isInstanceOf(MojoExecutionException.class)
+      .hasMessage("Unable to populate libraries")
+      .hasCauseInstanceOf(DependencyResolutionRequiredException.class);
+  }
+
+  @Test
+  void failWhenTestClasspathCannotBeResolved() {
+    MavenProject project = initializeProject(new MavenProject() {
+      @Override
+      public List<String> getTestClasspathElements() throws DependencyResolutionRequiredException {
+        throw new DependencyResolutionRequiredException(mock(Artifact.class));
+      }
+    }, temp.resolve("pom.xml").toFile(), new Properties(), "jar");
+    List<MavenProject> reactorProjects = Collections.singletonList(project);
+    Properties userProperties = new Properties();
+
+    assertThatThrownBy(() -> projectConverter.configure(reactorProjects, project, userProperties))
+      .isInstanceOf(MojoExecutionException.class)
+      .hasMessage("Unable to populate test libraries")
+      .hasCauseInstanceOf(DependencyResolutionRequiredException.class);
+  }
+
+  @Test
+  void ignoreUndefinedClasspaths() throws Exception {
+    MavenProject project = initializeProject(new MavenProject() {
+      @Override
+      public List<String> getCompileClasspathElements() {
+        return null;
+      }
+
+      @Override
+      public List<String> getTestClasspathElements() {
+        return null;
+      }
+    }, Files.createFile(temp.resolve("pom.xml")).toFile(), new Properties(), "jar");
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+
+    assertThat(props).doesNotContainKeys("sonar.libraries", "sonar.java.libraries", "sonar.java.test.libraries");
+  }
+
+  @Test
+  void includeOnlyResolvedModularJarArtifactsInLibraries() throws Exception {
+    File modularJar = Files.createFile(temp.resolve("modular.jar")).toFile();
+    MavenProject project = createProject(new Properties(), "jar");
+    project.setArtifacts(Set.of(
+      createArtifact("resolved-modular", "modular-jar", modularJar, true),
+      createArtifact("unresolved-modular", "modular-jar", Files.createFile(temp.resolve("unresolved.jar")).toFile(), false),
+      createArtifact("plain", "jar", Files.createFile(temp.resolve("plain.jar")).toFile(), true)));
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+
+    assertThat(props)
+      .containsEntry("sonar.libraries", modularJar.getAbsolutePath())
+      .containsEntry("sonar.java.libraries", modularJar.getAbsolutePath())
+      .containsEntry("sonar.java.test.libraries", project.getBuild().getOutputDirectory() + "," + modularJar.getAbsolutePath());
+  }
+
+  @Test
+  void removeNestedSourceDirectories() throws Exception {
+    File parentSourceDir = temp.resolve("src").toFile();
+    File nestedSourceDir = temp.resolve(Paths.get("src", "main", "java")).toFile();
+    nestedSourceDir.mkdirs();
+    MavenProject project = createProject(new Properties(), "jar");
+    project.addCompileSourceRoot(parentSourceDir.getAbsolutePath());
+    project.addCompileSourceRoot(nestedSourceDir.getAbsolutePath());
+
+    Map<String, String> props = projectConverter.configure(Collections.singletonList(project), project, new Properties());
+
+    assertThat(props.get("sonar.sources").split(","))
+      .contains(parentSourceDir.getAbsolutePath())
+      .doesNotContain(nestedSourceDir.getAbsolutePath());
+  }
+
+  private void givenCompilerConfiguration(MavenCompilerConfiguration compilerConfiguration) {
+    when(mavenCompilerResolver.extractConfiguration(any())).thenReturn(Optional.of(compilerConfiguration));
+  }
+
+  private static void addFindbugsPlugin(MavenProject project, String excludeFilterFile) {
+    Xpp3Dom excludeFilterFileNode = new Xpp3Dom("excludeFilterFile");
+    excludeFilterFileNode.setValue(excludeFilterFile);
+    Xpp3Dom configuration = new Xpp3Dom("configuration");
+    configuration.addChild(excludeFilterFileNode);
+    Plugin plugin = new Plugin();
+    plugin.setGroupId("org.codehaus.mojo");
+    plugin.setArtifactId("findbugs-maven-plugin");
+    plugin.setConfiguration(configuration);
+    project.getBuild().addPlugin(plugin);
+  }
+
+  private static Artifact createArtifact(String artifactId, String type, File file, boolean resolved) {
+    Artifact artifact = new DefaultArtifact("com.foo", artifactId, "1.0", "compile", type, null, new DefaultArtifactHandler(type));
+    artifact.setFile(file);
+    artifact.setResolved(resolved);
+    return artifact;
+  }
+
   private MavenProject createProject(Properties pomProps, String packaging) throws IOException {
     File pom = temp.resolve("pom.xml").toFile();
     pom.createNewFile();
@@ -751,7 +1125,10 @@ class MavenProjectConverterTest {
   }
 
   private MavenProject createProject(File pom, Properties pomProps, String packaging) {
-    MavenProject project = new MavenProject();
+    return initializeProject(new MavenProject(), pom, pomProps, packaging);
+  }
+
+  private static MavenProject initializeProject(MavenProject project, File pom, Properties pomProps, String packaging) {
     File target = new File(pom.getParentFile(), "target");
     File classes = new File(target, "classes");
     File testClasses = new File(target, "test-classes");

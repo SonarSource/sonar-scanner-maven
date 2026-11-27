@@ -13,7 +13,7 @@
   <name>SonarSource :: E2E :: SonarQube Maven</name>
 
   <properties>
-    <jetty.version>12.1.12</jetty.version>
+    <jetty.version>12.1.15</jetty.version>
     <maven.compiler.release>17</maven.compiler.release>
     <skipTests>true</skipTests>
     <maven.deploy.skip>true</maven.deploy.skip>
